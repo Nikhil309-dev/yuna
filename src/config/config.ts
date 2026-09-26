@@ -44,7 +44,7 @@ export const config = {
       nodeList.push({
         id: "main-node-1",
         host: process.env.LAVALINK_HOST,
-        port: Number(process.env.LAVALINK_PORT) || 2333,
+        port: Number(process.env.LAVALINK_PORT) || 9000,
         authorization: process.env.LAVALINK_PASSWORD || "youshallnotpass",
         secure: process.env.LAVALINK_SECURE === "true",
         retryAmount: 10,
@@ -56,7 +56,7 @@ export const config = {
       nodeList.push({
         id: "backup-node-2",
         host: process.env.LAVALINK_HOST_2,
-        port: Number(process.env.LAVALINK_PORT_2) || 2333,
+        port: Number(process.env.LAVALINK_PORT_2) || 9000,
         authorization: process.env.LAVALINK_PASSWORD_2 || process.env.LAVALINK_PASSWORD || "youshallnotpass",
         secure: process.env.LAVALINK_SECURE_2 === "true",
         retryAmount: 10,
@@ -68,7 +68,7 @@ export const config = {
       nodeList.push({
         id: "backup-node-3",
         host: process.env.LAVALINK_HOST_3,
-        port: Number(process.env.LAVALINK_PORT_3) || 2333,
+        port: Number(process.env.LAVALINK_PORT_3) || 9000,
         authorization: process.env.LAVALINK_PASSWORD_3 || process.env.LAVALINK_PASSWORD || "youshallnotpass",
         secure: process.env.LAVALINK_SECURE_3 === "true",
         retryAmount: 10,
