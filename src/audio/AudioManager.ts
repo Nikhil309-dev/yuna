@@ -1,6 +1,9 @@
 /**
  * @file AudioManager.ts
- * @description Central Audio Manager for Yuna V2 powered by KizunaLink (Lavalink v4 Drop-in).
+ * @description Central audio manager for Yuna V2, powered entirely by a standard
+ * Lavalink v4 server (through the lavalink-client library). The bot never decodes,
+ * encodes, resamples, or streams audio itself — it only sends REST/WS commands and
+ * forwards raw voice payloads so the node does all heavy audio work.
  */
 
 import { LavalinkManager, Player } from 'lavalink-client';
@@ -31,9 +34,9 @@ export class AudioManager {
     this.lavalink = new LavalinkManager({
       nodes: config.nodes.length > 0 ? config.nodes : [
         {
-          id: 'kizunalink-core',
+          id: 'lavalink-node',
           host: process.env.LAVALINK_HOST || '127.0.0.1',
-          port: Number(process.env.LAVALINK_PORT) || 2333,
+          port: Number(process.env.LAVALINK_PORT) || 9000,
           authorization: process.env.LAVALINK_PASSWORD || 'youshallnotpass',
           secure: process.env.LAVALINK_SECURE === 'true',
           retryAmount: 20,
@@ -82,15 +85,16 @@ export class AudioManager {
 
       if (process.env.LAVALINK_DEBUG_FETCH === '1' && !(globalThis as any).__yunaFetchPatched) {
         (globalThis as any).__yunaFetchPatched = true;
+        const nodePort = String(config.nodes?.[0]?.port ?? process.env.LAVALINK_PORT ?? 9000);
         const origFetch = global.fetch;
         global.fetch = async (url: any, options: any) => {
-          if (url.toString().includes('2333')) {
+          if (url.toString().includes(nodePort)) {
             logger.info('AudioManager', `FETCH OUTGOING: ${options?.method} ${url}`);
             if (options?.body) logger.info('AudioManager', `FETCH BODY: ${options?.body}`);
           }
           try {
             const res = await origFetch(url, options);
-            if (url.toString().includes('2333')) {
+            if (url.toString().includes(nodePort)) {
               logger.info('AudioManager', `FETCH RESPONSE: ${res.status}`);
             }
             return res;
@@ -111,40 +115,11 @@ export class AudioManager {
           username: this.client.user!.username
         });
 
-        this._patchNodeUpdatePlayer();
-
         logger.success('AudioManager', `⛩️ Lavalink audio engine initialized!`);
       } catch (err) {
         logger.error('AudioManager', `Failed to initialize Lavalink manager:`, err);
       }
     });
-  }
-
-  /**
-   * Patches each Lavalink node's updatePlayer to transform the nested
-   * { track: { encoded } } format into flat { encodedTrack } for KizunaLink.
-   * lavalink-client sends Lavalink v4 REST spec but KizunaLink's current
-   * binary reads `encodedTrack` as a flat string.
-   */
-  _patchNodeUpdatePlayer() {
-    for (const node of this.lavalink.nodeManager.nodes.values()) {
-      const originalRequest = node.request.bind(node);
-      node.request = ((endpoint: any, modify: any, isAutoSkip?: boolean) => {
-        return (originalRequest as any)(endpoint, (reqObj: any) => {
-          if (modify) modify(reqObj);
-          if (reqObj.method === 'PATCH' && reqObj.body) {
-            try {
-              const body = JSON.parse(reqObj.body);
-              if (body.track?.encoded && !body.encodedTrack) {
-                body.encodedTrack = body.track.encoded;
-                logger.debug('AudioManager', `Transformed track.encoded → encodedTrack for KizunaLink`);
-              }
-              reqObj.body = JSON.stringify(body);
-            } catch (e) {}
-          }
-        }, isAutoSkip);
-      }) as typeof node.request;
-    }
   }
 
   /**
