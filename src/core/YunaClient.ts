@@ -150,18 +150,18 @@ export class YunaClient extends Client {
 			if (this.scheduler) {
 				this.scheduler.stop();
 			}
-			if (this.audio && (this.audio as any).players) {
-				for (const [guildId, player] of (this.audio as any).players) {
-					if (player && player.voiceChannelId && (player.queue?.current || player.queue?.length > 0)) {
+			if (this.audio && this.audio.players) {
+				for (const [guildId, player] of this.audio.players) {
+					if (player && player.voiceChannelId && (player.queue?.current || player.queue?.tracks?.length > 0)) {
 						try {
 							const current = player.queue?.current;
-							const remaining = player.queue ? Array.from(player.queue) : [];
+							const remaining = player.queue?.tracks ? Array.from(player.queue.tracks) : [];
 							const pos = player.position || 0;
 
 							await this.db.guild?.saveActiveSession?.(
 								guildId,
 								player.voiceChannelId,
-								player.textChannelId,
+								player.textChannelId ?? player.voiceChannelId,
 								current,
 								remaining,
 								pos

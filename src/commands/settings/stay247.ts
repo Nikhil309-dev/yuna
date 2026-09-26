@@ -244,7 +244,7 @@ class Stay247Command extends Command {
         }
       } else if (player.voiceChannelId !== targetVoiceChannel.id) {
         try {
-          await player.setVoiceChannel(targetVoiceChannel.id);
+          await player.changeVoiceState({ voiceChannelId: targetVoiceChannel.id });
           connectionStatus = "Moved to new voice channel";
         } catch (moveError) {
           logger.error("Stay247Command", `Failed to move to new voice channel:`, moveError);

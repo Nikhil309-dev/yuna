@@ -16,6 +16,16 @@ export class PlayerManager {
   }
 
   async connect() { await this.player.connect(); return this; }
+
+  /**
+   * Moves the player to another voice channel (Lavalink-safe).
+   * Always pass `voiceChannelId` — lavalink-client rejects a same-channel move.
+   */
+  async changeVoiceState(data: { voiceChannelId: string; selfDeaf?: boolean; selfMute?: boolean }) {
+    await this.player.changeVoiceState(data);
+    return this;
+  }
+
   async disconnect(force: boolean = false) {
     await this.player.destroy(force ? 'Force disconnect' : 'Disconnect');
     return this;
@@ -123,7 +133,14 @@ export class PlayerManager {
     return this;
   }
 
+  /** Clears the upcoming tracks (keeps the current track playing). */
+  async clearQueue() {
+    return this.queue.clear();
+  }
+
   get isConnected() { return this.player.connected; }
+  get textChannelId() { return this.player.textChannelId; }
+  get voiceChannelId() { return this.player.voiceChannelId; }
   get isPlaying() { return this.player.playing; }
   get isPaused() { return this.player.paused; }
   get currentTrack() { return this.player.queue.current; }

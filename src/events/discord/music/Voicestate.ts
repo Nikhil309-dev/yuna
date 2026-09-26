@@ -56,7 +56,7 @@ async function handleBotVoiceStateChange(oldState: any, newState: any, pm: any, 
 		logger.info('VoiceStateUpdate', `Bot moved from ${oldState.channelId} to ${newState.channelId} in guild ${guildId}`);
 
 		try {
-			await pm.changeVoiceState({ channelId: newState.channelId });
+			await pm.changeVoiceState({ voiceChannelId: newState.channelId });
 		} catch (error) {
 			logger.error('VoiceStateUpdate', 'Error updating voice state after channel move:', error);
 		}
