@@ -15,6 +15,7 @@ interface CreatePlayerOptions {
   textChannelId?: string;
   volume?: number;
   selfDeaf?: boolean;
+  selfMute?: boolean;
 }
 
 interface SearchOptions {
@@ -155,19 +156,23 @@ export class AudioManager {
     return this.lavalink.getPlayer(guildId);
   }
 
+  /** All active players keyed by guild id (proxied from the Lavalink manager). */
+  get players() {
+    return this.lavalink.players;
+  }
+
   /**
    * Creates or returns an active player for a guild
    * @param {Object} options { guildId, voiceChannelId, textChannelId, volume, selfDeaf }
    * @returns {Promise<import('lavalink-client').Player>}
    */
   async createPlayer(options: CreatePlayerOptions): Promise<Player> {
-    const { guildId, voiceChannelId, textChannelId, volume = 100, selfDeaf = true } = options;
+    const { guildId, voiceChannelId, textChannelId, volume = 100, selfDeaf = true, selfMute = false } = options;
     let player = this.lavalink.getPlayer(guildId);
 
     if (player) {
       if (voiceChannelId && player.voiceChannelId !== voiceChannelId) {
-        player.voiceChannelId = voiceChannelId;
-        await player.connect();
+        await player.changeVoiceState({ voiceChannelId });
       }
       if (textChannelId) player.textChannelId = textChannelId;
       return player;
@@ -178,6 +183,7 @@ export class AudioManager {
       voiceChannelId,
       textChannelId,
       selfDeaf,
+      selfMute,
       volume
     });
 

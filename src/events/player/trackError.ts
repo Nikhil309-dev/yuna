@@ -6,7 +6,7 @@ import { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacin
 import emoji from "#config/emoji";
 
 export default {
-  name: "trackException",
+  name: "trackError",
   once: false,
   async execute(player: Player, track: Track, payload: any, musicManager: LavalinkManager, client: YunaClient) {
     try {
@@ -77,7 +77,7 @@ export default {
       });
 
     } catch (error: any) {
-      logger.error('TrackException', 'Error in trackException event handler:', error);
+      logger.error('TrackError', 'Error in trackError event handler:', error);
     }
   }
 };
