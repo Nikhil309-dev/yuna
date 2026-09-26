@@ -19,11 +19,11 @@ import {
 export default {
 	name: "playerDestroy",
 	once: false,
-	async execute(player: Player, reason: string, client: YunaClient) {
+	async execute(player: Player, reason: string, _musicManager: LavalinkManager, client: YunaClient) {
 		try {
 			logger.info(
 				"playerDestroy",
-				`🎵 Player destroyed for guild: ${player.guildId},reason : ${reason}`,
+				`🎵 Player destroyed for guild: ${player.guildId}, reason: ${reason}`,
 			);
 			EventUtils.clearPlayerInterval(player, 'updateInterval');
 			db.guild.deleteActiveSession(player.guildId);

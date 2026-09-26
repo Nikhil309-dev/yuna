@@ -8,7 +8,7 @@ export default {
       if (!data) return;
 
       if (data.t === "VOICE_STATE_UPDATE" || data.t === "VOICE_SERVER_UPDATE") {
-        logger.info("RawVoice", `Received ${data.t} for guild: ${data.d?.guild_id || "unknown"} (User ID: ${data.d?.user_id})`);
+        logger.debug("RawVoice", `Received ${data.t} for guild: ${data.d?.guild_id || "unknown"}`);
       }
 
       const lavalink = client?.audio?.lavalink || client?.music?.lavalink;
