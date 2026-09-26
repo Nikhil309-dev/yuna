@@ -1,0 +1,16 @@
+# Run a local Lavalink v4 node for Yuna V2.
+#
+#   docker compose up -d
+#
+# It listens on 127.0.0.1:9000 with the password from .env.example
+# (youshallnotpass), which is what the bot connects to by default.
+# Lavalink downloads its plugins (e.g. youtube-source) on first start.
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    container_name: yuna-lavalink
+    restart: unless-stopped
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+    ports:
+      - "9000:9000"

@@ -72,7 +72,7 @@ export class AudioManager {
 
   init() {
     this.client.once('clientReady', async () => {
-      logger.info('AudioManager', `🌸 Connecting to KizunaLink Audio Core...`);
+      logger.info('AudioManager', `🌸 Initializing Lavalink audio core...`);
 
       this.lavalink.on("debug", (event: any, log: any) => {
         if (log.state === "warn" || log.state === "error") {
@@ -113,9 +113,9 @@ export class AudioManager {
 
         this._patchNodeUpdatePlayer();
 
-        logger.success('AudioManager', `⛩️ KizunaLink Audio Engine connected!`);
+        logger.success('AudioManager', `⛩️ Lavalink audio engine initialized!`);
       } catch (err) {
-        logger.error('AudioManager', `Failed to initialize KizunaLink node:`, err);
+        logger.error('AudioManager', `Failed to initialize Lavalink manager:`, err);
       }
     });
   }
@@ -137,7 +137,7 @@ export class AudioManager {
               const body = JSON.parse(reqObj.body);
               if (body.track?.encoded && !body.encodedTrack) {
                 body.encodedTrack = body.track.encoded;
-                logger.info('AudioManager', `Transformed track.encoded → encodedTrack for KizunaLink`);
+                logger.debug('AudioManager', `Transformed track.encoded → encodedTrack for KizunaLink`);
               }
               reqObj.body = JSON.stringify(body);
             } catch (e) {}
@@ -199,9 +199,9 @@ export class AudioManager {
     const requester = options.requester || null;
     const cleanQuery = query.trim();
 
-    const node = this.lavalink.nodeManager.leastUsedNodes()?.[0] || this.lavalink.nodeManager.nodes.values().next().value;
+    const node = this.lavalink.nodeManager.leastUsedNodes()?.[0];
     if (!node) {
-      throw new Error('No KizunaLink/Lavalink audio node available');
+      throw new Error('No connected Lavalink node available. Make sure your Lavalink server is running and reachable at the configured host/port.');
     }
 
     const isUrl = /^https?:\/\//i.test(cleanQuery);
