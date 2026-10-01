@@ -26,6 +26,7 @@ class I18nManager {
 			const currentDir = path.dirname(fileURLToPath(import.meta.url));
 			const localesPath = path.join(currentDir, "..", "locales");
 			const files = fs.readdirSync(localesPath).filter(f => f.endsWith(".ts") || f.endsWith(".js"));
+			this.locales.clear();
 
 			for (const file of files) {
 				const localeCode = file.replace(/\.(ts|js)$/, "");
@@ -35,9 +36,13 @@ class I18nManager {
 				const localeModule = await import(filePath);
 				this.locales.set(localeCode, localeModule.default);
 			}
+			if (this.locales.size === 0 || !this.locales.has(this.defaultLocale)) {
+				throw new Error(`No usable locale files found in ${localesPath}`);
+			}
 			logger.info("i18n", `Loaded ${this.locales.size} languages: ${Array.from(this.locales.keys()).join(", ")}`);
 		} catch (error) {
 			logger.error("i18n", "Failed to load locales", error);
+			throw error;
 		}
 	}
 

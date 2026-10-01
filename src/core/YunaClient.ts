@@ -17,6 +17,7 @@ import { ComponentLoader } from '#loaders/ComponentLoader';
 import { logger } from '#utils/logger';
 import ErrorHandler from '#core/ErrorHandler';
 import { Scheduler } from '#core/Scheduler';
+import { i18n } from '#utils/i18n.js';
 
 let shardInfo: any = null;
 try {
@@ -106,6 +107,9 @@ export class YunaClient extends Client {
 	async init() {
 		this.logger.info('YunaClient', `Initializing Yuna V2 Sakura engine...`);
 		try {
+			// Locale data must be ready before commands are handled. Without this,
+			// /language sees an empty menu and Discord rejects the interaction.
+			await i18n.init();
 			await this.withTimeout('eventLoader.load()', () => this.eventLoader.load(), 20_000);
 			await this.withTimeout('commandLoader.load()', () => this.commandLoader.load(), 20_000);
 			await this.withTimeout('components.load()', () => this.components.load(), 20_000);

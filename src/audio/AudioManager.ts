@@ -137,12 +137,29 @@ export class AudioManager {
   }
 
   /**
+   * Returns a connected Lavalink node or fails loudly. There is deliberately no
+   * local playback fallback: without a node, Yuna must not create a player or
+   * attempt to resolve/play media.
+   */
+  private getConnectedNode() {
+    const node = Array.from(this.lavalink.nodeManager.nodes.values())
+      .find((candidate: any) => candidate.connected === true);
+
+    if (!node) {
+      throw new Error('No connected Lavalink node available. Start or reconnect Lavalink before using music commands.');
+    }
+
+    return node;
+  }
+
+  /**
    * Creates or returns an active player for a guild
    * @param {Object} options { guildId, voiceChannelId, textChannelId, volume, selfDeaf }
    * @returns {Promise<import('lavalink-client').Player>}
    */
   async createPlayer(options: CreatePlayerOptions): Promise<Player> {
     const { guildId, voiceChannelId, textChannelId, volume = 100, selfDeaf = true, selfMute = false } = options;
+    this.getConnectedNode();
     let player = this.lavalink.getPlayer(guildId);
 
     if (player) {
@@ -174,10 +191,7 @@ export class AudioManager {
     const requester = options.requester || null;
     const cleanQuery = query.trim();
 
-    const node = this.lavalink.nodeManager.leastUsedNodes()?.[0];
-    if (!node) {
-      throw new Error('No connected Lavalink node available. Make sure your Lavalink server is running and reachable at the configured host/port.');
-    }
+    const node = this.getConnectedNode();
 
     const isUrl = /^https?:\/\//i.test(cleanQuery);
     const searchOptions: { query: string; source?: string } = isUrl
