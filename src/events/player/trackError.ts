@@ -35,13 +35,11 @@ export default {
             const fallbackNotice = new ContainerBuilder()
               .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### 🔄 **Stream Recovery Active**`))
               .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-              .addSectionComponents(
-                new SectionBuilder().addTextDisplayComponents(
-                  new TextDisplayBuilder().setContent(
-                    `YouTube stream was blocked by YouTube bot protection.\n\n` +
-                    `├─ 🎵 **Original Track:** ${title}\n` +
-                    `└─ ⚡ **Auto-Fallback:** Switched to SoundCloud stream automatically!`
-                  )
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                  `YouTube stream was blocked by YouTube bot protection.\n\n` +
+                  `├─ 🎵 **Original Track:** ${title}\n` +
+                  `└─ ⚡ **Auto-Fallback:** Switched to SoundCloud stream automatically!`
                 )
               );
 

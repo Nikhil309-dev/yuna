@@ -54,7 +54,7 @@ export class EventUtils {
    * @param {MessageCreateOptions | MessagePayload | string | any} messageOptions
    */
   static async sendPlayerMessage(client: Client | any, player: any, messageOptions: any) {
-    if (!client || !player || !player.textChannelId) return null;
+    if (!client?.channels?.fetch || !player || !player.textChannelId) return null;
     try {
       const channel: any = await client.channels.fetch(player.textChannelId).catch(() => null);
       if (channel && typeof channel.send === 'function') {

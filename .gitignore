@@ -6,3 +6,6 @@ logs/
 backups/
 *.log
 .DS_Store
+
+database/*.yuna-shm
+database/*.yuna-wal

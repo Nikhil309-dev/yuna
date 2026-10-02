@@ -62,7 +62,7 @@ export class AudioManager {
       autoSkip: true,
       playerOptions: {
         clientBasedPositionUpdateInterval: 50,
-        defaultSearchPlatform: 'jssearch',
+        defaultSearchPlatform: 'ytsearch',
         volumeDecrementer: 1
       },
       queueOptions: {
@@ -196,7 +196,7 @@ export class AudioManager {
     const isUrl = /^https?:\/\//i.test(cleanQuery);
     const searchOptions: { query: string; source?: string } = isUrl
       ? { query: cleanQuery }
-      : { query: cleanQuery, source: options.source || 'jssearch' };
+      : { query: cleanQuery, source: options.source || 'ytsearch' };
 
     return await node.search({ ...searchOptions } as any, requester);
   }

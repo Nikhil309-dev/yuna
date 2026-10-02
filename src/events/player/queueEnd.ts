@@ -127,13 +127,11 @@ export default {
             const dcContainer = new ContainerBuilder()
               .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### 👋 Disconnected`))
               .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-              .addSectionComponents(
-                new SectionBuilder().addTextDisplayComponents(
-                  new TextDisplayBuilder().setContent(
-                    `Queue finished. Disconnected from voice channel.\n\n` +
-                    `🎵 **Session Summary:**\n` +
-                    `Played **${totalTracks}** tracks${durationString}.`
-                  )
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                  `Queue finished. Disconnected from voice channel.\n\n` +
+                  `🎵 **Session Summary:**\n` +
+                  `Played **${totalTracks}** tracks${durationString}.`
                 )
               );
 

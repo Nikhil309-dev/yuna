@@ -35,11 +35,9 @@ export default {
 						const stuckContainer = new ContainerBuilder()
 							.addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ⚠️ **Track Stuck**`))
 							.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-							.addSectionComponents(
-								new SectionBuilder().addTextDisplayComponents(
-									new TextDisplayBuilder().setContent(
-										`Attempting to recover: **${track?.info?.title || "Track"}**`,
-									),
+							.addTextDisplayComponents(
+								new TextDisplayBuilder().setContent(
+									`Attempting to recover: **${track?.info?.title || "Track"}**`,
 								),
 							);
 
@@ -57,11 +55,9 @@ export default {
 			const warnContainer = new ContainerBuilder()
 				.addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ⚠️ **Playback Recovery**`))
 				.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-				.addSectionComponents(
-					new SectionBuilder().addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(
-							"Audio playback is experiencing issues. Attempting to recover automatically...",
-						),
+				.addTextDisplayComponents(
+					new TextDisplayBuilder().setContent(
+						"Audio playback is experiencing issues. Attempting to recover automatically...",
 					),
 				);
 
