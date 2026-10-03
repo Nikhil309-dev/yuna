@@ -73,8 +73,6 @@ export default {
 			const stuckTimeoutId = setTimeout(async () => {
 				try {
 					if (player.queue.current && player.queue.current.info.identifier === track?.info?.identifier) {
-						logger.info("TrackStuck", `Auto-skipping stuck track: ${track?.info?.title}`);
-
 						const warningMsgId = player.get<string | null>("stuckWarningMessageId");
 						if (warningMsgId) {
 							try {
@@ -89,10 +87,32 @@ export default {
 							}
 						}
 
-						await player.skip();
+						const title = track?.info?.title;
+						const author = track?.info?.author;
+						let recovered = false;
+
+						if (title && client?.music && track?.info?.sourceName === 'youtube') {
+							try {
+								const query = `scsearch:${author ? `${author} ` : ''}${title}`;
+								logger.info("TrackStuck", `Attempting SoundCloud recovery for stuck track: "${query}"`);
+								const fallbackRes = await client.music.search(query);
+								if (fallbackRes?.tracks?.length > 0) {
+									logger.info("TrackStuck", `Recovered stuck track via SoundCloud: "${fallbackRes.tracks[0].info.title}"`);
+									await player.play({ clientTrack: fallbackRes.tracks[0] });
+									recovered = true;
+								}
+							} catch (recoveryErr) {
+								logger.debug("TrackStuck", "Fallback recovery failed:", recoveryErr);
+							}
+						}
+
+						if (!recovered) {
+							logger.info("TrackStuck", `Auto-skipping stuck track: ${track?.info?.title}`);
+							await player.skip();
+						}
 					}
 				} catch (skipError) {
-					logger.error("TrackStuck", "Failed to auto-skip stuck track:", skipError);
+					logger.error("TrackStuck", "Failed to recover or auto-skip stuck track:", skipError);
 				}
 			}, 5000);
 

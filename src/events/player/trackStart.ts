@@ -71,9 +71,11 @@ export default {
           const buffer = await musicCard.createMusicCard(track, 0, { isPremium });
           const attachment = new AttachmentBuilder(buffer, { name: 'yuna-nowplaying.png' });
 
+          const cardContainer = createPlayerContainer('default', { isTextMode: false, track, position: player.position || 0, hasImage: true });
+
           message = await EventUtils.sendPlayerMessage(client, player, {
             files: [attachment],
-            components: [container],
+            components: [cardContainer],
             flags: MessageFlags.IsComponentsV2
           });
         }

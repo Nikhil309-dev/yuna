@@ -277,7 +277,7 @@ export default class StatsCard {
     ctx.save();
     this.drawSakuraFlower(ctx, CARD_WIDTH - px - 28, headerY + 20, 14);
 
-    ctx.font = '38px: "Great Vibes", "Alex Brush", cursive';
+    ctx.font = '38px "Great Vibes", "Alex Brush", cursive';
     const yunaGrad = ctx.createLinearGradient(CARD_WIDTH - 150, headerY, CARD_WIDTH - 40, headerY + 24);
     yunaGrad.addColorStop(0, '#FFFFFF');
     yunaGrad.addColorStop(0.5, '#FFC0CB');

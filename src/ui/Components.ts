@@ -6,7 +6,9 @@ import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
-  SeparatorSpacingSize
+  SeparatorSpacingSize,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder
 } from 'discord.js';
 import { formatDuration } from './Formatters';
 
@@ -104,9 +106,31 @@ export function createFilterSelect(presets: any = []) {
   return new ActionRowBuilder().addComponents(menu);
 }
 
+export function createFeatureSelect() {
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId('yuna:music:feature')
+    .setPlaceholder('Player Options...')
+    .addOptions(
+      { label: 'Default Controls', description: 'Prev / Pause / Skip / Stop / Like', value: 'mode_default' },
+      { label: 'Playback Controls', description: 'Seek / Rewind / Forward / Replay', value: 'mode_playback' },
+      { label: 'Audio Filters', description: 'Apply audio filters & EQ presets', value: 'mode_filters' }
+    );
+
+  return new ActionRowBuilder().addComponents(menu);
+}
+
 export function createPlayerContainer(mode: any = 'default', options: any = {}) {
-  const { isTextMode = false, track = null } = options;
+  const { isTextMode = false, track = null, hasImage = false } = options;
   const container = new ContainerBuilder();
+
+  // Show the music card image if attachment is included
+  if (!isTextMode && hasImage) {
+    container.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(
+        new MediaGalleryItemBuilder().setURL('attachment://yuna-nowplaying.png')
+      )
+    );
+  }
 
   if (isTextMode && track && track.info) {
     const duration = track.info.duration || 0;
@@ -127,8 +151,20 @@ export function createPlayerContainer(mode: any = 'default', options: any = {}) 
     container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
   }
 
-  const controlsRow = createPlayerControls({ mode });
-  container.addActionRowComponents(controlsRow as any);
+  // Add the appropriate control row based on mode
+  if (mode === 'filters') {
+    // Show filter presets dropdown
+    const filterRow = createFilterSelect();
+    container.addActionRowComponents(filterRow as any);
+  } else {
+    // Show the button controls (default or playback mode)
+    const controlsRow = createPlayerControls({ mode });
+    container.addActionRowComponents(controlsRow as any);
+  }
+
+  // Add the feature mode select dropdown (switch between default/playback/filters)
+  const featureRow = createFeatureSelect();
+  container.addActionRowComponents(featureRow as any);
 
   return container;
 }
@@ -138,9 +174,11 @@ const Components = {
   createPaginationRow,
   createConfirmRow,
   createFilterSelect,
+  createFeatureSelect,
   createPlayerContainer
 };
 
 export default Components;
 
 // Made by Nikhil Under CodeX Devs
+

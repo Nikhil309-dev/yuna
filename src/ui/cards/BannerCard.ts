@@ -111,7 +111,7 @@ class YunaBanner {
     this.drawSakuraFlower(ctx, centerX - 140, 70, 18);
     this.drawSakuraFlower(ctx, centerX + 140, 70, 18);
 
-    ctx.font = '78px: "Great Vibes", "Alex Brush", cursive';
+    ctx.font = '78px "Great Vibes", "Alex Brush", cursive';
     const textGrad = ctx.createLinearGradient(centerX - 100, 40, centerX + 100, 100);
     textGrad.addColorStop(0, '#FFFFFF');
     textGrad.addColorStop(0.5, '#FFC0CB');

@@ -135,7 +135,7 @@ export default class ProfileCard {
     const brandY = py + 30;
     this.drawSakuraFlower(ctx, CARD_WIDTH - px - 28, brandY, 14);
 
-    ctx.font = '34px: "Great Vibes", "Alex Brush", cursive';
+    ctx.font = '34px "Great Vibes", "Alex Brush", cursive';
     const yunaGrad = ctx.createLinearGradient(CARD_WIDTH - 150, brandY, CARD_WIDTH - 40, brandY + 24);
     yunaGrad.addColorStop(0, '#FFFFFF');
     yunaGrad.addColorStop(0.5, '#FFC0CB');

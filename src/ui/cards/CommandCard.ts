@@ -125,7 +125,7 @@ export class CommandCard {
     ctx.save();
     this.drawSakuraFlower(ctx, 240, 75, 22);
 
-    ctx.font = '84px: "Great Vibes", "Alex Brush", cursive';
+    ctx.font = '84px "Great Vibes", "Alex Brush", cursive';
     const textGrad = ctx.createLinearGradient(50, 40, 300, 100);
     textGrad.addColorStop(0, "#FFFFFF");
     textGrad.addColorStop(0.5, "#FFC0CB");
@@ -139,7 +139,7 @@ export class CommandCard {
 
     const rawCmdName = (command.name || "COMMAND").toUpperCase();
     ctx.save();
-    ctx.font = '15px: "Righteous", sans-serif';
+    ctx.font = '15px "Righteous", sans-serif';
     ctx.fillStyle = "#FFB6C1";
     ctx.textAlign = "left";
     ctx.fillText(`⚡ COMMAND SPECIFICATION · .${rawCmdName.toLowerCase()}`, 50, 132);
@@ -147,7 +147,7 @@ export class CommandCard {
 
     const categoryText = (command.category || "General").toUpperCase();
     ctx.save();
-    ctx.font = '13px: "Righteous", sans-serif';
+    ctx.font = '13px "Righteous", sans-serif';
     const catWidth = ctx.measureText(categoryText).width + 28;
     const catX = width - 50 - catWidth;
 

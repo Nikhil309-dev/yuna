@@ -128,7 +128,7 @@ export class PingCard {
     ctx.save();
     this.drawSakuraFlower(ctx, 240, 85, 22);
 
-    ctx.font = '84px: "Great Vibes", "Alex Brush", cursive';
+    ctx.font = '84px "Great Vibes", "Alex Brush", cursive';
     const textGrad = ctx.createLinearGradient(50, 50, 300, 110);
     textGrad.addColorStop(0, "#FFFFFF");
     textGrad.addColorStop(0.5, "#FFC0CB");

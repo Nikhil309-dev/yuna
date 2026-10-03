@@ -43,12 +43,12 @@ export class BlendCard {
     ctx.fill();
     ctx.restore();
 
-    ctx.font = '32px: "Righteous", sans-serif';
+    ctx.font = '32px "Righteous", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.fillText('SPOTIFY TASTE BLEND', width / 2, 55);
 
-    ctx.font = '15px: "Righteous", sans-serif';
+    ctx.font = '15px "Righteous", sans-serif';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.fillText('MUSIC COMPATIBILITY ANALYSIS', width / 2, 82);
 
@@ -84,7 +84,7 @@ export class BlendCard {
       drawAvatar(imgB, 650, 200, 65, '#1ed760');
     } catch (_) {}
 
-    ctx.font = '20px: "Righteous", sans-serif';
+    ctx.font = '20px "Righteous", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     const nameA = userA.displayName || userA.username;
@@ -104,13 +104,13 @@ export class BlendCard {
     ctx.strokeStyle = scoreGradient;
     ctx.stroke();
 
-    ctx.font = '36px: "Righteous", sans-serif';
+    ctx.font = '36px "Righteous", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${matchPercentage}%`, width / 2, 192);
 
-    ctx.font = '12px: "Righteous", sans-serif';
+    ctx.font = '12px "Righteous", sans-serif';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.fillText('MATCH', width / 2, 225);
     ctx.restore();
@@ -123,7 +123,7 @@ export class BlendCard {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.font = '14px: "Righteous", sans-serif';
+    ctx.font = '14px "Righteous", sans-serif';
     ctx.fillStyle = '#1ed760';
     ctx.textAlign = 'left';
     ctx.fillText('✨ SHARED VIBES & TOP RECOMMENDATIONS', 105, 365);

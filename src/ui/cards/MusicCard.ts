@@ -491,7 +491,7 @@ export default class MusicCard {
     ctx.save();
     this.drawSakuraFlower(ctx, width - panelMargin - 28, artworkY + 16, 14);
 
-    ctx.font = '38px: "Great Vibes", "Alex Brush", cursive';
+    ctx.font = '38px "Great Vibes", "Alex Brush", cursive';
     const yunaGrad = ctx.createLinearGradient(width - 150, artworkY, width - 40, artworkY + 24);
     yunaGrad.addColorStop(0, '#FFFFFF');
     yunaGrad.addColorStop(0.5, '#FFC0CB');
@@ -505,7 +505,7 @@ export default class MusicCard {
 
     const titleY = artworkY + 52;
     const title = track?.info?.title || 'Unknown Title';
-    const titleFont = 'bold 28px: "Syne ExtraBold", "Space Grotesk Bold", "Noto Sans JP Bold"';
+    const titleFont = 'bold 28px "Syne ExtraBold", "Space Grotesk Bold", "Noto Sans JP Bold"';
     const displayTitle = this.truncateText(ctx, title, contentWidth, titleFont);
 
     ctx.save();
@@ -518,7 +518,7 @@ export default class MusicCard {
 
     const artistY = titleY + 44;
     const artist = track?.info?.author || 'Unknown Artist';
-    const artistFont = '19px: "Righteous", "Space Grotesk", "Noto Sans JP"';
+    const artistFont = '19px "Righteous", "Space Grotesk", "Noto Sans JP"';
     const displayArtist = this.truncateText(ctx, artist, contentWidth, artistFont);
 
     ctx.save();
