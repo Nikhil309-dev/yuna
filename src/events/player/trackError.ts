@@ -22,13 +22,23 @@ export default {
 
       if (title && client?.music) {
         try {
-          const query = `scsearch:${author ? `${author} ` : ''}${title}`;
-          logger.info('TrackException', `Attempting SoundCloud fallback for "${query}" in guild ${player.guildId}`);
+          const cleanTitle = title.replace(/\(.*?\)|\[.*?\]|Official|Music|Video|Audio|HD|4K/gi, '').trim();
+          const cleanAuthor = author ? author.replace(/VEVO|Official|Channel/gi, '').trim() : '';
+          const searchQuery = `${cleanAuthor ? `${cleanAuthor} ` : ''}${cleanTitle}`;
 
-          const fallbackRes = await client.music.search(query);
+          logger.info('TrackException', `Attempting stream recovery for "${searchQuery}" in guild ${player.guildId}`);
+
+          let fallbackRes = await client.music.search(`jssearch:${searchQuery}`);
+          let sourceUsed = 'JioSaavn';
+
+          if (!fallbackRes?.tracks?.length) {
+            fallbackRes = await client.music.search(`scsearch:${searchQuery}`);
+            sourceUsed = 'SoundCloud';
+          }
+
           if (fallbackRes?.tracks?.length > 0) {
             const fallbackTrack = fallbackRes.tracks[0];
-            logger.info('TrackException', `Found SoundCloud fallback stream: "${fallbackTrack.info.title}"`);
+            logger.info('TrackException', `Found ${sourceUsed} fallback stream: "${fallbackTrack.info.title}"`);
 
             await player.play({ clientTrack: fallbackTrack });
 
@@ -37,9 +47,9 @@ export default {
               .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
               .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                  `YouTube stream was blocked by YouTube bot protection.\n\n` +
+                  `YouTube stream was blocked (HTTP 403 / bot protection).\n\n` +
                   `├─ 🎵 **Original Track:** ${title}\n` +
-                  `└─ ⚡ **Auto-Fallback:** Switched to SoundCloud stream automatically!`
+                  `└─ ⚡ **Auto-Fallback:** Switched to ${sourceUsed} stream automatically!`
                 )
               );
 

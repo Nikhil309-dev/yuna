@@ -93,11 +93,22 @@ export default {
 
 						if (title && client?.music && track?.info?.sourceName === 'youtube') {
 							try {
-								const query = `scsearch:${author ? `${author} ` : ''}${title}`;
-								logger.info("TrackStuck", `Attempting SoundCloud recovery for stuck track: "${query}"`);
-								const fallbackRes = await client.music.search(query);
+								const cleanTitle = title.replace(/\(.*?\)|\[.*?\]|Official|Music|Video|Audio|HD|4K/gi, '').trim();
+								const cleanAuthor = author ? author.replace(/VEVO|Official|Channel/gi, '').trim() : '';
+								const searchQuery = `${cleanAuthor ? `${cleanAuthor} ` : ''}${cleanTitle}`;
+
+								logger.info("TrackStuck", `Attempting stream recovery for stuck track: "${searchQuery}"`);
+
+								let fallbackRes = await client.music.search(`jssearch:${searchQuery}`);
+								let sourceUsed = 'JioSaavn';
+
+								if (!fallbackRes?.tracks?.length) {
+									fallbackRes = await client.music.search(`scsearch:${searchQuery}`);
+									sourceUsed = 'SoundCloud';
+								}
+
 								if (fallbackRes?.tracks?.length > 0) {
-									logger.info("TrackStuck", `Recovered stuck track via SoundCloud: "${fallbackRes.tracks[0].info.title}"`);
+									logger.info("TrackStuck", `Recovered stuck track via ${sourceUsed}: "${fallbackRes.tracks[0].info.title}"`);
 									await player.play({ clientTrack: fallbackRes.tracks[0] });
 									recovered = true;
 								}
