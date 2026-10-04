@@ -3,7 +3,7 @@
  *
  * Keys are the exact English literals used at call sites. Placeholders use
  * `{name}` and must be preserved exactly — `i18n.cmd()` interpolates them
- * after lookup, and `scripts/audit.ts` fails on any placeholder mismatch.
+ * after lookup, and every locale catalog is checked for placeholder parity.
  * Markdown, emojis, box-drawing characters, URLs and command names must also
  * be preserved verbatim.
  */

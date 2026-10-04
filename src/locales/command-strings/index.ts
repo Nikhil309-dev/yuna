@@ -8,8 +8,8 @@
  *
  * `i18n.cmd(english, replacements)` looks up `cmd.<english>` first and falls
  * back to the interpolated English literal, so a missing key degrades to
- * English instead of crashing. `scripts/audit.ts` section C hard-fails when
- * any locale is missing a key, so the fallback should never actually be hit.
+ * English instead of crashing. Locale parity is enforced across every catalog,
+ * so the fallback should never actually be hit.
  */
 import DE from './de';
 import ES from './es';
