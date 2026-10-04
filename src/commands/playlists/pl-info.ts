@@ -3,11 +3,13 @@ import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const TRACKS_PER_PAGE = 10;
 
@@ -34,7 +36,7 @@ class PlaylistInfoCommand extends Command {
 					options: [
 						{
 							name: "playlist",
-							description: "The ID or name of the playlist to view",
+							description: i18n.cmd("The ID or name of the playlist to view"),
 							type: 3,
 							required: false,
 						},
@@ -104,16 +106,16 @@ class PlaylistInfoCommand extends Command {
 
 	_createSelectionContainer(playlists: any) {
 		const content =
-			`**Select a playlist**\n\n` +
-			`You have **${playlists.length}** playlists. Choose one from the menu below to view its details and manage its tracks.`;
+			i18n.cmd("**Select a playlist**") + "\n\n" +
+			i18n.cmd("You have **{count}** playlists. Choose one from the menu below to view its details and manage its tracks.", { count: playlists.length });
 
 		const selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new StringSelectMenuBuilder()
 				.setCustomId("plinfo_select")
-				.setPlaceholder("Select a playlist...")
+				.setPlaceholder(i18n.cmd("Select a playlist..."))
 				.addOptions(
 					playlists.slice(0, 25).map((pl: any) => ({
 						label: pl.name,
-						description: `${pl.track_count} tracks`,
+						description: i18n.cmd('{count} tracks', { count: pl.track_count }),
 						value: pl.id,
 						emoji: "📁",
 					})),
@@ -121,7 +123,7 @@ class PlaylistInfoCommand extends Command {
 		);
 
 		return buildContainer({
-			title: "Your Playlists",
+			title: i18n.translateTitle("Your Playlists"),
 			content: content,
 			thumbnail: null,
 			components: [selectMenu],
@@ -146,14 +148,14 @@ class PlaylistInfoCommand extends Command {
 
 		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 				.setCustomId("plinfo_view_tracks")
-				.setLabel(`View Tracks (${playlist.track_count})`)
+				.setLabel(i18n.cmd('View Tracks ({count})', { count: playlist.track_count }))
 				.setStyle(ButtonStyle.Primary)
 				.setEmoji(emoji.get("music") || "🎵")
 				.setDisabled(playlist.track_count === 0),
 		);
 
 		return buildContainer({
-			title: `Playlist Details: ${playlist.name}`,
+			title: i18n.cmd("Playlist Details: {name}", { name: playlist.name }),
 			content: content,
 			thumbnail: null,
 			components: [buttons],
@@ -168,7 +170,11 @@ class PlaylistInfoCommand extends Command {
 		const startIdx = (page - 1) * TRACKS_PER_PAGE;
 		const pageTracks = playlist.tracks.slice(startIdx, startIdx + TRACKS_PER_PAGE);
 
-		let trackListStr = `Viewing tracks for playlist **${playlist.name}** (Page ${page}/${totalPages}).\n\n`;
+		let trackListStr = i18n.cmd("Viewing tracks for playlist **{name}** (Page {page}/{total}).\n\n", {
+			name: playlist.name,
+			page,
+			total: totalPages,
+		});
 		pageTracks.forEach((track: any, index: any) => {
 			const globalIdx = startIdx + index + 1;
 			trackListStr += `**${globalIdx}.** ${track.title} - *${track.author}* (${this._formatDuration(track.duration)})\n`;
@@ -179,13 +185,13 @@ class PlaylistInfoCommand extends Command {
 		if (pageTracks.length > 0) {
 			const selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new StringSelectMenuBuilder()
 					.setCustomId("plinfo_remove_tracks")
-					.setPlaceholder("Select tracks to remove...")
+					.setPlaceholder(i18n.cmd("Select tracks to remove..."))
 					.setMinValues(1)
 					.setMaxValues(pageTracks.length)
 					.addOptions(
 						pageTracks.map((track: any, index: any) => ({
 							label: `${startIdx + index + 1}. ${track.title}`.substring(0, 100),
-							description: track.author ? track.author.substring(0, 100) : "Unknown",
+							description: track.author ? track.author.substring(0, 100) : i18n.cmd("Unknown"),
 							value: track.identifier,
 						})),
 					),
@@ -195,24 +201,24 @@ class PlaylistInfoCommand extends Command {
 
 		const navButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 				.setCustomId("plinfo_back_to_info")
-				.setLabel("Back to Overview")
+				.setLabel(i18n.cmd("Back to Overview"))
 				.setStyle(ButtonStyle.Secondary)
 				.setEmoji(emoji.get("left") || "⬅️"),
 			new ButtonBuilder()
 				.setCustomId("plinfo_tracks_prev")
-				.setLabel("Previous")
+				.setLabel(i18n.cmd("Previous"))
 				.setStyle(ButtonStyle.Secondary)
 				.setDisabled(page <= 1),
 			new ButtonBuilder()
 				.setCustomId("plinfo_tracks_next")
-				.setLabel("Next")
+				.setLabel(i18n.cmd("Next"))
 				.setStyle(ButtonStyle.Secondary)
 				.setDisabled(page >= totalPages),
 		);
 		components.push(navButtons);
 
 		return buildContainer({
-			title: `Tracks in: ${playlist.name}`,
+			title: i18n.cmd("Tracks in: {name}", { name: playlist.name }),
 			content: trackListStr,
 			thumbnail: null,
 			components: components,
@@ -222,7 +228,7 @@ class PlaylistInfoCommand extends Command {
 
 	_setupCollector(message: any, userId: string, initialPlaylist: any, allPlaylists: any[] | null = null) {
 		const filter = (i: any) => i.user.id === userId;
-		const collector = message.createMessageComponentCollector({
+		const collector = componentCollectorSource(message).createMessageComponentCollector({
 			filter,
 			time: 300000,
 		});
@@ -304,7 +310,7 @@ class PlaylistInfoCommand extends Command {
 						components: [this._createTracksContainer(currentPlaylist, currentPage)],
 					});
 					await interaction.followUp({
-						content: `Successfully removed ${removedCount} track(s).`,
+						content: i18n.cmd("Successfully removed {count} track(s).", { count: removedCount }),
 						ephemeral: true,
 					});
 					break;
@@ -322,7 +328,7 @@ class PlaylistInfoCommand extends Command {
 				if (error.code !== 10008) {
 					logger.error(
 						"PlaylistInfo",
-						"Failed to edit message on collector end",
+						i18n.cmd("Failed to edit message on collector end"),
 						error,
 					);
 				}
@@ -345,24 +351,24 @@ class PlaylistInfoCommand extends Command {
 
 	_createNotFoundContainer(query: any, userId?: any) {
 		return buildError(
-			`Could not find a playlist matching \`${query}\`.\n\n` +
-			`**Tips:**\n` +
-			`└─ Check the spelling of the playlist name.\n` +
-			`└─ Try using the playlist's ID.\n` +
-			`└─ Use \`/my-playlists\` to see a list of your playlists.`,
-			"Playlist Not Found"
+			i18n.cmd("Could not find a playlist matching `{query}`.\n\n", { query }) +
+			i18n.cmd("**Tips:**") + "\n" +
+			i18n.cmd("└─ Check the spelling of the playlist name.") + "\n" +
+			i18n.cmd("└─ Try using the playlist's ID.") + "\n" +
+			i18n.cmd("└─ Use `/my-playlists` to see a list of your playlists."),
+			i18n.translateTitle("Playlist Not Found")
 		);
 	}
 
 	_createNoPlaylistsContainer() {
 		return buildError(
-			`You don't have any custom playlists yet.\n\nUse \`/create-playlist <name>\` to get started!`,
-			"No Playlists Found"
+			i18n.cmd("You don't have any custom playlists yet.\n\nUse `/create-playlist <name>` to get started!"),
+			i18n.translateTitle("No Playlists Found")
 		);
 	}
 
 	_createExpiredContainer() {
-		const content = `This interactive menu has expired.\nPlease run the command again.`;
+		const content = i18n.cmd("This interactive menu has expired.\nPlease run the command again.");
 
 		return buildContainer({
 			title: "Interaction Expired",

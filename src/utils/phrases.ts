@@ -349,44 +349,31 @@ export const phrases = {
    * @returns {string}
    */
   get(category: string, replacements: Record<string, any> = {}): string {
-    const store = localeStore.getStore();
-    const locale = store?.locale || "en-US";
+    // The locale bound to the current request (user → guild → en-US). Locales
+    // are bundled statically, so no async warm-up is required here.
+    const locale = localeStore.getStore()?.locale || "en-US";
 
-    if (i18n.getLocales().size === 0) {
-      ensure_i18n_init();
-    }
-
-    // Locale file defines this category? Use it.
+    // Locale file defines this category? Use the translated pool.
     const localized = i18n.getPhraseList(locale, category);
     if (localized) {
       return i18n.t(locale, category, replacements);
     }
 
-    // Fall back to the embedded pool for this category.
+    // Fall back to the embedded English pool for this category.
     const embedded = (this as unknown as Record<string, string[]>)[category];
     if (Array.isArray(embedded) && embedded.length > 0) {
-      let template = embedded[Math.floor(Math.random() * embedded.length)];
+      const template = embedded[Math.floor(Math.random() * embedded.length)];
+      let out = template;
       for (const [key, value] of Object.entries(replacements)) {
-        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        template = template.replace(new RegExp(`\\$\\{${escapedKey}\\}`, "g"), String(value));
+        out = out.split(`\${${key}}`).join(String(value));
       }
-      return template;
+      return out;
     }
 
     // Category missing everywhere — generic localized error.
     return i18n.t(locale, "errorGeneric", replacements);
   }
 };
-
-// Locale files only cover a few categories, and i18n.init() is asynchronous —
-// kick it off lazily on first use (fire-and-forget) so the embedded pools above
-// serve as an immediate fallback until locale data is available.
-let _i18nInitPromise: Promise<void> | null = null;
-function ensure_i18n_init(): void {
-  if (!_i18nInitPromise) {
-    _i18nInitPromise = i18n.init().catch(() => {});
-  }
-}
 
 export default phrases;
 

@@ -1,10 +1,11 @@
 import { Command } from "#core/Command";
-import { MessageFlags, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from "discord.js";
+import { MessageFlags, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { buildContainer, buildSuccess, buildError } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import { i18n } from "#utils/i18n.js";
+import { localeFor } from "#utils/locale.js";
 import { logger } from "#utils/logger";
-import emoji from "#config/emoji";
 
 class LanguageCommand extends Command {
 	constructor() {
@@ -28,19 +29,23 @@ class LanguageCommand extends Command {
 	}
 
 	async execute(ctx: any) {
-		const { client, message, interaction, user, author } = ctx;
+		const { message, interaction, user, author, guild } = ctx;
 		const context = interaction || message;
 		const userId = user?.id || author?.id;
+		const guildId = guild?.id || context?.guildId;
 
-		const currentLocaleCode = db.users.getLocale(userId) || "en-US";
+		// Speak in the requester's current language while they choose a new one.
+		const locale = localeFor(userId, guildId);
+		const tr = (key: string, replacements: Record<string, any> = {}) => i18n.ui(locale, key, replacements);
+
+		const currentLocaleCode = i18n.normalize(db.users.getLocale(userId) || "en-US");
 		const currentMeta = i18n.getLocaleMeta(currentLocaleCode) || i18n.getLocaleMeta("en-US");
 
-		const locales = i18n.getLocales();
 		const options: any[] = [];
-		locales.forEach((data, code) => {
+		i18n.getLocales().forEach((data, code) => {
 			options.push({
 				label: data.meta.nativeName || code,
-				description: `Set language to ${data.meta.name}`,
+				description: tr("lang.setLanguageTo", { name: data.meta.name }),
 				value: code,
 				emoji: data.meta.emoji || "🌐",
 				default: code === currentLocaleCode,
@@ -49,16 +54,16 @@ class LanguageCommand extends Command {
 
 		const selectMenu = new StringSelectMenuBuilder()
 			.setCustomId("lang_select")
-			.setPlaceholder("Select a language...")
+			.setPlaceholder(tr("lang.selectPlaceholder"))
 			.addOptions(options);
 
 		const row1 = new ActionRowBuilder().addComponents(selectMenu);
 
-		const content = `**Your current language:** ${currentMeta?.emoji} **${currentMeta?.nativeName}**\n\nSelect a new language from the dropdown menu below to see a preview of how Yuna will speak to you.`;
+		const content = `**${tr("lang.currentLanguage")}:** ${currentMeta?.emoji} **${currentMeta?.nativeName}**\n\n${tr("lang.pickPrompt")}`;
 
 		const initialContainer = buildContainer({
-			title: "Language Settings",
-			content: content,
+			title: tr("title.languageSettings"),
+			content,
 			icon: "🌐",
 		});
 
@@ -77,15 +82,15 @@ class LanguageCommand extends Command {
 			msgInstance = await context.channel.send(payload);
 		}
 
-		this._setupCollector(msgInstance, userId);
+		this._setupCollector(msgInstance, userId, locale);
 	}
 
 	async slashExecute(ctx: any) {
 		return this.execute(ctx);
 	}
 
-	_setupCollector(messageInstance: any, userId: string) {
-		const collector = messageInstance.createMessageComponentCollector({
+	_setupCollector(messageInstance: any, userId: string, locale: string) {
+		const collector = componentCollectorSource(messageInstance).createMessageComponentCollector({
 			filter: (i: any) => i.user.id === userId,
 			time: 120_000,
 		});
@@ -95,24 +100,28 @@ class LanguageCommand extends Command {
 		collector.on("collect", async (interaction: any) => {
 			try {
 				if (interaction.customId === "lang_select") {
-					selectedLocaleCode = interaction.values[0];
+					selectedLocaleCode = i18n.normalize(interaction.values[0]);
 					const meta = i18n.getLocaleMeta(selectedLocaleCode);
 
-					const currentLocaleCode = db.users.getLocale(userId) || "en-US";
+					// Preview strings render in the newly selected language.
+					const sel = (key: string, replacements: Record<string, any> = {}) =>
+						i18n.ui(selectedLocaleCode, key, replacements);
+
+					const currentLocaleCode = i18n.normalize(db.users.getLocale(userId) || "en-US");
 					const oldPreview = i18n.t(currentLocaleCode, "languagePreviewTest");
 					const newPreview = i18n.t(selectedLocaleCode, "languagePreviewTest");
 
-					const previewContent = `**UI Preview:**\n> 🇺🇸 "${oldPreview}"\n> ⬇️\n> ${meta?.emoji} "${newPreview}"\n\nDo you want to save these changes?`;
+					const previewContent = `**${sel("lang.uiPreview")}:**\n> 🇺🇸 "${oldPreview}"\n> ⬇️\n> ${meta?.emoji} "${newPreview}"\n\n${sel("lang.confirmSave")}`;
 
 					const previewContainer = buildContainer({
-						title: "Preview Language",
+						title: sel("title.previewLanguage"),
 						content: previewContent,
 						icon: meta?.emoji || "🌐",
 					});
 
 					const btnRow = new ActionRowBuilder().addComponents(
-						new ButtonBuilder().setCustomId("lang_confirm").setLabel("Yes").setStyle(ButtonStyle.Success),
-						new ButtonBuilder().setCustomId("lang_cancel").setLabel("No").setStyle(ButtonStyle.Danger)
+						new ButtonBuilder().setCustomId("lang_confirm").setLabel(sel("lang.yes")).setStyle(ButtonStyle.Success),
+						new ButtonBuilder().setCustomId("lang_cancel").setLabel(sel("lang.no")).setStyle(ButtonStyle.Danger)
 					);
 
 					await interaction.update({
@@ -123,7 +132,7 @@ class LanguageCommand extends Command {
 					db.users.setLocale(userId, selectedLocaleCode);
 					const successMsg = i18n.t(selectedLocaleCode, "languageSuccess");
 
-					const successContainer = buildSuccess(successMsg, "Success");
+					const successContainer = buildSuccess(successMsg, i18n.ui(selectedLocaleCode, "ui.success.title"));
 
 					await interaction.update({
 						components: [successContainer],
@@ -132,7 +141,7 @@ class LanguageCommand extends Command {
 					collector.stop("confirmed");
 				} else if (interaction.customId === "lang_cancel") {
 					await interaction.update({
-						components: [buildError("Language change cancelled.")],
+						components: [buildError(i18n.ui(selectedLocaleCode || locale, "lang.cancelled"))],
 						flags: MessageFlags.IsComponentsV2,
 					});
 					collector.stop("cancelled");
@@ -146,7 +155,7 @@ class LanguageCommand extends Command {
 			if (reason === "time") {
 				try {
 					await messageInstance.edit({
-						components: [buildError("Menu timed out.")],
+						components: [buildError(i18n.ui(locale, "lang.timedOut"))],
 						flags: MessageFlags.IsComponentsV2,
 					});
 				} catch (e) {}

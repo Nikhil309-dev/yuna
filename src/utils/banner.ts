@@ -13,7 +13,8 @@ export function showBanner(client: any) {
   } catch (_) {}
 
   const cmdCount = client?.commands ? client.commands.size : 0;
-  const slashCount = client?.slashCommands ? client.slashCommands.size : cmdCount;
+  const slashCount = client?.commandLoader?.slashCommands?.size
+    ?? (client?.commands ? Array.from(client.commands.values()).filter((c: any) => c?.slash?.enabled ?? c?.enabledSlash).length : cmdCount);
   const eventCount = client?.eventsCount || 15;
   const clusterId = client?.cluster ? `Cluster ${client.cluster.id}` : 'Standalone';
   const tag = client?.user?.tag || 'Yuna#0000';

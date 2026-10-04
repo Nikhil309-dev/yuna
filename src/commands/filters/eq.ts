@@ -1,11 +1,21 @@
 import { MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, SectionBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, MessageActionRowComponentBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { config } from "#config/config";
 import { Command, CommandContext } from '#core/Command';
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 import { PlayerManager } from "#audio/PlayerManager";
+
+/**
+ * Resolves a preset's English name/description through the locale catalog so
+ * the menu, select options and success card all speak the user's language.
+ */
+const presetName = (key: string): string => i18n.cmd(EQ_PRESETS[key as keyof typeof EQ_PRESETS].name);
+const presetDescription = (key: string): string =>
+  i18n.cmd(EQ_PRESETS[key as keyof typeof EQ_PRESETS].description);
 
 const EQ_PRESETS = {
   flat: {
@@ -114,7 +124,7 @@ class EqualizerCommand extends Command {
           options: [
             {
               name: "preset",
-              description: "Select an equalizer preset",
+              description: i18n.cmd("Select an equalizer preset"),
               type: 3,
               required: false,
               choices: Object.entries(EQ_PRESETS).map(([key, data]) => ({
@@ -146,18 +156,18 @@ class EqualizerCommand extends Command {
 
   async _sendEQMenu(context: CommandContext, pm: PlayerManager) {
     const button = new ButtonBuilder()
-      .setLabel("Support")
+      .setLabel(i18n.cmd("Support"))
       .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
       .setStyle(ButtonStyle.Link);
 
-    let desc = `Select a custom equalizer profile below to sculpt your server's audio experience in real-time!\n\n`;
-    Object.entries(EQ_PRESETS).forEach(([key, data]) => {
-      desc += `🎚️ **${data.name}**\n${data.description}\n\`Command: .eq ${key}\`\n\n`;
+    let desc = i18n.cmd("Select a custom equalizer profile below to sculpt your server's audio experience in real-time!") + "\n\n";
+    Object.keys(EQ_PRESETS).forEach((key) => {
+      desc += `🎚️ **${presetName(key)}**\n${presetDescription(key)}\n${i18n.cmd("Command: .eq {preset}", { preset: key })}\n\n`;
     });
 
     const container = new ContainerBuilder()
       .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`### 🎛️ 15-Band Graphic Equalizer`)
+        new TextDisplayBuilder().setContent(i18n.cmd("### 🎛️ 15-Band Graphic Equalizer"))
       )
       .addSeparatorComponents(
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
@@ -170,9 +180,9 @@ class EqualizerCommand extends Command {
           .setButtonAccessory(button)
       );
 
-    const selectOptions = Object.entries(EQ_PRESETS).map(([key, data]) => ({
-      label: data.name,
-      description: data.description.substring(0, 100),
+    const selectOptions = Object.keys(EQ_PRESETS).map((key) => ({
+      label: presetName(key),
+      description: presetDescription(key).substring(0, 100),
       value: key,
       emoji: "🎚️",
     }));
@@ -180,7 +190,7 @@ class EqualizerCommand extends Command {
     const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("eq_select_preset")
-        .setPlaceholder("Choose Equalizer Preset...")
+        .setPlaceholder(i18n.cmd("Choose Equalizer Preset..."))
         .addOptions(selectOptions)
     );
 
@@ -195,7 +205,7 @@ class EqualizerCommand extends Command {
     if (msg) {
       const userId = ctxAny.author?.id || ctxAny.user?.id;
       const filter = (i: any) => i.customId === "eq_select_preset" && i.user.id === userId;
-      const collector = msg.createMessageComponentCollector({ filter, time: 60000 });
+      const collector = componentCollectorSource(msg).createMessageComponentCollector({ filter, time: 60000 });
 
       collector.on("collect", async (i: any) => {
         const selectedKey = i.values[0];
@@ -215,7 +225,8 @@ class EqualizerCommand extends Command {
 
       const note = phrases.get("filterApplied");
       const container = buildSuccess(
-        `Successfully set audio equalizer to **${preset.name}**!\n\n*${preset.description}*\n*${note}*`,
+        i18n.cmd("Successfully set audio equalizer to **{preset}**!", { preset: presetName(presetKey) }) +
+          `\n\n*${presetDescription(presetKey)}*\n*${note}*`,
         "Equalizer Profile Applied"
       );
 

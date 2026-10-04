@@ -6,6 +6,18 @@ import { GuildMember, Guild, GuildChannel } from 'discord.js';
 const premiumCache = new TTLCache(60000, 1000);
 
 /**
+ * Drops every cached premium lookup for a user. Call after granting/revoking
+ * premium so gated commands and cooldowns reflect the change immediately
+ * instead of waiting out the cache TTL.
+ */
+export function invalidatePremiumCache(userId: string): void {
+    if (!userId) return;
+    for (const [key] of premiumCache.entries()) {
+        if (key.startsWith(`${userId}-`)) premiumCache.delete(key);
+    }
+}
+
+/**
  * Checks if a member has required Discord permissions.
  */
 export function checkPermissions(member: GuildMember | null, requiredPerms: bigint[]): boolean {

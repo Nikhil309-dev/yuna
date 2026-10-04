@@ -23,30 +23,34 @@ export default {
     logger.success("Bot", `Logged in as ${user.tag}`);
     logger.info("Bot", `Serving ${guilds.cache.size} guilds`);
 
-    if (config.features.stay247) {
-      logger.info(
-        "Bot",
-        "Waiting 10 seconds for Lavalink to be ready before initializing 24/7 mode...",
-      );
-      setTimeout(async () => {
+    // Restore saved sessions for every guild, independent of 24/7 mode. Give
+    // Lavalink a moment to finish connecting before recreating players.
+    logger.info(
+      "Bot",
+      "Waiting 10 seconds for Lavalink to be ready before restoring sessions...",
+    );
+    setTimeout(async () => {
+      if (config.features.stay247) {
         await initialize247Mode(client);
-
-        setInterval(
-          () => check247Connections(client),
-          config.player.stay247.checkInterval,
+        intervals.push(
+          setInterval(
+            () => check247Connections(client),
+            config.player.stay247.checkInterval,
+          ),
         );
-      }, 10000);
-    }
+      }
+      await restoreActiveSessions(client);
+    }, 10000);
 
     const updateStatus = () => {
       user.setActivity({
-        name: `is this a comeback?`,
+        name: config.status?.text || "Yuna Music",
         type: getStatusType(config.status.type),
       });
     };
 
     updateStatus();
-    setInterval(updateStatus, 10 * 60 * 1000);
+    intervals.push(setInterval(updateStatus, 10 * 60 * 1000));
     user.setStatus(config.status.status || "dnd");
 
     try {
@@ -107,7 +111,7 @@ function getStatusType(type: any) {
 
 async function initialize247Mode(client: any) {
   try {
-    logger.success("247Mode", "Native In-Bot Audio Engine active!");
+    logger.success("247Mode", "24/7 mode active — connecting persistent Lavalink players");
     const guilds247: any[] = db.guild.getValid247Guilds();
     logger.info(
       "247Mode",
@@ -139,20 +143,26 @@ async function initialize247Mode(client: any) {
 
     await Promise.all(connectionPromises);
     logger.success("247Mode", "24/7 mode initialization completed");
+  } catch (error) {
+    logger.error("247Mode", "Failed to initialize 247 mode:", error);
+  }
+}
 
+async function restoreActiveSessions(client: any) {
+  try {
     const activeSessions = db.guild.getAllActiveSessions();
-    if (activeSessions && activeSessions.length > 0) {
-      logger.info("SessionRestorer", `Restoring ${activeSessions.length} active player sessions...`);
-      for (const session of activeSessions) {
-        try {
-          await restoreActiveSession(client, session);
-        } catch (sessionErr) {
-          logger.error("SessionRestorer", `Failed to restore session for guild ${session.guild_id}:`, sessionErr);
-        }
+    if (!activeSessions || activeSessions.length === 0) return;
+
+    logger.info("SessionRestorer", `Restoring ${activeSessions.length} active player sessions...`);
+    for (const session of activeSessions) {
+      try {
+        await restoreActiveSession(client, session);
+      } catch (sessionErr) {
+        logger.error("SessionRestorer", `Failed to restore session for guild ${session.guild_id}:`, sessionErr);
       }
     }
   } catch (error) {
-    logger.error("247Mode", "Failed to initialize 247 mode:", error);
+    logger.error("SessionRestorer", "Failed to restore active sessions:", error);
   }
 }
 

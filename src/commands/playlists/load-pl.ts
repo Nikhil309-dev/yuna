@@ -9,6 +9,7 @@ import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const MAX_TRACKS_TO_ADD = 50;
 
@@ -39,13 +40,13 @@ class LoadPlaylistCommand extends Command {
 					options: [
 						{
 							name: "playlist",
-							description: "Playlist ID or name to load",
+							description: i18n.cmd("Playlist ID or name to load"),
 							type: 3,
 							required: true,
 						},
 						{
 							name: "positions",
-							description: "Optional: Specific tracks or ranges (e.g., 5, 8-10)",
+							description: i18n.cmd("Optional: Specific tracks or ranges (e.g., 5, 8-10)"),
 							type: 3,
 							required: false,
 						},
@@ -123,15 +124,18 @@ class LoadPlaylistCommand extends Command {
 					return this._editReply(
 						loadingMessage,
 						this._createErrorContainer(
-							`**Invalid Track Selection**\n\nThe positions \`${positionsStr}\` are invalid or out of range for this playlist (1-${playlist.tracks.length}).`,
+							i18n.cmd("**Invalid Track Selection**\n\nThe positions `{positions}` are invalid or out of range for this playlist (1-{total}).", {
+							positions: positionsStr,
+							total: playlist.tracks.length,
+						}),
 						),
 					);
 				}
 				tracksToProcess = indices.map((index: number) => playlist.tracks[index]);
-				selectionInfo = `${indices.length} selected track(s)`;
+				selectionInfo = i18n.cmd('{count} selected track(s)', { count: indices.length });
 			} else {
 				tracksToProcess = playlist.tracks.slice(0, MAX_TRACKS_TO_ADD);
-				selectionInfo = `up to ${MAX_TRACKS_TO_ADD} tracks`;
+				selectionInfo = i18n.cmd('up to {count} tracks', { count: MAX_TRACKS_TO_ADD });
 			}
 
 			const voiceChannel = context.member?.voice?.channel;
@@ -139,7 +143,7 @@ class LoadPlaylistCommand extends Command {
 				return this._editReply(
 					loadingMessage,
 					this._createErrorContainer(
-						`**Voice Channel Required**\n\nYou must be in a voice channel to play music.`,
+						i18n.cmd("**Voice Channel Required**\n\nYou must be in a voice channel to play music."),
 					),
 				);
 			const permissions = voiceChannel.permissionsFor(context.guild.members.me);
@@ -147,7 +151,7 @@ class LoadPlaylistCommand extends Command {
 				return this._editReply(
 					loadingMessage,
 					this._createErrorContainer(
-						`**Missing Permissions**\n\nI need permission to join and speak in your voice channel.`,
+						i18n.cmd("**Missing Permissions**\n\nI need permission to join and speak in your voice channel."),
 					),
 				);
 
@@ -166,7 +170,7 @@ class LoadPlaylistCommand extends Command {
 				return this._editReply(
 					loadingMessage,
 					this._createErrorContainer(
-						`**Queue Limit Reached**\n\n${queueCheck.message}`,
+						i18n.cmd("**Queue Limit Reached**\n\n{message}", { message: queueCheck.message }),
 					),
 				);
 
@@ -232,7 +236,7 @@ class LoadPlaylistCommand extends Command {
 			return this._editReply(
 				loadingMessage,
 				this._createErrorContainer(
-					`An unexpected error occurred while loading the playlist.`,
+					i18n.cmd("An unexpected error occurred while loading the playlist."),
 				),
 			);
 		}
@@ -307,12 +311,17 @@ class LoadPlaylistCommand extends Command {
 		const progress = Math.round((processedCount / totalCount) * 100) || 0;
 		const content =
 			`**Adding songs to queue...**\n\n` +
-			`**${emoji.get("folder")} Playlist:** ${playlistName}\n` +
-			`**${emoji.get("music")} Selection:** Loading ${selectionInfo}\n` +
-			`**${emoji.get("loading")} Progress:** ${processedCount}/${totalCount} (${progress}%)`;
+			i18n.cmd("**{emoji} Playlist:** {name}", { emoji: emoji.get("folder"), name: playlistName }) + "\n" +
+			i18n.cmd("**{emoji} Selection:** Loading {selection}", { emoji: emoji.get("music"), selection: selectionInfo }) + "\n" +
+			i18n.cmd("**{emoji} Progress:** {processed}/{total} ({progress}%)", {
+				emoji: emoji.get("loading"),
+				processed: processedCount,
+				total: totalCount,
+				progress,
+			});
 
 		return buildContainer({
-			title: "Loading Playlist Tracks",
+			title: i18n.translateTitle("Loading Playlist Tracks"),
 			content: content,
 			thumbnail: null,
 			icon: emoji.get("loading") || "ℹ️"
@@ -328,24 +337,31 @@ class LoadPlaylistCommand extends Command {
 		limitWarning: any,
 		wasPlaying: any,
 	) {
-		const statusText = wasPlaying ? "Started playing: " : "Added to queue";
-		const title = added > 0 ? "Playlist Loaded Successfully" : "Failed to Load Playlist";
+		const statusText = wasPlaying ? i18n.cmd("Started playing: ") : i18n.cmd("Added to queue");
+		const title = added > 0 ? i18n.translateTitle("Playlist Loaded Successfully") : i18n.translateTitle("Failed to Load Playlist");
 		const note = phrases.get("playlistLoaded");
 		const content =
-			`**Loaded tracks from ${playlist.name}**\n\n` +
-			`**${emoji.get("check")} Added:** ${added} / ${totalSelected} selected tracks\n` +
-			`${failed > 0 ? `**${emoji.get("cross")} Failed:** ${failed} tracks (not found)\n` : ""}` +
-			`**${emoji.get("music")} Status:** ${statusText}\n\n` +
-			`**Queue Info:** ${premium.hasPremium ? "Premium" : "Free"} Tier (${premium.maxSongs} limit)\n` +
-			`${limitWarning ? `**${emoji.get("info")} Notice:** ${limitWarning}\n` : ""}` +
+			i18n.cmd("**Loaded tracks from {name}**", { name: playlist.name }) + "\n\n" +
+			i18n.cmd("**{emoji} Added:** {added} / {total} selected tracks", {
+				emoji: emoji.get("check"),
+				added,
+				total: totalSelected,
+			}) + "\n" +
+			`${failed > 0 ? i18n.cmd("**{emoji} Failed:** {failed} tracks (not found)", { emoji: emoji.get("cross"), failed }) + "\n" : ""}` +
+			i18n.cmd("**{emoji} Status:** {status}", { emoji: emoji.get("music"), status: statusText }) + "\n\n" +
+			i18n.cmd("**Queue Info:** {tier} Tier ({max} limit)", {
+				tier: premium.hasPremium ? i18n.cmd("Premium") : i18n.cmd("Free"),
+				max: premium.maxSongs,
+			}) + "\n" +
+			`${limitWarning ? i18n.cmd("**{emoji} Notice:** {warning}", { emoji: emoji.get("info"), warning: limitWarning }) + "\n" : ""}` +
 			`\n*${note}*`;
 
 		return buildSuccess(content, title);
 	}
 
-	_createLoadingContainer(query: any) { return buildContainer({ title: "Loading", content: `**Loading playlist \`${query}\`...**`, icon: emoji.get("loading") || "ℹ️" }); }
-	_createNotFoundContainer(query: any) { return buildError(`Could not find a playlist matching \`${query}\`.`, "Playlist Not Found"); }
-	_createEmptyPlaylistContainer(playlist: any) { return buildContainer({ title: "Empty Playlist", content: `The playlist \`${playlist.name}\` has no tracks to load.`, icon: emoji.get("info") || "ℹ️" }); }
+	_createLoadingContainer(query: any) { return buildContainer({ title: i18n.translateTitle("Loading"), content: i18n.cmd("**Loading playlist `{query}`...**", { query }), icon: emoji.get("loading") || "ℹ️" }); }
+	_createNotFoundContainer(query: any) { return buildError(i18n.cmd("Could not find a playlist matching `{query}`.", { query }), i18n.translateTitle("Playlist Not Found")); }
+	_createEmptyPlaylistContainer(playlist: any) { return buildContainer({ title: i18n.translateTitle("Empty Playlist"), content: i18n.cmd("The playlist `{name}` has no tracks to load.", { name: playlist.name }), icon: emoji.get("info") || "ℹ️" }); }
 	_createErrorContainer(message: string) { return buildError(message, "Error"); }
 	_getPremiumStatus(guildId: any, userId: any) {
 		const premiumStatus = db.hasAnyPremium(userId, guildId);
@@ -362,12 +378,12 @@ class LoadPlaylistCommand extends Command {
 		if (availableSlots <= 0)
 			return {
 				allowed: false,
-				message: `Queue is full (${premiumStatus.maxSongs} songs).`,
+				message: i18n.cmd('Queue is full ({max} songs).', { max: premiumStatus.maxSongs }),
 			};
 		const canAddAll = tracksToAdd <= availableSlots;
 		const tracksToAddActual = canAddAll ? tracksToAdd : availableSlots;
 		let limitWarning = !canAddAll
-			? `Only ${tracksToAddActual} tracks could be added due to queue limit.`
+			? i18n.cmd('Only {count} tracks could be added due to queue limit.', { count: tracksToAddActual })
 			: null;
 		return {
 			allowed: true,

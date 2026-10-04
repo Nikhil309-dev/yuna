@@ -20,7 +20,9 @@ import { db } from "#database/Database";
 import emoji from "#config/emoji";
 import StatsCard from "#ui/cards/StatsCard";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class StatsCommand extends Command {
   constructor() {
@@ -46,15 +48,15 @@ class StatsCommand extends Command {
             },
             {
               name: "period",
-              description: "Time period to view stats for",
+              description: i18n.cmd("Time period to view stats for"),
               type: 3,
               required: false,
               choices: [
-                { name: "Today", value: "today" },
-                { name: "This Week", value: "week" },
-                { name: "This Month", value: "month" },
-                { name: "This Year", value: "year" },
-                { name: "All Time", value: "all" },
+                { name: i18n.cmd("Today"), value: "today" },
+                { name: i18n.cmd("This Week"), value: "week" },
+                { name: i18n.cmd("This Month"), value: "month" },
+                { name: i18n.cmd("This Year"), value: "year" },
+                { name: i18n.cmd("All Time"), value: "all" },
               ],
             },
           ],
@@ -88,13 +90,16 @@ class StatsCommand extends Command {
 
     if (!report.aggregate || report.aggregate.total_tracks_played === 0) {
       const noDataContent =
-        `**No Listening Data**\n\n` +
-        `└─ **${emoji.get("info") || "ℹ️"} User:** ${targetUser.displayName || targetUser.username}\n` +
-        `└─ **${emoji.get("music") || "🎵"} Status:** No tracks played yet\n\n` +
-        `*Start listening to music to build your stats!*`;
+        `**${i18n.cmd("No Listening Data")}**\n\n` +
+        i18n.cmd("└─ **{emoji} User:** {user}", {
+          emoji: emoji.get("info") || "ℹ️",
+          user: targetUser.displayName || targetUser.username,
+        }) + "\n" +
+        i18n.cmd("└─ **{emoji} Status:** No tracks played yet", { emoji: emoji.get("music") || "🎵" }) + "\n\n" +
+        i18n.cmd("*Start listening to music to build your stats!*");
 
       const container = buildContainer({
-        title: "Listening Stats",
+        title: i18n.translateTitle("Listening Stats"),
         content: noDataContent,
         icon: emoji.get("info") || "📊",
       });
@@ -128,7 +133,7 @@ class StatsCommand extends Command {
       }
     } catch (err: any) {
       const container = buildError(
-        `Failed to generate stats card: ${err.message}`,
+        i18n.cmd("Failed to generate stats card: {error}", { error: err.message }),
         "Stats Error"
       );
       return this._reply(context, container);
@@ -152,9 +157,9 @@ class StatsCommand extends Command {
     const longestStreak = stats.longest_streak || 0;
 
     const quickInfo =
-      `🔥 **Current Streak:** ${streak} day${streak !== 1 ? 's' : ''} · ` +
-      `**Longest:** ${longestStreak} day${longestStreak !== 1 ? 's' : ''} · ` +
-      `**Since:** ${stats.first_listen_date || 'N/A'}`;
+      i18n.cmd("🔥 **Current Streak:** {streak} · ", { streak: i18n.cmd("{count} day(s)", { count: streak }) }) +
+      i18n.cmd("**Longest:** {longest} · ", { longest: i18n.cmd("{count} day(s)", { count: longestStreak }) }) +
+      i18n.cmd("**Since:** {date}", { date: stats.first_listen_date || 'N/A' });
 
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(quickInfo)
@@ -166,13 +171,13 @@ class StatsCommand extends Command {
 
     const periodMenu = new StringSelectMenuBuilder()
       .setCustomId(`stats_period_${user.id}`)
-      .setPlaceholder("Change time period...")
+      .setPlaceholder(i18n.cmd("Change time period..."))
       .addOptions([
-        { label: "Today", value: "today", default: currentPeriod === "today" },
-        { label: "This Week", value: "week", default: currentPeriod === "week" },
-        { label: "This Month", value: "month", default: currentPeriod === "month" },
-        { label: "This Year", value: "year", default: currentPeriod === "year" },
-        { label: "All Time", value: "all", default: currentPeriod === "all" },
+        { label: i18n.cmd("Today"), value: "today", default: currentPeriod === "today" },
+        { label: i18n.cmd("This Week"), value: "week", default: currentPeriod === "week" },
+        { label: i18n.cmd("This Month"), value: "month", default: currentPeriod === "month" },
+        { label: i18n.cmd("This Year"), value: "year", default: currentPeriod === "year" },
+        { label: i18n.cmd("All Time"), value: "all", default: currentPeriod === "all" },
       ]);
 
     container.addActionRowComponents(new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(periodMenu));
@@ -182,7 +187,7 @@ class StatsCommand extends Command {
 
   _setupPeriodCollector(message: Message, client: Client, targetUser: any) {
     const filter = (i: any) => i.customId === `stats_period_${targetUser.id}`;
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 120_000,
     });
@@ -204,7 +209,7 @@ class StatsCommand extends Command {
         });
       } catch (err: any) {
         const errorContainer = buildError(
-          `Failed to generate stats card: ${err.message}`,
+          i18n.cmd("Failed to generate stats card: {error}", { error: err.message }),
           "Stats Error"
         );
         await interaction.editReply({

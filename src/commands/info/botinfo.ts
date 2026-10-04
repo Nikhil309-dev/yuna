@@ -11,7 +11,9 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class BotInfoCommand extends Command {
 	constructor() {
@@ -44,7 +46,7 @@ class BotInfoCommand extends Command {
 		} catch (error: any) {
 			logger.error("BotInfoCommand", `Error in prefix command: ${error.message}`, error);
 			await message.reply({
-				components: [this._createErrorContainer("An error occurred while loading bot information.")],
+				components: [this._createErrorContainer(i18n.cmd("An error occurred while loading bot information."))],
 				flags: MessageFlags.IsComponentsV2,
 			}).catch(() => {});
 		}
@@ -52,17 +54,16 @@ class BotInfoCommand extends Command {
 
 	async slashExecute({ client, interaction }: any) {
 		try {
-			const messageInstance = await interaction.reply({
+			const messageInstance = await interaction.editReply({
 				components: [this._createBotInfoContainer(client, "overview")],
 				flags: MessageFlags.IsComponentsV2,
-				fetchReply: true,
 			});
 
 			this._setupCollector(messageInstance, interaction.user.id, client);
 		} catch (error: any) {
 			logger.error("BotInfoCommand", `Error in slash command: ${error.message}`, error);
 			const errorPayload = {
-				components: [this._createErrorContainer("An error occurred while loading bot information.")],
+				components: [this._createErrorContainer(i18n.cmd("An error occurred while loading bot information."))],
 				ephemeral: true,
 			};
 			if (interaction.replied || interaction.deferred) {
@@ -77,15 +78,15 @@ class BotInfoCommand extends Command {
 		const buttonRow = new ActionRowBuilder().addComponents(
 			new ButtonBuilder()
 				.setCustomId("binfo_tab_overview")
-				.setLabel("Overview")
+				.setLabel(i18n.cmd("Overview"))
 				.setStyle(tab === "overview" ? ButtonStyle.Primary : ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId("binfo_tab_audio")
-				.setLabel("Audio Engine")
+				.setLabel(i18n.cmd("Audio Engine"))
 				.setStyle(tab === "audio" ? ButtonStyle.Primary : ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setCustomId("binfo_tab_team")
-				.setLabel("Team & Links")
+				.setLabel(i18n.cmd("Team & Links"))
 				.setStyle(tab === "team" ? ButtonStyle.Primary : ButtonStyle.Secondary),
 			new ButtonBuilder()
 				.setLabel("Support")
@@ -111,7 +112,7 @@ class BotInfoCommand extends Command {
 				`└─ **Ping:** ${client.ws.ping}ms\n\n` +
 				`**Network & Audio**\n` +
 				`└─ **Servers:** ${client.guilds.cache.size.toLocaleString()} (${client.users.cache.size.toLocaleString()} users)\n` +
-				`└─ **Audio Sessions:** ${activePlayers} active / ${client.music?.players?.size || 0} total\n` +
+				i18n.cmd("└─ **Audio Sessions:** {active} active / {total} total\n", { active: activePlayers, total: client.music?.players?.size || 0 }) +
 				`└─ **Framework:** Discord.js v14\n`;
 
 			return buildContainer({
@@ -142,10 +143,10 @@ class BotInfoCommand extends Command {
 
 			const content =
 				`**Audio Infrastructure**\n` +
-				`└─ **Connected Nodes:** ${nodes.size}\n` +
+				i18n.cmd("└─ **Connected Nodes:** {count}\n", { count: nodes.size }) +
 				`└─ **Sources:** YouTube, Spotify, JioSaavn, SoundCloud\n` +
 				`└─ **Filters:** Bassboost, Nightcore, Vaporwave, 8D, EQ\n\n` +
-				`**Node Health:**\n` + (nodeDetails.trim() || "No active nodes.");
+				`**Node Health:**\n` + (nodeDetails.trim() || i18n.cmd("No active nodes."));
 
 			return buildContainer({
 				title: "Lavalink Audio Engine Stats",
@@ -190,7 +191,7 @@ class BotInfoCommand extends Command {
 	}
 
 	_setupCollector(messageInstance: any, userId: any, client: Client) {
-		const collector = messageInstance.createMessageComponentCollector({
+		const collector = componentCollectorSource(messageInstance).createMessageComponentCollector({
 			filter: (i: any) => i.user.id === userId,
 			time: 120_000,
 		});

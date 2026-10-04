@@ -4,6 +4,7 @@ import { ContainerBuilder, MessageFlags } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class ShowLikedCommand extends Command {
   constructor() {
@@ -48,11 +49,11 @@ class ShowLikedCommand extends Command {
       content += `└─ **${i + 1}.** ${t.title}\n`;
     });
     if (tracks.length > 20) {
-      content += `\n*...and ${tracks.length - 20} more tracks*`;
+      content += i18n.cmd("\n*...and {count} more tracks*", { count: tracks.length - 20 });
     }
 
     const container = buildContainer({ image: undefined,
-      title: `❤️ **${user.username}'s Liked Songs**`,
+      title: i18n.cmd("❤️ **{name}'s Liked Songs**", { name: user.username }),
       content: content,
       thumbnail: user.displayAvatarURL({ dynamic: true }),
       icon: emoji.get("info") || "ℹ️"

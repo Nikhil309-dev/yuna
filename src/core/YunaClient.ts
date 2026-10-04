@@ -151,6 +151,12 @@ export class YunaClient extends Client {
 	async cleanup() {
 		this.logger.warn('YunaClient', `Saving active player sessions before shutdown...`);
 		try {
+			if (Array.isArray((this as any)._intervals)) {
+				for (const interval of (this as any)._intervals) {
+					clearInterval(interval);
+				}
+				(this as any)._intervals = [];
+			}
 			if (this.scheduler) {
 				this.scheduler.stop();
 			}

@@ -13,6 +13,7 @@ import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
 import { PlayerManager } from '#audio/PlayerManager';
+import { i18n } from "#utils/i18n";
 
 class ClearCommand extends Command {
   constructor() {
@@ -56,7 +57,7 @@ class ClearCommand extends Command {
     if (pm.queueSize === 0) {
       return this._reply(
         context,
-        this._createErrorContainer("There are no tracks in the queue to clear."),
+        this._createErrorContainer(i18n.cmd("There are no tracks in the queue to clear.")),
       );
     }
     const size = pm.queueSize;
@@ -67,10 +68,10 @@ class ClearCommand extends Command {
   }
 
   _createSuccessContainer(pm: any, size: any) {
-    const content = `Cleared **${size}** tracks from the queue.`;
+    const content = i18n.cmd("Cleared **{count}** tracks from the queue.", { count: size });
     const current = pm.player?.queue?.current;
     return buildContainer({ image: undefined,
-      title: "Queue Cleared",
+      title: i18n.translateTitle("Queue Cleared"),
       content: content,
       thumbnail: current?.info?.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "🎵"

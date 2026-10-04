@@ -12,6 +12,7 @@ import { Command, CommandContext } from '#core/Command';
 import { buildContainer, buildError } from '#ui/Theme';
 import emoji from '#config/emoji';
 import phrases from '#utils/phrases';
+import { i18n } from '#utils/i18n';
 import { PlayerManager } from '#audio/PlayerManager';
 
 class ReplayCommand extends Command {
@@ -66,19 +67,19 @@ class ReplayCommand extends Command {
     try {
       await pm.replay();
     } catch (err: any) {
-      return this._reply(context, this._createErrorContainer(`Failed to replay: ${err.message}`));
+      return this._reply(context, this._createErrorContainer(i18n.cmd("Failed to replay: {error}", { error: err.message })));
     }
 
     const replayNote = phrases.get('replaySuccess');
-    const content = `**Track Information**\n\n` +
-      `└─ **${emoji.get('music')} Title:** ${currentTrack.info.title}\n` +
-      `└─ **${emoji.get('folder')} Artist:** ${currentTrack.info.author || 'Unknown'}\n` +
-      `└─ **${emoji.get('info')} Duration:** ${this._formatDuration(currentTrack.info.duration)}\n` +
-      `└─ **${emoji.get('check')} Status:** Playback restarted\n\n` +
+    const content = i18n.cmd("**Track Information**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get('music'), title: currentTrack.info.title }) + "\n" +
+      i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: emoji.get('folder'), author: currentTrack.info.author || i18n.cmd("Unknown") }) + "\n" +
+      i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get('info'), duration: this._formatDuration(currentTrack.info.duration) }) + "\n" +
+      i18n.cmd("└─ **{emoji} Status:** Playback restarted", { emoji: emoji.get('check') }) + "\n\n" +
       `*${replayNote}*`;
 
     const container = buildContainer({
-      title: "Track Replayed",
+      title: i18n.translateTitle("Track Replayed"),
       content: content,
       thumbnail: currentTrack.info.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "ℹ️"
@@ -89,11 +90,11 @@ class ReplayCommand extends Command {
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
       );
 
-      const requesterContent = `**Request Information**\n\n` +
-        `└─ **${emoji.get('add')} Requested by:** <@${currentTrack.requester.id}>\n` +
-        `└─ **${emoji.get('reset')} Action:** Track replayed\n` +
-        `└─ **${emoji.get('check')} Status:** Now playing from start\n\n` +
-        `*Original request information preserved*`;
+      const requesterContent = i18n.cmd("**Request Information**") + "\n\n" +
+        i18n.cmd("└─ **{emoji} Requested by:** <@{user}>", { emoji: emoji.get('add'), user: currentTrack.requester.id }) + "\n" +
+        i18n.cmd("└─ **{emoji} Action:** Track replayed", { emoji: emoji.get('reset') }) + "\n" +
+        i18n.cmd("└─ **{emoji} Status:** Now playing from start", { emoji: emoji.get('check') }) + "\n\n" +
+        i18n.cmd("*Original request information preserved*");
 
       container.addSectionComponents(
         new SectionBuilder()

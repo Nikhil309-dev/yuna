@@ -15,10 +15,14 @@ import {
 import { config } from '#config/config';
 import { Command } from '#core/Command';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
 import phrases from '#utils/phrases';
+import { i18n } from '#utils/i18n.js';
 import { PlayerManager } from '#audio/PlayerManager';
+
+const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
 
 class LoopCommand extends Command {
   constructor() {
@@ -129,7 +133,7 @@ class LoopCommand extends Command {
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId('loop_back')
-        .setLabel('Back to Controls')
+        .setLabel(tr('loop.back'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get('reset') || "↩️")
     );
@@ -143,32 +147,35 @@ class LoopCommand extends Command {
     const artworkUrl = pm.currentTrack?.info?.artworkUrl || config.assets.defaultTrackArtwork;
 
     let modeText = "Off";
-    if (currentMode === "track") modeText = "Current Track (🔂)";
-    else if (currentMode === "queue") modeText = "Entire Queue (🔁)";
+    if (currentMode === "track") modeText = i18n.cmd("Current Track (🔂)");
+    else if (currentMode === "queue") modeText = i18n.cmd("Entire Queue (🔁)");
 
     const content =
-      `**Loop Configuration**\n\n` +
-      `└─ **${emoji.get("info") || "ℹ️"} Current Mode:** ${modeText}\n` +
-      `└─ **${emoji.get("music") || "🎵"} Track:** ${pm.currentTrack?.info?.title || "None"}\n` +
-      `└─ **${emoji.get("folder") || "📁"} Queue Size:** ${pm.queueSize} tracks\n\n` +
-      `*Click the buttons below to switch loop mode*`;
+      i18n.cmd("**Loop Configuration**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Current Mode:** {mode}", { emoji: emoji.get("info") || "ℹ️", mode: modeText }) + "\n" +
+      i18n.cmd("└─ **{emoji} Track:** {title}", {
+        emoji: emoji.get("music") || "🎵",
+        title: pm.currentTrack?.info?.title || i18n.cmd("None"),
+      }) + "\n" +
+      i18n.cmd("└─ **{emoji} Queue Size:** {count} tracks", { emoji: emoji.get("folder") || "📁", count: pm.queueSize }) + "\n\n" +
+      i18n.cmd("*Click the buttons below to switch loop mode*");
 
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId("loop_off")
-        .setLabel("Off")
+        .setLabel(tr("loop.off"))
         .setStyle(currentMode === "off" ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId("loop_track")
-        .setLabel("Track")
+        .setLabel(tr("loop.track"))
         .setStyle(currentMode === "track" ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId("loop_queue")
-        .setLabel("Queue")
+        .setLabel(tr("loop.queue"))
         .setStyle(currentMode === "queue" ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId("loop_help")
-        .setLabel("Help")
+        .setLabel(tr("loop.help"))
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -192,7 +199,7 @@ class LoopCommand extends Command {
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId("loop_back")
-        .setLabel("Back to Controls")
+        .setLabel(tr("loop.back"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get("reset") || "↩️")
     );
@@ -207,7 +214,7 @@ class LoopCommand extends Command {
 
   async _setupCollector(message: any, author: any, pm: any) {
     const filter = (i: any) => i.user.id === author.id;
-    const collector = message.createMessageComponentCollector({ filter, time: 300_000 });
+    const collector = componentCollectorSource(message).createMessageComponentCollector({ filter, time: 300_000 });
 
     collector.on("collect", async (interaction: any) => {
       try {

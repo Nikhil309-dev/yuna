@@ -16,6 +16,10 @@ import { PlayerManager } from '#audio/PlayerManager';
 import { db } from '#database/Database';
 import { config } from "#config/config";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
+import { i18n } from '#utils/i18n.js';
+
+const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
 import { formatDuration } from '#ui/Formatters';
@@ -91,8 +95,8 @@ class QueueCommand extends Command {
     const currentPage = Math.min(page, maxPages);
 
     const container = buildContainer({ image: undefined,
-      title: "Interactive Queue Dashboard",
-      content: `### 🎵 Now Playing\n[**${current.info.title}**](${current.info.uri})\n└ **Artist:** ${current.info.author} • **Duration:** \`${formatDuration(current.info.duration)}\``,
+      title: tr("title.queueDashboard"),
+      content: i18n.cmd("### 🎵 Now Playing\n[**{title}**]({uri})\n└ **{artistLabel}:** {author} • **{durationLabel}:** `{duration}`", { title: current.info.title, uri: current.info.uri, artistLabel: i18n.cmd("Artist"), author: current.info.author, durationLabel: i18n.cmd("Duration"), duration: formatDuration(current.info.duration) }),
       thumbnail: current.info.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "🌸"
     });
@@ -145,7 +149,7 @@ class QueueCommand extends Command {
       );
     } else {
       container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent("*(No more tracks in queue. Add more songs using `/play`!)*")
+        new TextDisplayBuilder().setContent(tr("queue.noMoreTracks"))
       );
     }
 
@@ -164,7 +168,7 @@ class QueueCommand extends Command {
     return new ActionRowBuilder<any>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`q_jump_${guildId}`)
-        .setPlaceholder("⚡ Select a track to jump directly...")
+        .setPlaceholder(tr("queue.jumpPlaceholder"))
         .addOptions(options)
     );
   }
@@ -173,7 +177,7 @@ class QueueCommand extends Command {
     return new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId(`q_page_${currentPage - 1}_${guildId}`)
-        .setLabel("◀ Prev")
+        .setLabel(tr("queue.prev"))
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(currentPage <= 1),
       new ButtonBuilder()
@@ -183,7 +187,7 @@ class QueueCommand extends Command {
         .setDisabled(true),
       new ButtonBuilder()
         .setCustomId(`q_page_${currentPage + 1}_${guildId}`)
-        .setLabel("Next ▶")
+        .setLabel(tr("queue.next"))
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(currentPage >= maxPages)
     );
@@ -193,17 +197,17 @@ class QueueCommand extends Command {
     return new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId(`q_shuffle_${guildId}`)
-        .setLabel("Shuffle")
+        .setLabel(tr("queue.shuffle"))
         .setEmoji("🔀")
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(`q_savepl_${guildId}`)
-        .setLabel("Save as Playlist")
+        .setLabel(tr("queue.savePlaylist"))
         .setEmoji("💾")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId(`q_clear_${guildId}`)
-        .setLabel("Clear Queue")
+        .setLabel(tr("queue.clear"))
         .setEmoji("🗑️")
         .setStyle(ButtonStyle.Danger)
     );
@@ -211,7 +215,7 @@ class QueueCommand extends Command {
 
   async _setupCollector(message: any, client: any, guildId: any, initialPage: any, userId: any) {
     const filter = (i: any) => i.customId.startsWith("q_") && i.customId.endsWith(guildId);
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 180_000,
     });
@@ -234,7 +238,7 @@ class QueueCommand extends Command {
         currentPage = parseInt(parts[2], 10);
         const newContainer = this._buildQueueContainer(player, currentPage, guildId, interaction.user.id);
         await interaction.editReply({ components: [newContainer], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
-      } else if (action === "jump" && interaction.isSelectMenu()) {
+      } else if (action === "jump" && interaction.isStringSelectMenu()) {
         await interaction.deferUpdate().catch(() => {});
         const targetIndex = parseInt(interaction.values[0], 10);
         if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < player.queue.tracks.length) {
@@ -257,16 +261,16 @@ class QueueCommand extends Command {
         const newContainer = this._buildQueueContainer(player, 1, guildId, interaction.user.id);
         await interaction.editReply({ components: [newContainer], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
       } else if (action === "savepl") {
-        const plName = `Queue-${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        const plName = i18n.cmd("Queue-{date}", { date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) });
         const allTracks = [player.queue.current, ...player.queue.tracks].filter(Boolean);
 
         try {
-          const playlist = (db as any).playlists.create(interaction.user.id, plName, `Saved from live queue on ${new Date().toLocaleString()}`);
+          const playlist = db.playlists.createPlaylist(interaction.user.id, plName, i18n.cmd("Saved from live queue on {date}", { date: new Date().toLocaleString() }));
           for (const t of allTracks) {
-            (db as any).playlists.addTrack(playlist.id, t.info || t);
+            db.playlists.addTrackToPlaylist(playlist.id, interaction.user.id, t.info || t);
           }
           await (interaction.deferred || interaction.replied ? interaction.editReply.bind(interaction) : interaction.reply.bind(interaction))({
-            components: [buildSuccess(`Saved **${allTracks.length}** tracks to playlist **"${plName}"**! Use \`/playlist load name:${plName}\` anytime.`, "Playlist Created")],
+            components: [buildSuccess(i18n.cmd('Saved **{count}** tracks to playlist **"{name}"**! Use `/playlist load name:{name}` anytime.', { count: allTracks.length, name: plName }), "Playlist Created")],
             flags: MessageFlags.IsComponentsV2,
             ephemeral: true
           }).catch(() => {});

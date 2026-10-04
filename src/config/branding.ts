@@ -1,7 +1,7 @@
 export const branding = {
   botName: process.env.BOT_NAME || 'Yuna',
   botVersion: '2.0.0',
-  description: 'A high-performance Discord Music Bot featuring native 48kHz audio, zero buffer loops, and dynamic multi-source autoplay.',
+  description: 'A high-performance Discord Music Bot powered by Lavalink, featuring multi-source search, autoplay and rich interactive player controls.',
 
   developer: {
     name: process.env.DEV_NAME || 'Nikhil',

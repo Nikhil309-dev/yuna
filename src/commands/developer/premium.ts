@@ -19,7 +19,9 @@ import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -45,7 +47,7 @@ class PremiumCommand extends Command {
   async execute({ client, message, args }: any) {
     try {
       if (!config.ownerIds?.includes(message.author.id)) {
-        return this._sendError(message, "Access Denied", "This command is restricted to bot owners only.");
+        return this._sendError(message, "Access Denied", i18n.cmd("This command is restricted to bot owners only."));
       }
 
       if (!args.length) {
@@ -69,11 +71,19 @@ class PremiumCommand extends Command {
         case "cleanup":
           return await this._handleCleanup(client, message);
         default:
-          return this._sendError(message, "Invalid Action", `Unknown action: \`${action}\`\n\n**Valid actions:**\n├─ \`grant\` - Grant premium to user/guild\n├─ \`revoke\` - Revoke premium from user/guild\n├─ \`stats\` - View premium statistics\n└─ \`cleanup\` - Remove expired premiums`);
+          return this._sendError(
+            message,
+            i18n.translateTitle("Invalid Action"),
+            i18n.cmd("Unknown action: `{action}`\n\n**Valid actions:**", { action }) +
+              "\n" + i18n.cmd("├─ `grant` - Grant premium to user/guild") +
+              "\n" + i18n.cmd("├─ `revoke` - Revoke premium from user/guild") +
+              "\n" + i18n.cmd("├─ `stats` - View premium statistics") +
+              "\n" + i18n.cmd("└─ `cleanup` - Remove expired premiums"),
+          );
       }
     } catch (error: any) {
       logger.error("PremiumCommand", "Premium command error:", error);
-      return this._sendError(message, "Error", `An unexpected error occurred:\n\`\`\`\n${error.message}\n\`\`\``);
+      return this._sendError(message, "Error", i18n.cmd("An unexpected error occurred:\n```\n{error}\n```", { error: error.message }));
     }
   }
 
@@ -81,8 +91,14 @@ class PremiumCommand extends Command {
     if (args.length < 2) {
       return this._sendError(
         message,
-        "Usage Error",
-        `**Command Format:**\n\`premium grant <user|guild> <id> [duration] [reason]\`\n\n**Duration Options:**\n├─ \`1d\` - 1 day\n├─ \`7d\` - 7 days\n├─ \`30d\` - 30 days (default)\n└─ \`perm\` - Permanent`
+        i18n.translateTitle("Usage Error"),
+        i18n.cmd("**Command Format:**") +
+          "\n`premium grant <user|guild> <id> [duration] [reason]`\n\n" +
+          i18n.cmd("**Duration Options:**") + "\n" +
+          i18n.cmd("├─ `1d` - 1 day") + "\n" +
+          i18n.cmd("├─ `7d` - 7 days") + "\n" +
+          i18n.cmd("├─ `30d` - 30 days (default)") + "\n" +
+          i18n.cmd("└─ `perm` - Permanent")
       );
     }
 
@@ -95,17 +111,32 @@ class PremiumCommand extends Command {
     }
 
     const durationArg = args[2] || "30d";
-    const reason = args.slice(3).join(" ") || "Premium granted by owner";
+    const reason = args.slice(3).join(" ") || i18n.cmd("Premium granted by owner");
 
     if (!["user", "guild"].includes(type)) {
-      return this._sendError(message, "Invalid Type", `Type must be either \`user\` or \`guild\`.\n\n**Examples:**\n├─ \`premium grant user 123456789 30d\`\n└─ \`premium grant guild 987654321 perm\``);
+      return this._sendError(
+          message,
+          i18n.translateTitle("Invalid Type"),
+          i18n.cmd("Type must be either `user` or `guild`.") + "\n\n" +
+            i18n.cmd("**Examples:**") + "\n" +
+            i18n.cmd("├─ `premium grant user 123456789 30d`") + "\n" +
+            i18n.cmd("└─ `premium grant guild 987654321 perm`"),
+        );
     }
 
     let expiresAt = null;
     if (durationArg.toLowerCase() !== "perm" && durationArg.toLowerCase() !== "permanent") {
       const duration = this._parseDuration(durationArg);
       if (!duration) {
-        return this._sendError(message, "Invalid Duration", `**Valid durations:**\n├─ \`1d\` - 1 day\n├─ \`7d\` - 7 days\n├─ \`30d\` - 30 days\n└─ \`perm\` - Permanent`);
+        return this._sendError(
+            message,
+            i18n.translateTitle("Invalid Duration"),
+            i18n.cmd("**Valid durations:**") + "\n" +
+              i18n.cmd("├─ `1d` - 1 day") + "\n" +
+              i18n.cmd("├─ `7d` - 7 days") + "\n" +
+              i18n.cmd("├─ `30d` - 30 days") + "\n" +
+              i18n.cmd("└─ `perm` - Permanent"),
+          );
       }
       expiresAt = Date.now() + duration;
     }
@@ -119,12 +150,18 @@ class PremiumCommand extends Command {
 
       const expiryText = expiresAt
         ? `<t:${Math.floor(expiresAt / 1000)}:R>`
-        : "Never (Permanent)";
+        : i18n.cmd("Never (Permanent)");
 
       return this._sendSuccess(
         message,
-        "Premium Granted",
-        `**Successfully granted ${type} premium!**\n\n**${emoji.get("folder")} Details:**\n├─ **Target:** \`${id}\`\n├─ **Type:** ${type.charAt(0).toUpperCase() + type.slice(1)}\n├─ **Expires:** ${expiryText}\n└─ **Reason:** ${reason}`
+        i18n.translateTitle("Premium Granted"),
+        i18n.cmd("**Successfully granted {type} premium!**", { type }) +
+          "\n\n" +
+          i18n.cmd("**{emoji} Details:**", { emoji: emoji.get("folder") }) +
+          "\n" + i18n.cmd("├─ **Target:** `{id}`", { id }) +
+          "\n" + i18n.cmd("├─ **Type:** {type}", { type: type.charAt(0).toUpperCase() + type.slice(1) }) +
+          "\n" + i18n.cmd("├─ **Expires:** {expires}", { expires: expiryText }) +
+          "\n" + i18n.cmd("└─ **Reason:** {reason}", { reason })
       );
     } catch (error: any) {
       logger.error("PremiumCommand", "Error granting premium:", error);
@@ -134,7 +171,15 @@ class PremiumCommand extends Command {
 
   async _handleRevoke(client: any, message: any, args: any) {
     if (args.length < 2) {
-      return this._sendError(message, "Usage Error", `**Command Format:**\n\`premium revoke <user|guild> <id>\`\n\n**Examples:**\n├─ \`premium revoke user 123456789\`\n└─ \`premium revoke guild 987654321\``);
+      return this._sendError(
+        message,
+        i18n.translateTitle("Usage Error"),
+        i18n.cmd("**Command Format:**") +
+          "\n`premium revoke <user|guild> <id>`\n\n" +
+          i18n.cmd("**Examples:**") + "\n" +
+          i18n.cmd("├─ `premium revoke user 123456789`") + "\n" +
+          i18n.cmd("└─ `premium revoke guild 987654321`"),
+      );
     }
 
     const type = args[0].toLowerCase();
@@ -146,7 +191,14 @@ class PremiumCommand extends Command {
     }
 
     if (!["user", "guild"].includes(type)) {
-      return this._sendError(message, "Invalid Type", `Type must be either \`user\` or \`guild\`.\n\n**Examples:**\n├─ \`premium revoke user 123456789\`\n└─ \`premium revoke guild 987654321\``);
+      return this._sendError(
+          message,
+          i18n.translateTitle("Invalid Type"),
+          i18n.cmd("Type must be either `user` or `guild`.") + "\n\n" +
+            i18n.cmd("**Examples:**") + "\n" +
+            i18n.cmd("├─ `premium revoke user 123456789`") + "\n" +
+            i18n.cmd("└─ `premium revoke guild 987654321`"),
+        );
     }
 
     try {
@@ -158,8 +210,12 @@ class PremiumCommand extends Command {
 
       return this._sendSuccess(
         message,
-        "Premium Revoked",
-        `**Successfully revoked ${type} premium!**\n\n**${emoji.get("folder")} Details:**\n├─ **Target:** \`${id}\`\n└─ **Type:** ${type.charAt(0).toUpperCase() + type.slice(1)}`
+        i18n.translateTitle("Premium Revoked"),
+        i18n.cmd("**Successfully revoked {type} premium!**", { type }) +
+          "\n\n" +
+          i18n.cmd("**{emoji} Details:**", { emoji: emoji.get("folder") }) +
+          "\n" + i18n.cmd("├─ **Target:** `{id}`", { id }) +
+          "\n" + i18n.cmd("└─ **Type:** {type}", { type: type.charAt(0).toUpperCase() + type.slice(1) })
       );
     } catch (error: any) {
       logger.error("PremiumCommand", "Error revoking premium:", error);
@@ -193,7 +249,7 @@ class PremiumCommand extends Command {
       return this._sendSuccess(
         message,
         "Cleanup Complete",
-        `**Cleanup operation successful!**\n\n**${emoji.get("folder")} Results:**\n├─ **User premiums removed:** ${result.usersRevoked}\n├─ **Guild premiums removed:** ${result.guildsRevoked}\n└─ **Total cleaned:** ${result.total}`
+        i18n.cmd("**Cleanup operation successful!**\n\n**{emoji} Results:**\n├─ **User premiums removed:** {users}\n├─ **Guild premiums removed:** {guilds}\n└─ **Total cleaned:** {total}", { emoji: emoji.get("folder"), users: result.usersRevoked, guilds: result.guildsRevoked, total: result.total })
       );
     } catch (error: any) {
       logger.error("PremiumCommand", "Error during cleanup:", error);
@@ -205,29 +261,32 @@ class PremiumCommand extends Command {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`### ${emoji.get("info")} Premium Management`)
+      new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} {title}", { emoji: emoji.get("info"), title: i18n.translateTitle("Premium Management") }))
     );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
     );
 
-    const content = `**Available premium management commands:**\n\n` +
-      `**${emoji.get("check")} Commands:**\n` +
-      `├─ \`premium grant <user|guild> <id> [duration] [reason]\`\n` +
-      `├─ \`premium revoke <user|guild> <id>\`\n` +
-      `├─ \`premium stats\`\n` +
-      `└─ \`premium cleanup\`\n\n` +
-      `**${emoji.get("folder")} Duration Examples:**\n` +
-      `├─ \`1d\` - 1 day\n` +
-      `├─ \`7d\` - 7 days\n` +
-      `├─ \`30d\` - 30 days\n` +
-      `└─ \`perm\` - Permanent\n\n` +
-      `**${emoji.get("add")} Usage Examples:**\n` +
-      `├─ \`premium grant user 123456789 30d VIP user\`\n` +
-      `├─ \`premium grant guild 987654321 perm Server boost\`\n` +
-      `├─ \`premium revoke user 123456789\`\n` +
-      `└─ \`premium stats\``;
+    const content = i18n.cmd(
+      "**Available premium management commands:**\n\n" +
+      "**{check} Commands:**\n" +
+      "├─ `premium grant <user|guild> <id> [duration] [reason]`\n" +
+      "├─ `premium revoke <user|guild> <id>`\n" +
+      "├─ `premium stats`\n" +
+      "└─ `premium cleanup`\n\n" +
+      "**{folder} Duration Examples:**\n" +
+      "├─ `1d` - 1 day\n" +
+      "├─ `7d` - 7 days\n" +
+      "├─ `30d` - 30 days\n" +
+      "└─ `perm` - Permanent\n\n" +
+      "**{add} Usage Examples:**\n" +
+      "├─ `premium grant user 123456789 30d VIP user`\n" +
+      "├─ `premium grant guild 987654321 perm Server boost`\n" +
+      "├─ `premium revoke user 123456789`\n" +
+      "└─ `premium stats`",
+      { check: emoji.get("check"), folder: emoji.get("folder"), add: emoji.get("add") }
+    );
 
     const section = new SectionBuilder()
       .addTextDisplayComponents(new TextDisplayBuilder().setContent(content))
@@ -242,7 +301,7 @@ class PremiumCommand extends Command {
     container.addActionRowComponents(
       new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
           .setCustomId("prem_stats")
-          .setLabel("View Statistics")
+          .setLabel(i18n.cmd("View Statistics"))
           .setStyle(ButtonStyle.Secondary)
           .setEmoji(emoji.get("folder"))
       )
@@ -255,18 +314,18 @@ class PremiumCommand extends Command {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`### ${emoji.get("folder")} Premium Statistics`)
+      new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} {title}", { emoji: emoji.get("folder"), title: i18n.translateTitle("Premium Statistics") }))
     );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
     );
 
-    let content = `**Overview:**\n` +
-      `├─ **Users:** ${stats.total.users} (${stats.active.users} active)\n` +
-      `├─ **Guilds:** ${stats.total.guilds} (${stats.active.guilds} active)\n` +
-      `├─ **Total Active:** ${stats.active.total}\n` +
-      `└─ **Total Registered:** ${stats.total.total}\n\n`;
+    let content = i18n.cmd("**Overview:**\n") +
+      i18n.cmd("├─ **Users:** {total} ({active} active)\n", { total: stats.total.users, active: stats.active.users }) +
+      i18n.cmd("├─ **Guilds:** {total} ({active} active)\n", { total: stats.total.guilds, active: stats.active.guilds }) +
+      i18n.cmd("├─ **Total Active:** {count}\n", { count: stats.active.total }) +
+      i18n.cmd("└─ **Total Registered:** {count}\n\n", { count: stats.total.total });
 
     const userStart = userPage * ITEMS_PER_PAGE;
     const userEnd = Math.min(userStart + ITEMS_PER_PAGE, userPremiums.length);
@@ -274,10 +333,10 @@ class PremiumCommand extends Command {
     const guildEnd = Math.min(guildStart + ITEMS_PER_PAGE, guildPremiums.length);
 
     if (userPremiums.length > 0) {
-      content += `**${emoji.get("check")} User Premiums (${userStart + 1}-${userEnd} of ${userPremiums.length}):**\n`;
+      content += i18n.cmd("**{emoji} User Premiums ({from}-{to} of {total}):**\n", { emoji: emoji.get("check"), from: userStart + 1, to: userEnd, total: userPremiums.length });
       if (userEnd > userStart) {
         userPremiums.slice(userStart, userEnd).forEach((prem: any, index: any) => {
-          const expiry = prem.expires_at ? `<t:${Math.floor(prem.expires_at / 1000)}:R>` : "Permanent";
+          const expiry = prem.expires_at ? `<t:${Math.floor(prem.expires_at / 1000)}:R>` : i18n.cmd("Permanent");
           const isLast = index === (userEnd - userStart - 1) && guildPremiums.length === 0;
           content += `${isLast ? '└─' : '├─'} \`${prem.user_id}\` - ${expiry}\n`;
         });
@@ -285,10 +344,10 @@ class PremiumCommand extends Command {
     }
 
     if (guildPremiums.length > 0) {
-      content += `\n**${emoji.get("add")} Guild Premiums (${guildStart + 1}-${guildEnd} of ${guildPremiums.length}):**\n`;
+      content += i18n.cmd("\n**{emoji} Guild Premiums ({from}-{to} of {total}):**\n", { emoji: emoji.get("add"), from: guildStart + 1, to: guildEnd, total: guildPremiums.length });
       if (guildEnd > guildStart) {
         guildPremiums.slice(guildStart, guildEnd).forEach((prem: any, index: any) => {
-          const expiry = prem.expires_at ? `<t:${Math.floor(prem.expires_at / 1000)}:R>` : "Permanent";
+          const expiry = prem.expires_at ? `<t:${Math.floor(prem.expires_at / 1000)}:R>` : i18n.cmd("Permanent");
           const isLast = index === (guildEnd - guildStart - 1);
           content += `${isLast ? '└─' : '├─'} \`${prem.guild_id}\` - ${expiry}\n`;
         });
@@ -312,7 +371,7 @@ class PremiumCommand extends Command {
         buttons.push(
           new ButtonBuilder()
             .setCustomId("prem_prev")
-            .setLabel("Previous")
+            .setLabel(i18n.cmd("Previous"))
             .setStyle(ButtonStyle.Secondary)
             .setEmoji(emoji.get("reset"))
         );
@@ -322,7 +381,7 @@ class PremiumCommand extends Command {
         buttons.push(
           new ButtonBuilder()
             .setCustomId("prem_next")
-            .setLabel("Next")
+            .setLabel(i18n.cmd("Next"))
             .setStyle(ButtonStyle.Secondary)
             .setEmoji(emoji.get("add"))
         );
@@ -332,7 +391,7 @@ class PremiumCommand extends Command {
     buttons.push(
       new ButtonBuilder()
         .setCustomId("prem_help")
-        .setLabel("Back to Help")
+        .setLabel(i18n.cmd("Back to Help"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get("info"))
     );
@@ -364,7 +423,7 @@ class PremiumCommand extends Command {
   }
 
   _setupHelpCollector(message: any, userId: any, client: any) {
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter: (i: any) => i.user.id === userId,
       time: 300_000
     });
@@ -395,7 +454,7 @@ class PremiumCommand extends Command {
     let userPage = 0;
     let guildPage = 0;
 
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter: (i: any) => i.user.id === userId,
       time: 300_000
     });
@@ -464,9 +523,10 @@ class PremiumCommand extends Command {
 
   _sendSuccess(message: Message, title: string, description: string) {
     const container = new ContainerBuilder();
+    const localizedTitle = i18n.translateTitle(title);
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`### ${emoji.get("check")} ${title}`)
+      new TextDisplayBuilder().setContent(`### ${emoji.get("check")} ${localizedTitle}`)
     );
 
     container.addSeparatorComponents(
@@ -491,9 +551,10 @@ class PremiumCommand extends Command {
 
   _sendError(message: Message, title: string, description: string) {
     const container = new ContainerBuilder();
+    const localizedTitle = i18n.translateTitle(title);
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} ${title}`)
+      new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} ${localizedTitle}`)
     );
 
     container.addSeparatorComponents(

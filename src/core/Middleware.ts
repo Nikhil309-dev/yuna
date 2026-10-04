@@ -1,10 +1,9 @@
-import { config } from '#config/config';
 import { db } from '#database/Database';
-import phrases from '#utils/phrases';
 import { buildError } from '#ui/Theme';
 import { checkPermissions, checkBotPermissions, isPremium, isOwner, isBlacklisted } from '../core/AccessControl';
 import { AntiAbuse } from '../utils/AntiAbuse';
 import { GuildMember, Guild, GuildChannel, User, Client } from 'discord.js';
+import { i18n } from '#utils/i18n.js';
 
 export interface MiddlewareContext {
   client: any;
@@ -24,6 +23,9 @@ export class Middleware {
 
   /**
    * Runs the centralized execution pipeline.
+   *
+   * Called from inside a `runWithLocale(...)` scope, so `tr()` / phrase lookups
+   * below resolve to the requester's language.
    * @param ctx The execution context.
    * @param command The command being executed.
    * @returns The result of the middleware checks.
@@ -33,13 +35,17 @@ export class Middleware {
     const userId = user.id;
     const guildId = guild?.id;
 
+    const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
+    const pool = (category: string, replacements?: Record<string, any>) =>
+      i18n.t(i18n.activeLocale(), category, replacements);
+
     if (isBlacklisted(userId, guildId)) {
       return {
         pass: false,
         response: buildError({
-          title: 'Access Restricted',
-          issue: 'You or this server have been restricted from using Yuna.',
-          tip: 'Join our Support Server to appeal this restriction.'
+          title: tr('mw.blacklisted.title'),
+          issue: tr('mw.blacklisted.issue'),
+          tip: tr('mw.blacklisted.tip')
         })
       };
     }
@@ -48,9 +54,9 @@ export class Middleware {
       return {
         pass: false,
         response: buildError({
-          title: 'Under Maintenance',
-          issue: `The \`${command.name}\` command is currently undergoing scheduled maintenance.`,
-          tip: 'Please try again in a few moments.'
+          title: tr('mw.maintenance.title'),
+          issue: tr('mw.maintenance.issue', { command: command.name }),
+          tip: tr('ui.error.contact')
         })
       };
     }
@@ -61,9 +67,9 @@ export class Middleware {
       return {
         pass: false,
         response: buildError({
-          title: 'Rate Limited',
-          issue: `You repeatedly triggered the cooldown for \`${command.name}\`, so additional attempts are being ignored temporarily.`,
-          tip: 'Wait a few minutes and try again.'
+          title: tr('mw.rateLimited.title'),
+          issue: tr('mw.rateLimited.issue', { command: command.name }),
+          tip: tr('mw.cooldown.title')
         })
       };
     }
@@ -75,13 +81,13 @@ export class Middleware {
       return {
         pass: false,
         response: buildError({
-          title: escalated ? 'Rate Limited' : 'Slow Down',
+          title: escalated ? tr('mw.rateLimited.title') : tr('mw.cooldown.title'),
           issue: escalated
-            ? `You have triggered the \`${command.name}\` cooldown ${violations} times in the last minute.`
-            : `You are sending commands too quickly!`,
+            ? tr('mw.rateLimited.issue', { command: command.name })
+            : pool('cooldown', { time: cooldownTime }),
           tip: escalated
-            ? 'Please wait a few minutes before trying again.'
-            : `Please wait **${cooldownTime}s** before using \`${command.name}\` again.`
+            ? tr('ui.warning.action')
+            : tr('mw.cooldown.title')
         })
       };
     }
@@ -90,9 +96,9 @@ export class Middleware {
       return {
         pass: false,
         response: buildError({
-          title: 'Developer Only',
-          issue: `The \`${command.name}\` command is reserved for bot developers.`,
-          tip: 'Check out `/help` for public commands.'
+          title: tr('mw.devOnly.title'),
+          issue: pool('devOnly'),
+          tip: tr('ui.error.contact')
         })
       };
     }
@@ -102,8 +108,8 @@ export class Middleware {
         return {
           pass: false,
           response: buildError({
-            title: 'Insufficient Permissions',
-            issue: `You lack the required Discord permissions to run this command.`,
+            title: tr('mw.permissions.title'),
+            issue: tr('mw.permissions.issue'),
             tip: `Required: \`${command.access.permissions.join(', ')}\``
           })
         };
@@ -116,8 +122,8 @@ export class Middleware {
         return {
           pass: false,
           response: buildError({
-            title: 'Bot Permission Missing',
-            issue: `I need additional Discord permissions in this channel to execute this.`,
+            title: tr('mw.botPermissions.title'),
+            issue: tr('mw.botPermissions.issue'),
             tip: `Missing: \`${missing.join(', ')}\``
           })
         };
@@ -129,9 +135,9 @@ export class Middleware {
         return {
           pass: false,
           response: buildError({
-            title: 'Premium Required',
-            issue: `This command requires an active **${command.access.premium}** tier subscription.`,
-            tip: 'Unlock high-bitrate audio & unlimited playlists with `/buypremium`.'
+            title: tr('mw.premium.title'),
+            issue: tr('mw.premium.issue', { tier: command.access.premium }),
+            tip: tr('mw.premium.tip')
           })
         };
       }
@@ -141,9 +147,9 @@ export class Middleware {
       return {
         pass: false,
         response: buildError({
-          title: 'Voice Channel Required',
-          issue: 'You must be connected to a voice channel to use music commands.',
-          tip: 'Join a voice channel in this server and try again!'
+          title: tr('mw.voice.title'),
+          issue: pool('voiceRequired'),
+          tip: tr('ui.error.contact')
         })
       };
     }
@@ -153,9 +159,9 @@ export class Middleware {
         return {
           pass: false,
           response: buildError({
-            title: 'Voice Mismatch',
-            issue: `You must be in the same voice channel as me to control playback.`,
-            tip: `Join <#${guild.members.me.voice.channelId}> to control music.`
+            title: tr('mw.sameVoice.title'),
+            issue: pool('sameVoiceRequired'),
+            tip: `Join <#${guild.members.me.voice.channelId}>`
           })
         };
       }
@@ -168,9 +174,9 @@ export class Middleware {
         return {
           pass: false,
           response: buildError({
-            title: 'No Active Player',
-            issue: 'There is no music player currently active in this server.',
-            tip: 'Play a song using `/play <song>` or `.play <song>`.'
+            title: tr('mw.noPlayer.title'),
+            issue: pool('playerRequired'),
+            tip: tr('ui.error.contact')
           })
         };
       }
@@ -179,9 +185,9 @@ export class Middleware {
         return {
           pass: false,
           response: buildError({
-            title: 'Nothing Playing',
-            issue: 'The music queue is currently idle or ended.',
-            tip: 'Queue up a new song with `/play <song>`.'
+            title: tr('mw.playing.title'),
+            issue: pool('noTrackPlaying'),
+            tip: tr('ui.error.contact')
           })
         };
       }

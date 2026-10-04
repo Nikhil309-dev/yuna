@@ -3,11 +3,13 @@ import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class Add2PlaylistCommand extends Command {
 	constructor() {
@@ -34,7 +36,7 @@ class Add2PlaylistCommand extends Command {
 					options: [
 						{
 							name: "playlist",
-							description: "Playlist name or ID",
+							description: i18n.cmd("Playlist name or ID"),
 							type: 3,
 							required: false,
 						},
@@ -63,7 +65,7 @@ class Add2PlaylistCommand extends Command {
 		if (!player || !player.queue.current) {
 			return this._reply(
 				context,
-				this._createErrorContainer("No music is currently playing."),
+				this._createErrorContainer(i18n.cmd("No music is currently playing.")),
 			);
 		}
 
@@ -80,7 +82,7 @@ class Add2PlaylistCommand extends Command {
 			return this._reply(
 				context,
 				this._createErrorContainer(
-					"Playlist not found. Check the name or ID and try again.",
+					i18n.cmd("Playlist not found. Check the name or ID and try again."),
 				),
 			);
 		}
@@ -130,12 +132,12 @@ class Add2PlaylistCommand extends Command {
 
 	_createNoPlaylistsContainer() {
 		const content =
-			`**No Playlists Found**\n\n` +
-			`**${emoji.get("cross")} Status:** No playlists available\n\n` +
-			`You don't have any playlists to add tracks to.\n\n` +
-			`**${emoji.get("add")} Create your first playlist:**\n` +
-			`└─ Use \`create-playlist <name>\`\n\n` +
-			`*Create a playlist and come back to add tracks*`;
+			i18n.translateTitle("No Playlists Found") + "\n\n" +
+			i18n.cmd("**{emoji} Status:** No playlists available", { emoji: emoji.get("cross") }) + "\n\n" +
+			i18n.cmd("You don't have any playlists to add tracks to.") + "\n\n" +
+			i18n.cmd("**{emoji} Create your first playlist:**", { emoji: emoji.get("add") }) + "\n" +
+			i18n.cmd("└─ Use `create-playlist <name>`") + "\n\n" +
+			i18n.cmd("*Create a playlist and come back to add tracks*");
 
 		return buildContainer({
 			title: "Add to Playlist",
@@ -149,18 +151,18 @@ class Add2PlaylistCommand extends Command {
 		const current = player.queue.current;
 		const queueCount = player.queue.tracks.length;
 		const content =
-			`**Select a Playlist**\n\n` +
-			`**${emoji.get("music")} Current Track:** ${current.info.title}\n` +
-			`**${emoji.get("folder")} Queue:** ${queueCount} tracks\n` +
-			`**${emoji.get("info")} Your Playlists:** ${playlists.length}\n\n` +
-			`Choose a playlist below, then select what to add:\n` +
-			`└─ Current track only\n` +
-			`└─ Entire queue\n\n` +
-			`*Select a playlist from the dropdown menu*`;
+			i18n.cmd("**Select a Playlist**") + "\n\n" +
+			i18n.cmd("**{emoji} Current Track:** {title}", { emoji: emoji.get("music"), title: current.info.title }) + "\n" +
+			i18n.cmd("**{emoji} Queue:** {count} tracks", { emoji: emoji.get("folder"), count: queueCount }) + "\n" +
+			i18n.cmd("**{emoji} Your Playlists:** {count}", { emoji: emoji.get("info"), count: playlists.length }) + "\n\n" +
+			i18n.cmd("Choose a playlist below, then select what to add:") + "\n" +
+			i18n.cmd("└─ Current track only") + "\n" +
+			i18n.cmd("└─ Entire queue") + "\n\n" +
+			i18n.cmd("*Select a playlist from the dropdown menu*");
 
 		const selectMenu = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(new StringSelectMenuBuilder()
 				.setCustomId("playlist_select")
-				.setPlaceholder("Choose a playlist...")
+				.setPlaceholder(i18n.cmd("Choose a playlist..."))
 				.addOptions(
 					playlists.slice(0, 25).map((pl: any) => ({
 						label: pl.name,
@@ -186,21 +188,21 @@ class Add2PlaylistCommand extends Command {
 		const availableSlots = 50 - playlist.track_count;
 		const content =
 			`**Ready to Add Tracks**\n\n` +
-			`**${emoji.get("music")} Current Track:** ${current.info.title}\n` +
-			`**${emoji.get("folder")} Queue:** ${queueCount} tracks\n` +
-			`**${emoji.get("info")} Playlist:** ${playlist.track_count}/50 tracks\n` +
-			`**${emoji.get("add")} Available Slots:** ${availableSlots}\n\n` +
-			`Choose what to add to this playlist:\n\n` +
-			`*Use the buttons below to make your selection*`;
+			i18n.cmd("**{emoji} Current Track:** {title}", { emoji: emoji.get("music"), title: current.info.title }) + "\n" +
+			i18n.cmd("**{emoji} Queue:** {count} tracks", { emoji: emoji.get("folder"), count: queueCount }) + "\n" +
+			i18n.cmd("**{emoji} Playlist:** {count}/50 tracks", { emoji: emoji.get("info"), count: playlist.track_count }) + "\n" +
+			i18n.cmd("**{emoji} Available Slots:** {count}", { emoji: emoji.get("add"), count: availableSlots }) + "\n\n" +
+			i18n.cmd("Choose what to add to this playlist:") + "\n\n" +
+			i18n.cmd("*Use the buttons below to make your selection*");
 
 		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 				.setCustomId("add_current")
-				.setLabel("Add Current Track")
+				.setLabel(i18n.cmd("Add Current Track"))
 				.setStyle(ButtonStyle.Primary)
 				.setEmoji(emoji.get("add") || "➕"),
 			new ButtonBuilder()
 				.setCustomId("add_queue")
-				.setLabel(`Add Queue (${queueCount + 1})`)
+				.setLabel(i18n.cmd("Add Queue ({count})", { count: queueCount + 1 }))
 				.setStyle(ButtonStyle.Secondary)
 				.setEmoji(emoji.get("folder") || "📁"),
 		);
@@ -219,22 +221,22 @@ class Add2PlaylistCommand extends Command {
 		const queueCount = player.queue.tracks.length;
 		const availableSlots = 50 - selectedPlaylist.track_count;
 		const content =
-			`**Choose What to Add**\n\n` +
-			`**${emoji.get("music")} Current Track:** ${current.info.title}\n` +
-			`**${emoji.get("folder")} Queue:** ${queueCount} tracks\n` +
-			`**${emoji.get("info")} Playlist:** ${selectedPlaylist.track_count}/50 tracks\n` +
-			`**${emoji.get("add")} Available Slots:** ${availableSlots}\n\n` +
-			`Select what you want to add to this playlist:\n\n` +
-			`*Use the buttons below to make your selection*`;
+			i18n.cmd("**Choose What to Add**") + "\n\n" +
+			i18n.cmd("**{emoji} Current Track:** {title}", { emoji: emoji.get("music"), title: current.info.title }) + "\n" +
+			i18n.cmd("**{emoji} Queue:** {count} tracks", { emoji: emoji.get("folder"), count: queueCount }) + "\n" +
+			i18n.cmd("**{emoji} Playlist:** {count}/50 tracks", { emoji: emoji.get("info"), count: selectedPlaylist.track_count }) + "\n" +
+			i18n.cmd("**{emoji} Available Slots:** {count}", { emoji: emoji.get("add"), count: availableSlots }) + "\n\n" +
+			i18n.cmd("Select what you want to add to this playlist:") + "\n\n" +
+			i18n.cmd("*Use the buttons below to make your selection*");
 
 		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 				.setCustomId("add_current")
-				.setLabel("Add Current Track")
+				.setLabel(i18n.cmd("Add Current Track"))
 				.setStyle(ButtonStyle.Primary)
 				.setEmoji(emoji.get("add") || "➕"),
 			new ButtonBuilder()
 				.setCustomId("add_queue")
-				.setLabel(`Add Queue (${queueCount + 1})`)
+				.setLabel(i18n.cmd("Add Queue ({count})", { count: queueCount + 1 }))
 				.setStyle(ButtonStyle.Secondary)
 				.setEmoji(emoji.get("folder") || "📁"),
 		);
@@ -249,21 +251,21 @@ class Add2PlaylistCommand extends Command {
 	}
 
 	_createSuccessContainer(playlist: any, addedCount: any, skippedCount: any, action: any) {
-		const actionText = action === "current" ? "Current Track" : "Entire Queue";
+		const actionText = action === "current" ? i18n.cmd("Current Track") : i18n.cmd("Entire Queue");
 		const note = phrases.get("playlistUpdated");
-		const statusText = skippedCount > 0 ? `*Some tracks were skipped due to limits*` : `*${note}*`;
+		const statusText = skippedCount > 0 ? i18n.cmd("*Some tracks were skipped due to limits*") : `*${note}*`;
 		const content =
-			`**Tracks Added to Playlist**\n\n` +
-			`**${emoji.get("folder")} Playlist:** ${playlist.name}\n` +
-			`**${emoji.get("add")} Action:** Added ${actionText}\n` +
-			`**${emoji.get("check")} Added:** ${addedCount} track${addedCount > 1 ? "s" : ""}\n` +
-			`**${emoji.get("info")} Total:** ${playlist.track_count}/50 tracks\n` +
-			`${skippedCount > 0 ? `**${emoji.get("cross")} Skipped:** ${skippedCount} track${skippedCount > 1 ? "s" : ""}\n` : ""}` +
+			i18n.cmd("**Tracks Added to Playlist**") + "\n\n" +
+			i18n.cmd("**{emoji} Playlist:** {name}", { emoji: emoji.get("folder"), name: playlist.name }) + "\n" +
+			i18n.cmd("**{emoji} Action:** Added {action}", { emoji: emoji.get("add"), action: actionText }) + "\n" +
+			i18n.cmd("**{emoji} Added:** {count} track(s)", { emoji: emoji.get("check"), count: addedCount }) + "\n" +
+			i18n.cmd("**{emoji} Total:** {count}/50 tracks", { emoji: emoji.get("info"), count: playlist.track_count }) + "\n" +
+			`${skippedCount > 0 ? i18n.cmd("**{emoji} Skipped:** {count} track(s)", { emoji: emoji.get("cross"), count: skippedCount }) + "\n" : ""}` +
 			`\n${statusText}\n\n` +
-			`**${emoji.get("info")} Next Steps:**\n` +
-			`└─ Use \`my-playlists\` to view all playlists\n` +
-			`└─ Use \`playlist-info ${playlist.name}\` for details\n` +
-			`└─ Use \`load-pl ${playlist.name}\` to play`;
+			i18n.cmd("**{emoji} Next Steps:**", { emoji: emoji.get("info") }) + "\n" +
+			i18n.cmd("└─ Use `my-playlists` to view all playlists") + "\n" +
+			i18n.cmd("└─ Use `playlist-info {name}` for details", { name: playlist.name }) + "\n" +
+			i18n.cmd("└─ Use `load-pl {name}` to play", { name: playlist.name });
 
 		return buildSuccess(content, "Successfully Added");
 	}
@@ -274,7 +276,7 @@ class Add2PlaylistCommand extends Command {
 
 	_setupSelectionCollector(message: any, context: any, userId: any, player: any, playlists: any) {
 		const filter = (i: any) => i.user.id === userId;
-		const collector = message.createMessageComponentCollector({
+		const collector = componentCollectorSource(message).createMessageComponentCollector({
 			filter,
 			time: 300000,
 		});
@@ -318,7 +320,7 @@ class Add2PlaylistCommand extends Command {
 							});
 						} else {
 							await interaction.editReply({
-								components: [this._createErrorContainer(result?.message || "Failed to add tracks")],
+								components: [this._createErrorContainer(result?.message || i18n.cmd("Failed to add tracks"))],
 								flags: MessageFlags.IsComponentsV2,
 							});
 						}
@@ -327,7 +329,7 @@ class Add2PlaylistCommand extends Command {
 			} catch (error: any) {
 				logger.error("Add2PlaylistCommand", "Error processing collector", error);
 				await interaction.editReply({
-					components: [this._createErrorContainer("An error occurred while adding tracks.")],
+					components: [this._createErrorContainer(i18n.cmd("An error occurred while adding tracks."))],
 					flags: MessageFlags.IsComponentsV2,
 				});
 			}
@@ -343,7 +345,7 @@ class Add2PlaylistCommand extends Command {
 				if (error.code !== 10008) {
 					logger.error(
 						"Add2PlaylistCommand",
-						"Error updating expired message",
+						i18n.cmd("Error updating expired message"),
 						error,
 					);
 				}
@@ -353,7 +355,7 @@ class Add2PlaylistCommand extends Command {
 
 	_setupDirectCollector(message: any, context: any, userId: any, player: any, playlist: any) {
 		const filter = (i: any) => i.user.id === userId;
-		const collector = message.createMessageComponentCollector({
+		const collector = componentCollectorSource(message).createMessageComponentCollector({
 			filter,
 			time: 300000,
 		});
@@ -379,7 +381,7 @@ class Add2PlaylistCommand extends Command {
 				if (error.code !== 10008) {
 					logger.error(
 						"Add2PlaylistCommand",
-						"Error updating expired message",
+						i18n.cmd("Error updating expired message"),
 						error,
 					);
 				}
@@ -437,20 +439,20 @@ class Add2PlaylistCommand extends Command {
 			return { success: true, addedCount, skippedCount };
 		} catch (error: any) {
 			logger.error("Add2PlaylistCommand", "Error processing add", error);
-			return { success: false, message: "An error occurred while adding tracks." };
+			return { success: false, message: i18n.cmd("An error occurred while adding tracks.") };
 		}
 	}
 
 	_createExpiredContainer() {
 		const content =
-			`**This interaction has expired**\n\n` +
-			`**${emoji.get("reset")} Status:** Session timed out\n\n` +
-			`Run the command again to add tracks to your playlists.\n\n` +
-			`**${emoji.get("info")} Available Commands:**\n` +
-			`└─ \`add2pl\` - Select from menu\n` +
-			`└─ \`add2pl <playlist_name>\` - Direct add\n` +
-			`└─ \`my-playlists\` - View all playlists\n\n` +
-			`*Commands expire after 5 minutes of inactivity*`;
+			i18n.cmd("**This interaction has expired**") + "\n\n" +
+			i18n.cmd("**{emoji} Status:** Session timed out", { emoji: emoji.get("reset") }) + "\n\n" +
+			i18n.cmd("Run the command again to add tracks to your playlists.") + "\n\n" +
+			i18n.cmd("**{emoji} Available Commands:**", { emoji: emoji.get("info") }) + "\n" +
+			i18n.cmd("└─ `add2pl` - Select from menu") + "\n" +
+			i18n.cmd("└─ `add2pl <playlist_name>` - Direct add") + "\n" +
+			i18n.cmd("└─ `my-playlists` - View all playlists") + "\n\n" +
+			i18n.cmd("*Commands expire after 5 minutes of inactivity*");
 
 		return buildContainer({
 			title: "Interaction Expired",

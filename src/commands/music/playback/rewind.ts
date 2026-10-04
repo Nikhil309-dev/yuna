@@ -3,6 +3,7 @@ import {
 } from "discord.js";
 
 import { config } from "#config/config";
+import { i18n } from "#utils/i18n";
 import { Command, CommandContext } from '#core/Command';
 import { buildContainer, buildError } from '#ui/Theme';
 import emoji from "#config/emoji";
@@ -90,16 +91,20 @@ class RewindCommand extends Command {
     try {
       newPosition = await pm.rewind(seconds * 1000);
     } catch (err: any) {
-      return this._reply(context, this._createErrorContainer(`Failed to rewind: ${err.message}`));
+      return this._reply(context, this._createErrorContainer(i18n.cmd("Failed to rewind: {error}", { error: err.message })));
     }
 
-    const content = `**Track Rewound**\n\n` +
-      `└─ **${emoji.get("music") || "🎵"} Title:** ${currentTrack.info.title}\n` +
-      `└─ **${emoji.get("time") || "⏰"} Rewound by:** ${seconds} seconds\n` +
-      `└─ **${emoji.get("info") || "ℹ️"} New Position:** ${this._formatDuration(newPosition / 1000)} / ${this._formatDuration(currentTrack.info.duration / 1000)}`;
+    const content = i18n.cmd("**Track Rewound**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music") || "🎵", title: currentTrack.info.title }) + "\n" +
+      i18n.cmd("└─ **{emoji} Rewound by:** {seconds} seconds", { emoji: emoji.get("time") || "⏰", seconds }) + "\n" +
+      i18n.cmd("└─ **{emoji} New Position:** {position} / {total}", {
+        emoji: emoji.get("info") || "ℹ️",
+        position: this._formatDuration(newPosition / 1000),
+        total: this._formatDuration(currentTrack.info.duration / 1000),
+      });
 
     const container = buildContainer({
-      title: "Track Rewound",
+      title: i18n.translateTitle("Track Rewound"),
       content: content,
       thumbnail: currentTrack.info.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "ℹ️"

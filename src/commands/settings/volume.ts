@@ -18,13 +18,15 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class SetDefaultVolumeCommand extends Command {
   constructor() {
     super({
       name: "setdefaultvolume",
-      description: "Set the default volume for new music players in this server",
+      description: i18n.cmd("Set the default volume for new music players in this server"),
       usage: "setdefaultvolume [volume]",
       aliases: [ "defaultvolume", "setdefvol"],
       category: "settings",
@@ -42,10 +44,10 @@ class SetDefaultVolumeCommand extends Command {
         enabled: true,
         data: {
           name: "setdefaultvolume",
-          description: "Set the default volume for new music players in this server",
+          description: i18n.cmd("Set the default volume for new music players in this server"),
           options: [{
             name: "volume",
-            description: "Volume level (1-100). Leave empty to view current setting.",
+            description: i18n.cmd("Volume level (1-100). Leave empty to view current setting."),
             type: 4,
             required: false,
             min_value: 1,
@@ -71,12 +73,12 @@ class SetDefaultVolumeCommand extends Command {
     const user = isInteraction ? ctx.user : ctx.author;
 
     if (!ctx.member.permissions.has(PermissionFlagsBits.Administrator) && !config.ownerIds.includes(user.id)) {
-      return this._sendError(ctx, "Permission Denied", "Only server administrators can change the default volume setting.");
+      return this._sendError(ctx, i18n.translateTitle("Permission Denied"), i18n.cmd("Only server administrators can change the default volume setting."));
     }
 
     if (volume !== null) {
       if (isNaN(volume) || volume < 1 || volume > 100) {
-        return this._sendError(ctx, "Invalid Volume", "Volume must be a number between 1 and 100.");
+        return this._sendError(ctx, i18n.translateTitle("Invalid Volume"), i18n.cmd("Volume must be a number between 1 and 100."));
       }
       await this._setDefaultVolume(ctx, volume);
     } else {
@@ -89,8 +91,8 @@ class SetDefaultVolumeCommand extends Command {
       db.guild.setDefaultVolume(ctx.guild.id, volume);
 
       const container = this._createSuccessContainer(
-        "Default Volume Updated",
-        `The default volume for new music players has been set to **${volume}%**.\n\nThis will apply to all new music sessions started in this server.`,
+        i18n.translateTitle("Default Volume Updated"),
+        i18n.cmd("The default volume for new music players has been set to **{volume}%**.\n\nThis will apply to all new music sessions started in this server.", { volume }),
         volume
       );
 
@@ -108,7 +110,7 @@ class SetDefaultVolumeCommand extends Command {
       }
     } catch (error) {
       logger.error("SetDefaultVolume", "Error setting default volume:", error);
-      return this._sendError(ctx, "Database Error", "Failed to update the default volume setting. Please try again.");
+      return this._sendError(ctx, i18n.translateTitle("Database Error"), i18n.cmd("Failed to update the default volume setting. Please try again."));
     }
   }
 
@@ -118,18 +120,18 @@ class SetDefaultVolumeCommand extends Command {
       const container = new ContainerBuilder();
 
       container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`${emoji.get("info")} **Default Volume Settings**`)
+        new TextDisplayBuilder().setContent(i18n.cmd("{emoji} **{title}**", { emoji: emoji.get("info"), title: i18n.translateTitle("Default Volume Settings") }))
       );
 
       container.addSeparatorComponents(
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
       );
 
-      const content = `**${emoji.get("check")} Current Default Volume:** ${currentVolume}%\n\n` +
-        `This volume will be used when new music players are created in this server.\n\n` +
-        `**${emoji.get("folder")} Usage Examples:**\n` +
-        `├─ \`setdefaultvolume 75\`\n` +
-        `└─ \`/setdefaultvolume volume:75\``;
+      const content = i18n.cmd("**{emoji} Current Default Volume:** {volume}%", { emoji: emoji.get("check"), volume: currentVolume }) + "\n\n" +
+        i18n.cmd("This volume will be used when new music players are created in this server.") + "\n\n" +
+        i18n.cmd("**{emoji} Usage Examples:**", { emoji: emoji.get("folder") }) + "\n" +
+        i18n.cmd("├─ `setdefaultvolume 75`") + "\n" +
+        i18n.cmd("└─ `/setdefaultvolume volume:75`");
 
       const section = new SectionBuilder()
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(content))
@@ -180,12 +182,12 @@ class SetDefaultVolumeCommand extends Command {
       this._setupVolumeCollector(reply, isInteraction ? ctx.user.id : ctx.author.id);
     } catch (error) {
       logger.error("SetDefaultVolume", "Error showing volume settings:", error);
-      return this._sendError(ctx, "Database Error", "Failed to retrieve volume settings. Please try again.");
+      return this._sendError(ctx, i18n.translateTitle("Database Error"), i18n.cmd("Failed to retrieve volume settings. Please try again."));
     }
   }
 
   _setupVolumeCollector(message: Message, userId: any) {
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter: (i: any) => i.user.id === userId,
       time: 300_000,
     });
@@ -201,7 +203,7 @@ class SetDefaultVolumeCommand extends Command {
           const newVolume = db.guild.getDefaultVolume(message.guild!.id);
           const container = this._createSuccessContainer(
             "Default Volume Updated",
-            `The default volume for new music players has been set to **${newVolume}%**.\n\nThis will apply to all new music sessions started in this server.`,
+            i18n.cmd("The default volume for new music players has been set to **{volume}%**.\n\nThis will apply to all new music sessions started in this server.", { volume: newVolume }),
             newVolume
           );
 
@@ -249,16 +251,16 @@ class SetDefaultVolumeCommand extends Command {
     const volumeBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
 
     let volumeLevel = "";
-    if (volume <= 25) volumeLevel = `${emoji.get("folder")} Low`;
-    else if (volume <= 50) volumeLevel = `${emoji.get("info")} Medium`;
-    else if (volume <= 75) volumeLevel = `${emoji.get("check")} High`;
-    else volumeLevel = `${emoji.get("add")} Maximum`;
+    if (volume <= 25) volumeLevel = i18n.cmd("{emoji} Low", { emoji: emoji.get("folder") });
+    else if (volume <= 50) volumeLevel = i18n.cmd("{emoji} Medium", { emoji: emoji.get("info") });
+    else if (volume <= 75) volumeLevel = i18n.cmd("{emoji} High", { emoji: emoji.get("check") });
+    else volumeLevel = i18n.cmd("{emoji} Maximum", { emoji: emoji.get("add") });
 
-    return `**${emoji.get("add")} Volume Level:** ${volumeLevel}\n\`${volumeBar}\` ${volume}%`;
+    return i18n.cmd("**{emoji} Volume Level:** {level}\n`{bar}` {volume}%", { emoji: emoji.get("add"), level: volumeLevel, bar: volumeBar, volume });
   }
 
   _createExpiredContainer() {
-    return buildError("Interaction Expired. Run the command again to manage volume settings.", "Interaction Expired");
+    return buildError(i18n.cmd("Interaction Expired. Run the command again to manage volume settings."), "Interaction Expired");
   }
 
   async _sendError(ctx: any, title: any, description: any) {

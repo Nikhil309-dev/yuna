@@ -68,7 +68,7 @@ class ServersCommand extends Command {
       return this._displayGuildList(context, client, searchQuery);
     } catch (error: any) {
       logger.error("ServersCommand", "Error in servers command", error);
-      const err = buildError(ctx.t("failedToInspe"));
+      const err = buildError(ctx.t("failedToInspectServers"));
       if (interaction) return interaction.editReply({ components: [err], flags: MessageFlags.IsComponentsV2 });
       return message?.reply({ components: [err], flags: MessageFlags.IsComponentsV2 });
     }

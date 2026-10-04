@@ -11,7 +11,9 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const RADIO_STATIONS = [
   {
@@ -24,7 +26,7 @@ const RADIO_STATIONS = [
   {
     id: "bollywood",
     name: "Bollywood Radio Hits",
-    description: "Non-stop Hindi hits & romantic melodies",
+    description: i18n.cmd("Non-stop Hindi hits & romantic melodies"),
     emoji: "📻",
     url: "https://stream.zeno.fm/0r0xa792kwzuv"
   },
@@ -52,7 +54,7 @@ const RADIO_STATIONS = [
   {
     id: "retro",
     name: "80s Synth & Retro Wave",
-    description: "Nostalgic 80s synthwave, retrowave & electro hits",
+    description: i18n.cmd("Nostalgic 80s synthwave, retrowave & electro hits"),
     emoji: "🕹️",
     url: "https://stream.zeno.fm/91x4v5294geuv"
   }
@@ -80,7 +82,7 @@ class RadioCommand extends Command {
           options: [
             {
               name: "station",
-              description: "Select a 24/7 radio station to play",
+              description: i18n.cmd("Select a 24/7 radio station to play"),
               type: 3,
               required: false,
               choices: RADIO_STATIONS.map((s) => ({
@@ -114,13 +116,13 @@ class RadioCommand extends Command {
 
   async _sendRadioMenu(context: any, client: any) {
     const button = new ButtonBuilder()
-      .setLabel("Support")
+      .setLabel(i18n.cmd("Support"))
       .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
       .setStyle(ButtonStyle.Link);
 
-    let desc = `Select a 24/7 live radio station from the dropdown menu below to start streaming high-quality music instantly into your voice channel!\n\n`;
+    let desc = i18n.cmd("Select a 24/7 live radio station from the dropdown menu below to start streaming high-quality music instantly into your voice channel!") + "\n\n";
     RADIO_STATIONS.forEach((s) => {
-      desc += `${s.emoji} **${s.name}**\n${s.description}\n\`Command: .radio ${s.id}\`\n\n`;
+      desc += `${s.emoji} **${s.name}**\n${s.description}\n${i18n.cmd("Command: .radio {id}", { id: s.id })}\n\n`;
     });
 
     const container = buildContainer({
@@ -140,7 +142,7 @@ class RadioCommand extends Command {
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("radio_select_menu")
-        .setPlaceholder("Choose a 24/7 Radio Station...")
+        .setPlaceholder(i18n.cmd("Choose a 24/7 Radio Station..."))
         .addOptions(selectOptions)
     );
 
@@ -154,7 +156,7 @@ class RadioCommand extends Command {
     if (msg) {
       const userId = context.author?.id || context.user?.id;
       const filter = (i: any) => i.customId === "radio_select_menu" && i.user.id === userId;
-      const collector = msg.createMessageComponentCollector({ filter, time: 60000 });
+      const collector = componentCollectorSource(msg).createMessageComponentCollector({ filter, time: 60000 });
 
       collector.on("collect", async (interaction: any) => {
         const selectedId = interaction.values[0];
@@ -171,7 +173,7 @@ class RadioCommand extends Command {
   async _playRadioStation(context: any, client: any, station: any, existingMsg: any = null) {
     try {
       const button = new ButtonBuilder()
-        .setLabel("Support")
+        .setLabel(i18n.cmd("Support"))
         .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
         .setStyle(ButtonStyle.Link);
 
@@ -202,16 +204,20 @@ class RadioCommand extends Command {
       }
 
       const track = searchResult.tracks[0];
-      track.info.title = `${station.emoji} ${station.name} (Live Stream)`;
-      track.info.author = "24/7 Live Radio";
+      track.info.title = `${station.emoji} ${station.name} ${i18n.cmd("(Live Stream)")}`;
+      track.info.author = i18n.cmd("24/7 Live Radio");
 
       pm.queue.clear();
       await pm.addTracks(track);
       await pm.play();
 
       const successContainer = buildContainer({
-      title: `\`### ${station.emoji} Radio Stream Started\``,
-      content: `Now broadcasting **${station.name}** in <#${voiceChannel.id}>!\n\n*${station.description}*`,
+      title: `\`### ${station.emoji} ${i18n.translateTitle("Radio Stream Started")}\``,
+      content: i18n.cmd("Now broadcasting **{station}** in <#{channel}>!\n\n*{description}*", {
+        station: station.name,
+        channel: voiceChannel.id,
+        description: station.description,
+      }),
       thumbnail: config.assets.defaultTrackArtwork,
       icon: "ℹ️"
     });

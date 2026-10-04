@@ -18,7 +18,9 @@ import { Command } from "#core/Command";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class DevStatsCommand extends Command {
 	constructor() {
@@ -89,22 +91,22 @@ class DevStatsCommand extends Command {
 		const ping = client.ws.ping;
 
 		const processSectionContent =
-			`**Process & Memory Metrics**\n` +
-			`├─ **Heap Used:** ${heapUsedMb} MB / ${heapTotalMb} MB\n` +
-			`├─ **RSS Memory:** ${rssMb} MB\n` +
-			`├─ **External Memory:** ${externalMb} MB\n` +
-			`├─ **Process Uptime:** ${processUptime}\n` +
-			`└─ **Node Version:** ${process.version}\n\n` +
-			`**OS Host Metrics**\n` +
-			`├─ **Host Memory:** ${usedMemGb} GB used / ${totalMemGb} GB total (${freeMemGb} GB free)\n` +
-			`├─ **CPU Cores:** ${cpuCores} × \`${cpuModel.substring(0, 30)}\`\n` +
-			`├─ **OS Platform:** \`${os.type()} ${os.arch()}\`\n` +
-			`└─ **Host Uptime:** ${osUptime}\n\n` +
-			`**Discord & Music Engine**\n` +
-			`├─ **WebSocket Ping:** ${ping}ms\n` +
-			`├─ **Guilds / Users:** ${guildCount} servers / ${userCount} users\n` +
-			`├─ **Active Players:** ${playingCount} playing / ${players} total\n` +
-			`└─ **Environment:** ${process.env.NODE_ENV || "production"}`;
+			i18n.cmd("**Process & Memory Metrics**\n") +
+			i18n.cmd("├─ **Heap Used:** {used} MB / {total} MB\n", { used: heapUsedMb, total: heapTotalMb }) +
+			i18n.cmd("├─ **RSS Memory:** {value} MB\n", { value: rssMb }) +
+			i18n.cmd("├─ **External Memory:** {value} MB\n", { value: externalMb }) +
+			i18n.cmd("├─ **Process Uptime:** {uptime}\n", { uptime: processUptime }) +
+			i18n.cmd("└─ **Node Version:** {version}\n\n", { version: process.version }) +
+			i18n.cmd("**OS Host Metrics**\n") +
+			i18n.cmd("├─ **Host Memory:** {used} GB used / {total} GB total ({free} GB free)\n", { used: usedMemGb, total: totalMemGb, free: freeMemGb }) +
+			i18n.cmd("├─ **CPU Cores:** {cores} × `{model}`\n", { cores: cpuCores, model: cpuModel.substring(0, 30) }) +
+			i18n.cmd("├─ **OS Platform:** `{platform}`\n", { platform: `${os.type()} ${os.arch()}` }) +
+			i18n.cmd("└─ **Host Uptime:** {uptime}\n\n", { uptime: osUptime }) +
+			i18n.cmd("**Discord & Music Engine**\n") +
+			i18n.cmd("├─ **WebSocket Ping:** {ping}ms\n", { ping }) +
+			i18n.cmd("├─ **Guilds / Users:** {guilds} servers / {users} users\n", { guilds: guildCount, users: userCount }) +
+			i18n.cmd("├─ **Active Players:** {playing} playing / {total} total\n", { playing: playingCount, total: players }) +
+			i18n.cmd("└─ **Environment:** {env}", { env: process.env.NODE_ENV || "production" });
 
 		const section = new SectionBuilder()
 			.addTextDisplayComponents(
@@ -136,12 +138,12 @@ class DevStatsCommand extends Command {
 	}
 
 	_setupCollector(messageInstance: Message, userId: string, client: YunaClient) {
-		const collector = messageInstance.createMessageComponentCollector({
-			filter: (i) => i.user.id === userId,
+		const collector = componentCollectorSource(messageInstance).createMessageComponentCollector({
+			filter: (i: any) => i.user.id === userId,
 			time: 120_000,
 		});
 
-		collector.on("collect", async (interaction) => {
+		collector.on("collect", async (interaction: any) => {
 			try {
 				if (interaction.customId === "sys_refresh") {
 					const updatedContainer = this._createHealthDashboardContainer(client);
@@ -169,7 +171,7 @@ class DevStatsCommand extends Command {
 	_createErrorContainer(msg: string) {
 		const container = new ContainerBuilder();
 		container.addTextDisplayComponents(
-			new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} **System Dashboard Error**`),
+			new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} **{title}**", { emoji: emoji.get("cross"), title: i18n.translateTitle("System Dashboard Error") })),
 		);
 		container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 		container.addSectionComponents(

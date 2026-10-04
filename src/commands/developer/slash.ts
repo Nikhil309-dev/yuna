@@ -18,6 +18,7 @@ import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import phrases from '#utils/phrases';
+import { i18n } from '#utils/i18n';
 
 class UpdateSlashCommand extends Command {
 	constructor() {
@@ -40,7 +41,7 @@ class UpdateSlashCommand extends Command {
 		const initialContainer = new ContainerBuilder();
 
 		initialContainer.addTextDisplayComponents(
-			new TextDisplayBuilder().setContent(`### ${emoji.get("info")} Scanning Commands`)
+			new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Scanning Commands", { emoji: emoji.get("info") }))
 		);
 
 		initialContainer.addSeparatorComponents(
@@ -50,7 +51,7 @@ class UpdateSlashCommand extends Command {
 		initialContainer.addSectionComponents(
 			new SectionBuilder()
 				.addTextDisplayComponents(
-					new TextDisplayBuilder().setContent('**Checking for slash-enabled commands...**'),
+					new TextDisplayBuilder().setContent(i18n.cmd("**Checking for slash-enabled commands...**")),
 				)
 				.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 		);
@@ -64,7 +65,7 @@ class UpdateSlashCommand extends Command {
 				const noCommandsContainer = new ContainerBuilder();
 
 				noCommandsContainer.addTextDisplayComponents(
-					new TextDisplayBuilder().setContent(`### ${emoji.get("info")} No Commands Found`)
+					new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} No Commands Found", { emoji: emoji.get("info") }))
 				);
 
 				noCommandsContainer.addSeparatorComponents(
@@ -74,7 +75,7 @@ class UpdateSlashCommand extends Command {
 				noCommandsContainer.addSectionComponents(
 					new SectionBuilder()
 						.addTextDisplayComponents(
-							new TextDisplayBuilder().setContent('**No slash-enabled commands found to register.**'),
+							new TextDisplayBuilder().setContent(i18n.cmd("**No slash-enabled commands found to register.**")),
 						)
 						.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 				);
@@ -96,7 +97,7 @@ class UpdateSlashCommand extends Command {
 				const upToDateContainer = new ContainerBuilder();
 
 				upToDateContainer.addTextDisplayComponents(
-					new TextDisplayBuilder().setContent(`### ${emoji.get("check")} Commands Up to Date`)
+					new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Commands Up to Date", { emoji: emoji.get("check") }))
 				);
 
 				upToDateContainer.addSeparatorComponents(
@@ -106,7 +107,7 @@ class UpdateSlashCommand extends Command {
 				upToDateContainer.addSectionComponents(
 					new SectionBuilder()
 						.addTextDisplayComponents(
-							new TextDisplayBuilder().setContent(`**All ${slashCommandsData.length} commands are already registered and up to date.**`),
+							new TextDisplayBuilder().setContent(i18n.cmd("**All {count} commands are already registered and up to date.**", { count: slashCommandsData.length })),
 						)
 						.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 				);
@@ -121,7 +122,7 @@ class UpdateSlashCommand extends Command {
 			const validationContainer = new ContainerBuilder();
 
 			validationContainer.addTextDisplayComponents(
-				new TextDisplayBuilder().setContent(`### ${emoji.get("info")} Validating Commands`)
+				new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Validating Commands", { emoji: emoji.get("info") }))
 			);
 
 			validationContainer.addSeparatorComponents(
@@ -131,7 +132,7 @@ class UpdateSlashCommand extends Command {
 			validationContainer.addSectionComponents(
 				new SectionBuilder()
 					.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(`**Found ${slashCommandsData.length} commands - validating...**`),
+						new TextDisplayBuilder().setContent(i18n.cmd("**Found {count} commands - validating...**", { count: slashCommandsData.length })),
 					)
 					.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 			);
@@ -141,13 +142,13 @@ class UpdateSlashCommand extends Command {
 			const nameRegex = /^[\da-z-]{1,32}$/;
 			for (const cmdData of slashCommandsData as any[]) {
 				if (!nameRegex.test(cmdData.name)) {
-					const validationErrorMsg = `Validation failed for command name: "${cmdData.name}". Names must be 1-32 characters, all lowercase, and contain no spaces or special characters other than hyphens.`;
+					const validationErrorMsg = i18n.cmd('Validation failed for command name: "{name}". Names must be 1-32 characters, all lowercase, and contain no spaces or special characters other than hyphens.', { name: cmdData.name });
 					logger.error('UpdateSlash', validationErrorMsg, null);
 
 					const validationErrorContainer = new ContainerBuilder();
 
 					validationErrorContainer.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} Validation Failed`)
+						new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Validation Failed", { emoji: emoji.get("cross") }))
 					);
 
 					validationErrorContainer.addSeparatorComponents(
@@ -157,8 +158,8 @@ class UpdateSlashCommand extends Command {
 					validationErrorContainer.addSectionComponents(
 						new SectionBuilder()
 							.addTextDisplayComponents(
-								new TextDisplayBuilder().setContent(`**Invalid Command Name: \`${cmdData.name}\`**`),
-								new TextDisplayBuilder().setContent(`Names must be 1-32 characters, lowercase, and contain only letters, numbers, and hyphens.`),
+								new TextDisplayBuilder().setContent(i18n.cmd("**Invalid Command Name: `{name}`**", { name: cmdData.name })),
+								new TextDisplayBuilder().setContent(i18n.cmd("Names must be 1-32 characters, lowercase, and contain only letters, numbers, and hyphens.")),
 							)
 							.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 					);
@@ -174,7 +175,7 @@ class UpdateSlashCommand extends Command {
 			const processingContainer = new ContainerBuilder();
 
 			processingContainer.addTextDisplayComponents(
-				new TextDisplayBuilder().setContent(`### ${emoji.get("info")} Registering Commands`)
+				new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Registering Commands", { emoji: emoji.get("info") }))
 			);
 
 			processingContainer.addSeparatorComponents(
@@ -184,7 +185,7 @@ class UpdateSlashCommand extends Command {
 			processingContainer.addSectionComponents(
 				new SectionBuilder()
 					.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(`**Registering ${slashCommandsData.length} commands globally...**`),
+						new TextDisplayBuilder().setContent(i18n.cmd("**Registering {count} commands globally...**", { count: slashCommandsData.length })),
 					)
 					.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 			);
@@ -199,7 +200,7 @@ class UpdateSlashCommand extends Command {
 			const successContainer = new ContainerBuilder();
 
 			successContainer.addTextDisplayComponents(
-				new TextDisplayBuilder().setContent(`### ${emoji.get("check")} Registration Complete`)
+				new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Registration Complete", { emoji: emoji.get("check") }))
 			);
 
 			successContainer.addSeparatorComponents(
@@ -209,8 +210,8 @@ class UpdateSlashCommand extends Command {
 			successContainer.addSectionComponents(
 				new SectionBuilder()
 					.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(`**Successfully registered ${slashCommandsData.length} commands globally.**`),
-						new TextDisplayBuilder().setContent(`Commands may take up to 1 hour to appear globally.`),
+						new TextDisplayBuilder().setContent(i18n.cmd("**Successfully registered {count} commands globally.**", { count: slashCommandsData.length })),
+						new TextDisplayBuilder().setContent(i18n.cmd("Commands may take up to 1 hour to appear globally.")),
 					)
 					.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 			);
@@ -228,7 +229,7 @@ class UpdateSlashCommand extends Command {
 			const errorContainer = new ContainerBuilder();
 
 			errorContainer.addTextDisplayComponents(
-				new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} Registration Failed`)
+				new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} Registration Failed", { emoji: emoji.get("cross") }))
 			);
 
 			errorContainer.addSeparatorComponents(
@@ -238,8 +239,8 @@ class UpdateSlashCommand extends Command {
 			errorContainer.addSectionComponents(
 				new SectionBuilder()
 					.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent('**An error occurred while registering commands.**'),
-						new TextDisplayBuilder().setContent('Check console logs for more details.'),
+						new TextDisplayBuilder().setContent(i18n.cmd("**An error occurred while registering commands.**")),
+						new TextDisplayBuilder().setContent(i18n.cmd("Check console logs for more details.")),
 					)
 					.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets.defaultThumbnail))
 			);

@@ -146,7 +146,7 @@ export class AudioManager {
       .find((candidate: any) => candidate.connected === true);
 
     if (!node) {
-      throw new Error('No connected Lavalink node available. Start or reconnect Lavalink before using music commands.');
+      throw new Error('No Lavalink node is currently connected. Please try again in a moment.');
     }
 
     return node;

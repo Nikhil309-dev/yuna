@@ -2,11 +2,13 @@ import { Command, CommandContext } from '#core/Command';
 import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 import type { Message } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import emoji from "#config/emoji";
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const USER_PREFIX_LIMIT = 3;
 
@@ -43,31 +45,35 @@ class UserPrefixCommand extends Command {
   }
 
   _buildUIManagementContainer(username: any, prefixes: string[] = [], actionMessage: string | null = null) {
-    let content = `**Hello ${username}!** Manage your personal command prefixes here.\n\n`;
+    let content = i18n.cmd("**Hello {user}!** Manage your personal command prefixes here.\n\n", { user: username });
 
     if (actionMessage) {
       content += `${actionMessage}\n\n`;
     }
 
-    content += `**${emoji.get("folder")} Your Prefixes (${prefixes.length}/${USER_PREFIX_LIMIT}):**\n`;
+    content += i18n.cmd("**{emoji} Your Prefixes ({count}/{max}):**", {
+      emoji: emoji.get("folder"),
+      count: prefixes.length,
+      max: USER_PREFIX_LIMIT,
+    }) + "\n";
     if (prefixes.length > 0) {
       prefixes.forEach((prefix, index) => {
         const isLast = index === prefixes.length - 1;
         content += `${isLast ? '└─' : '├─'} \`${prefix}\`\n`;
       });
     } else {
-      content += `└─ ${emoji.get("cross")} No custom prefixes set\n`;
+      content += `└─ ${emoji.get("cross")} ${i18n.cmd("No custom prefixes set")}\n`;
     }
 
-    content += `\n**${emoji.get("check")} How it works:**\n`;
-    content += `└─ These prefixes work for you in any server where I am present\n`;
-    content += `└─ Use them instead of the server's default prefix\n`;
-    content += `└─ Maximum ${USER_PREFIX_LIMIT} prefixes allowed per user\n\n`;
+    content += `\n${i18n.cmd("**{emoji} How it works:**", { emoji: emoji.get("check") })}\n`;
+    content += i18n.cmd("└─ These prefixes work for you in any server where I am present\n");
+    content += i18n.cmd("└─ Use them instead of the server's default prefix\n");
+    content += i18n.cmd("└─ Maximum {max} prefixes allowed per user\n\n", { max: USER_PREFIX_LIMIT });
 
-    content += `**${emoji.get("add")} Examples:**\n`;
-    content += `└─ Add \`.\` as prefix → Use \`.play song\` anywhere\n`;
-    content += `└─ Add \`.\` as prefix → Use \`.help\` anywhere\n`;
-    content += `└─ Add \`y!\` as prefix → Use \`y!queue\` anywhere`;
+    content += i18n.cmd("**{emoji} Examples:**\n", { emoji: emoji.get("add") });
+    content += i18n.cmd("└─ Add `.` as prefix → Use `.play song` anywhere\n");
+    content += i18n.cmd("└─ Add `.` as prefix → Use `.help` anywhere\n");
+    content += i18n.cmd("└─ Add `y!` as prefix → Use `y!queue` anywhere");
 
     const components: ActionRowBuilder[] = [];
 
@@ -75,13 +81,13 @@ class UserPrefixCommand extends Command {
       new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId("up_add")
-          .setLabel("Add Prefix")
+          .setLabel(i18n.cmd("Add Prefix"))
           .setStyle(ButtonStyle.Secondary)
           .setEmoji(emoji.get("add"))
           .setDisabled(prefixes.length >= USER_PREFIX_LIMIT),
         new ButtonBuilder()
           .setCustomId("up_remove_all")
-          .setLabel("Remove All")
+          .setLabel(i18n.cmd("Remove All"))
           .setStyle(ButtonStyle.Secondary)
           .setEmoji(emoji.get("reset"))
           .setDisabled(prefixes.length === 0)
@@ -93,12 +99,12 @@ class UserPrefixCommand extends Command {
         new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("up_remove_select")
-            .setPlaceholder("Select specific prefixes to remove...")
+            .setPlaceholder(i18n.cmd("Select specific prefixes to remove..."))
             .setMinValues(1)
             .setMaxValues(prefixes.length)
             .addOptions(
               prefixes.map((p) => ({
-                label: `Remove prefix: "${p}"`,
+                label: i18n.cmd('Remove prefix: "{value}"', { value: p }),
                 value: p,
                 emoji: emoji.get("cross"),
               }))
@@ -153,14 +159,14 @@ class UserPrefixCommand extends Command {
     if (currentPrefixes.length >= USER_PREFIX_LIMIT) {
       return {
         success: false,
-        message: `You can only have ${USER_PREFIX_LIMIT} custom prefixes. Remove some existing prefixes first.`,
+        message: i18n.cmd("You can only have {max} custom prefixes. Remove some existing prefixes first.", { max: USER_PREFIX_LIMIT }),
       };
     }
 
     if (currentPrefixes.includes(trimmedPrefix)) {
       return {
         success: false,
-        message: `The prefix \`${trimmedPrefix}\` is already in your list.`,
+        message: i18n.cmd('The prefix `{prefix}` is already in your list.', { prefix: trimmedPrefix }),
       };
     }
 
@@ -170,7 +176,7 @@ class UserPrefixCommand extends Command {
     const note = phrases.get("prefixUpdated");
     return {
       success: true,
-      message: `Prefix \`${trimmedPrefix}\` has been added to your personal prefixes.\n\n*${note}*`,
+      message: i18n.cmd("Prefix `{prefix}` has been added to your personal prefixes.\n\n*{note}*", { prefix: trimmedPrefix, note }),
       prefixes: newPrefixes,
     };
   }
@@ -211,7 +217,7 @@ class UserPrefixCommand extends Command {
   }
 
   _setupCollector(message: Message, userId: any, username: any) {
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter: (i: any) => i.user.id === userId,
       time: 300_000,
     });
@@ -224,16 +230,16 @@ class UserPrefixCommand extends Command {
         if (interaction.customId === "up_add") {
           const modal = new ModalBuilder()
             .setCustomId("up_add_modal")
-            .setTitle("Add Personal Prefix")
+            .setTitle(i18n.cmd("Add Personal Prefix"))
             .addComponents(
               new ActionRowBuilder<TextInputBuilder>().addComponents(
                 new TextInputBuilder()
                   .setCustomId("new_prefix_input")
-                  .setLabel("New Prefix (max 5 characters)")
+                  .setLabel(i18n.cmd("New Prefix (max 5 characters)"))
                   .setStyle(TextInputStyle.Short)
                   .setRequired(true)
                   .setMaxLength(5)
-                  .setPlaceholder("Enter your custom prefix...")
+                  .setPlaceholder(i18n.cmd("Enter your custom prefix..."))
               )
             );
 
@@ -257,7 +263,7 @@ class UserPrefixCommand extends Command {
           await interaction.deferUpdate();
           db.users.setUserPrefixes(userId, []);
           prefixes = [];
-          actionMessage = `${emoji.get("check")} **All Prefixes Removed**\n\nAll custom prefixes have been successfully removed from your account.`;
+          actionMessage = i18n.cmd("{emoji} **All Prefixes Removed**\n\nAll custom prefixes have been successfully removed from your account.", { emoji: emoji.get("check") });
 
           await interaction.editReply({
             components: [this._buildUIManagementContainer(username, prefixes, actionMessage) as any],
@@ -269,7 +275,7 @@ class UserPrefixCommand extends Command {
           db.users.setUserPrefixes(userId, prefixes);
 
           const removedList = valuesToRemove.map((p: any) => `\`${p}\``).join(", ");
-          actionMessage = `${emoji.get("check")} **Prefixes Removed**\n\nSuccessfully removed: ${removedList}`;
+          actionMessage = i18n.cmd("{emoji} **Prefixes Removed**\n\nSuccessfully removed: {list}", { emoji: emoji.get("check"), list: removedList });
 
           await interaction.editReply({
             components: [this._buildUIManagementContainer(username, prefixes, actionMessage) as any],

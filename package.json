@@ -13,6 +13,9 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "tsx scripts/runtime-test.ts",
+    "audit": "tsx scripts/audit.ts",
+    "audit:dispatch": "tsx scripts/audit-dispatch.ts",
+    "audit:collectors": "tsx scripts/audit-collectors.ts",
     "bench": "node scripts/bench.js",
     "setup": "cp .env.example .env && echo 'Created .env file. Please edit it with your configuration.'"
   },

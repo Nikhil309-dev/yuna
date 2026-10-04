@@ -4,6 +4,7 @@ import { Command } from '#core/Command';
 import { buildContainer, buildError } from '#ui/Theme';
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 import { PlayerManager } from '#audio/PlayerManager';
 
 class PreviousCommand extends Command {
@@ -69,10 +70,10 @@ class PreviousCommand extends Command {
       );
     }
 
-    const content = `**Playing Previous Track**\n\n` +
-      `└─ **${(emoji as any).get("music") || "🎵"} Title:** ${previousTrack.info.title}\n` +
-      `└─ **${(emoji as any).get("folder") || "📁"} Artist:** ${previousTrack.info.author || "Unknown"}\n` +
-      `└─ **${(emoji as any).get("info") || "ℹ️"} Duration:** ${this._formatDuration(previousTrack.info.duration)}`;
+    const content = i18n.cmd("**Playing Previous Track**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: (emoji as any).get("music") || "🎵", title: previousTrack.info.title }) + "\n" +
+      i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: (emoji as any).get("folder") || "📁", author: previousTrack.info.author || i18n.cmd("Unknown") }) + "\n" +
+      i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: (emoji as any).get("info") || "ℹ️", duration: this._formatDuration(previousTrack.info.duration) });
 
     const container = buildContainer({
       title: "Playing Previous Track",

@@ -4,6 +4,7 @@ import { MessageFlags } from "discord.js";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 import { PlayerManager } from '#audio/PlayerManager';
 
 class SeekCommand extends Command {
@@ -88,13 +89,13 @@ class SeekCommand extends Command {
 
     await pm.seek(timeMs);
 
-    const content = `**Track Seeked**\n\n` +
-      `└─ **${emoji.get("music") || "🎵"} Title:** ${track.info.title}\n` +
-      `└─ **${emoji.get("time") || "⏰"} To:** ${this._formatDuration(timeMs / 1000)}\n` +
-      `└─ **${emoji.get("info") || "ℹ️"} Duration:** ${this._formatDuration(track.info.duration / 1000)}`;
+    const content = i18n.cmd("**Track Seeked**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music") || "🎵", title: track.info.title }) + "\n" +
+      i18n.cmd("└─ **{emoji} To:** {time}", { emoji: emoji.get("time") || "⏰", time: this._formatDuration(timeMs / 1000) }) + "\n" +
+      i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get("info") || "ℹ️", duration: this._formatDuration(track.info.duration / 1000) });
 
     const container = buildContainer({
-      title: "Track Seeked",
+      title: i18n.translateTitle("Track Seeked"),
       content: content,
       thumbnail: track.info.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "ℹ️"

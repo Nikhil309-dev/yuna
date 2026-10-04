@@ -30,7 +30,11 @@ export default {
 			new AutoplayEngine(client as any).clearSessionHistory(player.guildId);
 			cleanupGuildVoiceState(player.guildId);
 
-			if (client && player.textChannelId) {
+			// Commands that already send their own confirmation embed should not also
+			// trigger the generic "Player Disconnected" notice.
+			const quietReasons = new Set(['Stop command', 'Disconnect', 'Force disconnect', 'Destroyed']);
+
+			if (client && player.textChannelId && !quietReasons.has(reason)) {
 				const button = new ButtonBuilder()
 					.setLabel("Support")
 					.setURL("https://discord.gg/XYwwyDKhec")

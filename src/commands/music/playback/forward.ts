@@ -3,6 +3,7 @@ import {
 } from "discord.js";
 
 import { config } from "#config/config";
+import { i18n } from "#utils/i18n";
 import { Command, CommandContext } from '#core/Command';
 import { buildContainer, buildError } from '#ui/Theme';
 import emoji from "#config/emoji";
@@ -90,7 +91,7 @@ class ForwardCommand extends Command {
     try {
       newPosition = await pm.forward(seconds * 1000);
     } catch (err: any) {
-      return this._reply(context, this._createErrorContainer(`Failed to forward: ${err.message}`));
+      return this._reply(context, this._createErrorContainer(i18n.cmd("Failed to forward: {error}", { error: err.message })));
     }
     if (newPosition === false) {
       return this._reply(
@@ -100,14 +101,14 @@ class ForwardCommand extends Command {
     }
 
     const forwardNote = phrases.get("forwardSuccess");
-    const content = `**Track Forwarded**\n\n` +
-      `└─ **${emoji.get("music") || "🎵"} Title:** ${currentTrack.info.title}\n` +
-      `└─ **${emoji.get("time") || "⏰"} Forwarded by:** ${seconds} seconds\n` +
-      `└─ **${emoji.get("info") || "ℹ️"} New Position:** ${this._formatDuration(newPosition / 1000)}\n\n` +
+    const content = i18n.cmd("**Track Forwarded**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music") || "🎵", title: currentTrack.info.title }) + "\n" +
+      i18n.cmd("└─ **{emoji} Forwarded by:** {seconds} seconds", { emoji: emoji.get("time") || "⏰", seconds }) + "\n" +
+      i18n.cmd("└─ **{emoji} New Position:** {position}", { emoji: emoji.get("info") || "ℹ️", position: this._formatDuration(newPosition / 1000) }) + "\n\n" +
       `*${forwardNote}*`;
 
     const container = buildContainer({
-      title: "Track Forwarded",
+      title: i18n.translateTitle("Track Forwarded"),
       content: content,
       thumbnail: currentTrack.info?.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "ℹ️"

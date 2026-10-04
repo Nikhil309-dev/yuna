@@ -6,6 +6,7 @@ import { db } from '#database/Database';
 import { logger } from '#utils/logger';
 import { buildError, buildSuccess } from '#ui/Theme';
 import phrases from '#utils/phrases';
+import { i18n } from "#utils/i18n";
 
 class GrabCommand extends Command {
   public musicCard: MusicCard;
@@ -95,7 +96,7 @@ class GrabCommand extends Command {
 
     } catch (error: any) {
       logger.error('GrabCommand', `Failed to grab track: ${error.message}`, error);
-      return this._replyError(context, 'An error occurred while grabbing the track.');
+      return this._replyError(context, i18n.cmd('An error occurred while grabbing the track.'));
     }
   }
 

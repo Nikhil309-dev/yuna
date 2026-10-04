@@ -5,6 +5,7 @@ import type { Client } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class LeaderboardCommand extends Command {
   constructor() {
@@ -50,7 +51,7 @@ class LeaderboardCommand extends Command {
 
     for (let i = 0; i < topUsers.length; i++) {
       const dbUser = topUsers[i];
-      let username = "Unknown User";
+      let username = i18n.cmd("Unknown User");
 
       try {
         const fetchUser = await client.users.fetch(dbUser.user_id);
@@ -64,7 +65,7 @@ class LeaderboardCommand extends Command {
     }
 
     const userCoins = db.economy.getCoins(user.id);
-    content += `\n└─ **You** currently have **${userCoins.toLocaleString()}** coins.`;
+    content += i18n.cmd("\n└─ **You** currently have **{coins}** coins.", { coins: userCoins.toLocaleString() });
 
     const container = buildContainer({
       title: "Global Leaderboard (Top Listeners)",

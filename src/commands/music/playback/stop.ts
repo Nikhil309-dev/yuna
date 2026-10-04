@@ -12,6 +12,7 @@ import { Command, CommandContext } from '#core/Command';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 import { PlayerManager } from '#audio/PlayerManager';
 
 class StopCommand extends Command {
@@ -71,10 +72,14 @@ class StopCommand extends Command {
     await pm.stop();
 
     const container = buildContainer({
-      title: is247Enabled ? "Queue Cleared" : "Playback Stopped",
-      content: `**${is247Enabled ? "Queue Cleared" : "Playback Stopped"}**\n\n` +
-        `└─ **${emoji.get("info") || "ℹ️"} Status:** ${is247Enabled ? "Remaining in channel (24/7 mode enabled)" : "Disconnected from voice channel"}\n` +
-        `└─ **${emoji.get("folder") || "📁"} Tracks Cleared:** ${queueLength}`,
+      title: is247Enabled ? i18n.translateTitle("Queue Cleared") : i18n.translateTitle("Playback Stopped"),
+      content:
+        i18n.cmd(is247Enabled ? "**Queue Cleared**" : "**Playback Stopped**") + "\n\n" +
+        i18n.cmd("└─ **{emoji} Status:** {status}", {
+          emoji: emoji.get("info") || "ℹ️",
+          status: is247Enabled ? i18n.cmd("Remaining in channel (24/7 mode enabled)") : i18n.cmd("Disconnected from voice channel"),
+        }) + "\n" +
+        i18n.cmd("└─ **{emoji} Tracks Cleared:** {count}", { emoji: emoji.get("folder") || "📁", count: queueLength }),
       thumbnail: lastTrackInfo
               ? lastTrackInfo.artworkUrl
               : config.assets?.defaultThumbnail ||
@@ -88,12 +93,15 @@ class StopCommand extends Command {
       );
 
       const lastTrackContent =
-        `**Last Track**\n\n` +
-        `└─ **${emoji.get("music")} Title:** ${lastTrackInfo.title}\n` +
-        `└─ **${emoji.get("folder")} Artist:** ${lastTrackInfo.author}\n` +
-        `└─ **${emoji.get("info")} Duration:** ${lastTrackInfo.duration}\n` +
-        `└─ **${emoji.get("check")} Status:** ${is247Enabled ? "Cleared from queue" : "Stopped playing"}\n\n` +
-        `*Track information from last playback*`;
+        i18n.cmd("**Last Track**") + "\n\n" +
+        i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music"), title: lastTrackInfo.title }) + "\n" +
+        i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: emoji.get("folder"), author: lastTrackInfo.author }) + "\n" +
+        i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get("info"), duration: lastTrackInfo.duration }) + "\n" +
+        i18n.cmd("└─ **{emoji} Status:** {status}", {
+          emoji: emoji.get("check"),
+          status: is247Enabled ? i18n.cmd("Cleared from queue") : i18n.cmd("Stopped playing"),
+        }) + "\n\n" +
+        i18n.cmd("*Track information from last playback*");
 
       container.addSectionComponents(
         new SectionBuilder()

@@ -9,9 +9,11 @@ import { db } from '#database/Database';
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import emoji from "#config/emoji";
 import musicSource from "#config/sources";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const MAX_RESULTS = 5;
 
@@ -19,7 +21,7 @@ class SearchCommand extends Command {
   constructor() {
     super({
       name: "search",
-      description: "Search for music across multiple platforms",
+      description: i18n.cmd("Search for music across multiple platforms"),
       usage: "search <query> [--src yt/sp/am/sc]",
       aliases: ["find", "lookup"],
       category: "music",
@@ -34,7 +36,7 @@ class SearchCommand extends Command {
         autoDefer: true,
         data: {
           name: "search",
-          description: "Search for music across multiple platforms",
+          description: i18n.cmd("Search for music across multiple platforms"),
           options: [
             {
               name: "query",
@@ -45,11 +47,11 @@ class SearchCommand extends Command {
             },
             {
               name: "source",
-              description: "Music source to search from",
+              description: i18n.cmd("Music source to search from"),
               type: 3,
               required: false,
               choices: [
-                { name: "All Sources (Multi-Platform)", value: "all" },
+                { name: i18n.cmd("All Sources (Multi-Platform)"), value: "all" },
                 { name: "JioSaavn", value: "js" },
                 { name: "YouTube", value: "yt" },
                 { name: "Spotify", value: "sp" },
@@ -74,7 +76,7 @@ class SearchCommand extends Command {
     } else {
       if (args.length === 0) {
         return message.reply({
-          components: [this._createErrorContainer("Please provide a search query.")],
+          components: [this._createErrorContainer(i18n.cmd("Please provide a search query."))],
           flags: MessageFlags.IsComponentsV2,
         });
       }
@@ -84,7 +86,7 @@ class SearchCommand extends Command {
     }
 
     if (!query || !query.trim()) {
-      const errorContainer = this._createErrorContainer("Please provide a search query.");
+      const errorContainer = this._createErrorContainer(i18n.cmd("Please provide a search query."));
       const payload = { components: [errorContainer], flags: MessageFlags.IsComponentsV2 };
       if (context.editReply && (context.deferred || context.replied)) {
         return await context.editReply(payload);
@@ -127,7 +129,7 @@ class SearchCommand extends Command {
     } catch (error) {
       logger.error('SearchCommand', 'Error performing search', error);
       return this._editReply(loadingMessage, this._createErrorContainer(
-        "Search failed. Please try again later."
+        i18n.cmd("Search failed. Please try again later.")
       ));
     }
   }
@@ -192,8 +194,8 @@ class SearchCommand extends Command {
 
     if (!currentResults || currentResults.length === 0) {
       return buildContainer({
-        title: "Music Search Results",
-        content: `*No tracks found for "${query}". Try a different search term or platform.*`,
+        title: i18n.translateTitle("Music Search Results"),
+        content: i18n.cmd('*No tracks found for "{query}". Try a different search term or platform.*', { query }),
         thumbnail: config.assets.defaultTrackArtwork,
         icon: emoji.get("warning") || "⚠️"
       });
@@ -220,7 +222,7 @@ class SearchCommand extends Command {
     content += `\n*Select a song from the dropdown menu below to play.*`;
 
     const container = buildContainer({
-      title: "Music Search Results",
+      title: i18n.translateTitle("Music Search Results"),
       content,
       thumbnail: currentResults[0]?.info?.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "🎵"
@@ -228,7 +230,7 @@ class SearchCommand extends Command {
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("search_select")
-      .setPlaceholder("Select a track to play...")
+      .setPlaceholder(i18n.cmd("Select a track to play..."))
       .addOptions(options);
 
     container.addActionRowComponents(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu));
@@ -238,8 +240,8 @@ class SearchCommand extends Command {
 
   _createLoadingContainer(query: any) {
     return buildContainer({
-      title: "Searching Music",
-      content: `> ${emoji.get("loading") || "⏳"} Searching for \`${query}\`...`,
+      title: i18n.translateTitle("Searching Music"),
+      content: i18n.cmd("> {emoji} Searching for `{query}`...", { emoji: emoji.get("loading") || "⏳", query }),
       icon: emoji.get("loading") || "⏳"
     });
   }
@@ -250,8 +252,8 @@ class SearchCommand extends Command {
 
   _createProcessingContainer(count: any) {
     const container = buildContainer({
-      title: "Processing Selection",
-      content: `Processing ${count} selection(s)...`,
+      title: i18n.translateTitle("Processing Selection"),
+      content: i18n.cmd("Processing {count} selection(s)...", { count }),
       thumbnail: config.assets.defaultTrackArtwork,
       icon: "ℹ️"
     });
@@ -265,8 +267,8 @@ class SearchCommand extends Command {
 
     if (availableSlots <= 0) {
       const limitMessage = premiumStatus.hasPremium
-        ? `Premium queue is full! You can have up to **${premiumStatus.maxSongs}** songs in queue.`
-        : `Free tier queue is full! You can have up to **${premiumStatus.maxSongs}** songs in queue.\n*Upgrade to premium for up to **${config.queue.maxSongs.premium}** songs!*`;
+        ? i18n.cmd("Premium queue is full! You can have up to **{count}** songs in queue.", { count: premiumStatus.maxSongs })
+        : i18n.cmd("Free tier queue is full! You can have up to **{count}** songs in queue.\n*Upgrade to premium for up to **{premium}** songs!*", { count: premiumStatus.maxSongs, premium: config.queue.maxSongs.premium });
 
       return { allowed: false, message: limitMessage };
     }
@@ -316,9 +318,9 @@ class SearchCommand extends Command {
       'am': 'Apple Music',
       'sc': 'SoundCloud',
       'dz': 'Deezer',
-      'all': 'All Sources'
+      'all': i18n.cmd('All Sources')
     };
-    return sourceNames[source] || 'Unknown';
+    return sourceNames[source] || i18n.cmd('Unknown');
   }
 
   _normalizeSource(source: any) {
@@ -349,7 +351,7 @@ class SearchCommand extends Command {
 
   _setupSearchCollector(message: any, client: any, userId: any, guildId: any, searchData: any) {
     const filter = (i: any) => i.customId === "search_select";
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 60_000,
     });
@@ -395,9 +397,9 @@ class SearchCommand extends Command {
 
         const container = buildSuccess(
           wasEmpty
-            ? `Now streaming **${track.info.title}**!`
-            : `Added **${track.info.title}** to the queue!`,
-          wasEmpty ? "Now Playing" : "Queued Track"
+            ? i18n.cmd("Now streaming **{title}**!", { title: track.info.title })
+            : i18n.cmd("Added **{title}** to the queue!", { title: track.info.title }),
+          wasEmpty ? i18n.translateTitle("Now Playing") : i18n.translateTitle("Queued Track")
         );
 
         await interaction.editReply({ components: [container] });

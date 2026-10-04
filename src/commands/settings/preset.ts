@@ -14,6 +14,7 @@ import emoji from '#config/emoji';
 import { config } from '#config/config';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import phrases from '#utils/phrases';
+import { i18n } from "#utils/i18n";
 
 class PresetCommand extends Command {
   constructor() {
@@ -35,12 +36,12 @@ class PresetCommand extends Command {
           options: [
             {
               name: 'style',
-              description: 'The style to use for Now Playing messages.',
+              description: i18n.cmd('The style to use for Now Playing messages.'),
               type: 3,
               required: true,
               choices: [
-                { name: 'Card Style', value: 'card' },
-                { name: 'Text Style', value: 'text' }
+                { name: i18n.cmd('Card Style'), value: 'card' },
+                { name: i18n.cmd('Text Style'), value: 'text' }
               ]
             }
           ]
@@ -58,26 +59,30 @@ class PresetCommand extends Command {
   }
 
   async slashExecute({ interaction }: any) {
-    const style = interaction.options.getString('style').toLowerCase();
-    await this.setStyle(interaction, interaction.user.id, style);
+    const rawStyle = interaction.options.getString('style');
+    // No style supplied → show the current style (same as the prefix path).
+    if (!rawStyle) return this.sendCurrentStyle(interaction, interaction.user.id);
+    await this.setStyle(interaction, interaction.user.id, rawStyle.toLowerCase());
   }
 
   async sendCurrentStyle(context: CommandContext, userId: any) {
     const currentStyle = db.getNpStyle(userId);
     const button = new ButtonBuilder()
-      .setLabel("Support")
+      .setLabel(i18n.cmd("Support"))
       .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
       .setStyle(ButtonStyle.Link);
 
     const container = new ContainerBuilder()
       .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`### ${emoji.get('info') || 'ℹ️'} Current Player Style`)
+        new TextDisplayBuilder().setContent(`### ${emoji.get('info') || 'ℹ️'} ${i18n.cmd("Current Player Style")}`)
       )
       .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
       .addSectionComponents(
         new SectionBuilder()
           .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`Your current Now Playing style is set to: **${currentStyle === 'card' ? 'Card Style' : 'Text Style'}**\n\nUse \`.preset <card|text>\` to change it.`)
+            new TextDisplayBuilder().setContent(i18n.cmd("Your current Now Playing style is set to: **{style}**\n\nUse `.preset <card|text>` to change it.", {
+              style: currentStyle === 'card' ? i18n.cmd("Card Style") : i18n.cmd("Text Style"),
+            }))
           )
           .setButtonAccessory(button)
       );
@@ -90,7 +95,7 @@ class PresetCommand extends Command {
 
   async setStyle(context: CommandContext, userId: any, style: any) {
     if (!['card', 'text'].includes(style)) {
-      const errorContainer = buildError('Please specify either `card` or `text`.', 'Invalid Style');
+      const errorContainer = buildError(i18n.cmd('Please specify either `card` or `text`.'), i18n.translateTitle('Invalid Style'));
       const payload = { components: [errorContainer], flags: MessageFlags.IsComponentsV2 };
       if (context.editReply && (context.deferred || context.replied)) await context.editReply(payload);
       else if (context.reply) await context.reply(payload);
@@ -102,8 +107,11 @@ class PresetCommand extends Command {
 
     const note = phrases.get("presetUpdated");
     const successContainer = buildSuccess(
-      `Your Now Playing style has been successfully changed to **${style === 'card' ? 'Card Style' : 'Text Style'}**.\n\n*${note}*`,
-      'Style Updated'
+      i18n.cmd("Your Now Playing style has been successfully changed to **{style}**.\n\n*{note}*", {
+        style: style === 'card' ? i18n.cmd("Card Style") : i18n.cmd("Text Style"),
+        note,
+      }),
+      i18n.translateTitle('Style Updated')
     );
 
     const payload = { components: [successContainer], flags: MessageFlags.IsComponentsV2 };

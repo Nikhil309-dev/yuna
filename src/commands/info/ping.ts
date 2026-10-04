@@ -11,7 +11,9 @@ import emoji from "#config/emoji";
 import { PingCard } from "#ui/cards/PingCard";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class PingCommand extends Command {
   constructor() {
@@ -25,6 +27,9 @@ class PingCommand extends Command {
       cooldown: 3,
       slash: {
         enabled: true,
+        // This command defers itself to measure API latency accurately, so the
+        // shared pipeline must not pre-defer it.
+        autoDefer: false,
         data: {
           name: "ping",
           description: "Check visual Yuna latency card",
@@ -45,12 +50,12 @@ class PingCommand extends Command {
         flags: MessageFlags.IsComponentsV2,
       });
 
-      this._setupCollector(pingMessage, message.author.id, client);
+      this._setupCollector(pingMessage ?? message, message.author.id, client);
     } catch (error: any) {
       logger.error("PingCommand", `Error in prefix command: ${error.message}`, error);
       await message
         .reply({
-          components: [this._createErrorContainer("An error occurred while checking ping.")],
+          components: [this._createErrorContainer(i18n.cmd("An error occurred while checking ping."))],
           flags: MessageFlags.IsComponentsV2,
         })
         .catch(() => {});
@@ -72,7 +77,7 @@ class PingCommand extends Command {
         flags: MessageFlags.IsComponentsV2,
       });
 
-      this._setupCollector(pingMessage, interaction.user.id, client);
+      this._setupCollector(pingMessage ?? interaction, interaction.user.id, client);
     } catch (error: any) {
       logger.error("PingCommand", `Error in slash command: ${error.message}`, error);
     }
@@ -108,8 +113,14 @@ class PingCommand extends Command {
     return buildError(msg, "Error");
   }
 
-  _setupCollector(pingMessage: any, userId: any, client: Client) {
-    const collector = pingMessage.createMessageComponentCollector({
+  _setupCollector(source: any, userId: any, client: Client) {
+    const collectorTarget = componentCollectorSource(source);
+    // Slash replies can resolve to an interaction (whose collector lives on
+    // `interaction.response`); guard so a missing collector never crashes the
+    // command after an otherwise successful reply.
+    if (typeof collectorTarget?.createMessageComponentCollector !== "function") return;
+
+    const collector = collectorTarget.createMessageComponentCollector({
       filter: (i: any) => i.user.id === userId,
       time: 120_000,
     });

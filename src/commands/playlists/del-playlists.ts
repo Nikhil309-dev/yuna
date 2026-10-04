@@ -8,6 +8,7 @@ import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class DeletePlaylistCommand extends Command {
 	constructor() {
@@ -32,7 +33,7 @@ class DeletePlaylistCommand extends Command {
 					options: [
 						{
 							name: "playlist",
-							description: "Playlist name or ID to delete",
+							description: i18n.cmd("Playlist name or ID to delete"),
 							type: 3,
 							required: true,
 						},
@@ -111,11 +112,11 @@ class DeletePlaylistCommand extends Command {
 			logger.error("DeletePlaylistCommand", "Error deleting playlist", error);
 
 			let errorMessage =
-				"An error occurred while deleting the playlist. Please try again.";
+				i18n.cmd("An error occurred while deleting the playlist. Please try again.");
 			if (error.message === "Playlist not found") {
-				errorMessage = "The specified playlist could not be found.";
+				errorMessage = i18n.cmd("The specified playlist could not be found.");
 			} else if (error.message === "Access denied") {
-				errorMessage = "You don't have permission to delete this playlist.";
+				errorMessage = i18n.cmd("You don't have permission to delete this playlist.");
 			}
 
 			return this._editReply(
@@ -127,17 +128,17 @@ class DeletePlaylistCommand extends Command {
 
 	_createUsageContainer() {
 		const content =
-			`**Missing Playlist Identifier**\n\n` +
-			`**${emoji.get("cross")} Status:** Identifier Required\n\n` +
-			`Please specify which playlist to delete.\n\n` +
-			`**${emoji.get("info")} Usage:**\n` +
-			`└─ \`delete-playlist <playlist_name>\`\n` +
-			`└─ \`delete-pl <playlist_id>\`\n` +
-			`└─ \`remove-playlist <playlist_name>\`\n` +
-			`└─ \`del-playlist <playlist_name>\`\n\n` +
-			`**${emoji.get("folder")} Examples:**\n` +
-			`└─ \`delete-playlist My Favorites\`\n` +
-			`└─ \`delete-pl pl_abc12345\`\n` +
+			i18n.cmd("**Missing Playlist Identifier**") + "\n\n" +
+			i18n.cmd("**{emoji} Status:** Identifier Required", { emoji: emoji.get("cross") }) + "\n\n" +
+			i18n.cmd("Please specify which playlist to delete.") + "\n\n" +
+			i18n.cmd("**{emoji} Usage:**", { emoji: emoji.get("info") }) + "\n" +
+			i18n.cmd("└─ `delete-playlist <playlist_name>`") + "\n" +
+			i18n.cmd("└─ `delete-pl <playlist_id>`") + "\n" +
+			i18n.cmd("└─ `remove-playlist <playlist_name>`") + "\n" +
+			i18n.cmd("└─ `del-playlist <playlist_name>`") + "\n\n" +
+			i18n.cmd("**{emoji} Examples:**", { emoji: emoji.get("folder") }) + "\n" +
+			i18n.cmd("└─ `delete-playlist My Favorites`") + "\n" +
+			i18n.cmd("└─ `delete-pl pl_abc12345`") + "\n" +
 			`└─ \`remove-playlist Chill Vibes\`\n\n` +
 			`**${emoji.get("info")} Tips:**\n` +
 			`└─ Use \`my-playlists\` to see all your playlists\n` +
@@ -155,11 +156,11 @@ class DeletePlaylistCommand extends Command {
 
 	_createLoadingContainer(playlistQuery: any) {
 		const content =
-			`**Locating and removing playlist**\n\n` +
-			`**${emoji.get("loading")} Status:** Processing\n` +
-			`**${emoji.get("folder")} Target:** ${playlistQuery}\n\n` +
-			`Please wait while we locate and delete your playlist.\n\n` +
-			`*Verifying permissions and removing data...*`;
+			i18n.cmd("**Locating and removing playlist**") + "\n\n" +
+			i18n.cmd("**{emoji} Status:** Processing", { emoji: emoji.get("loading") }) + "\n" +
+			i18n.cmd("**{emoji} Target:** {target}", { emoji: emoji.get("folder"), target: playlistQuery }) + "\n\n" +
+			i18n.cmd("Please wait while we locate and delete your playlist.") + "\n\n" +
+			i18n.cmd("*Verifying permissions and removing data...*");
 
 		return buildContainer({
 			title: "Deleting Playlist",
@@ -171,8 +172,8 @@ class DeletePlaylistCommand extends Command {
 
 	_createNoPlaylistsContainer() {
 		return buildError(
-			`You don't have any custom playlists yet.\n\nUse \`/create-playlist <name>\` to get started!`,
-			"No Playlists Found"
+			i18n.cmd("You don't have any custom playlists yet.\n\nUse `/create-playlist <name>` to get started!"),
+			i18n.translateTitle("No Playlists Found")
 		);
 	}
 
@@ -182,10 +183,10 @@ class DeletePlaylistCommand extends Command {
 			.map((pl) => `└─ \`${pl.name}\``)
 			.join("\n");
 		return buildError(
-			`Could not find a playlist matching \`${playlistQuery}\`.\n\n` +
-			`**Your playlists:**\n${list || "*(none)*"}\n\n` +
-			`Use \`my-playlists\` to see all of your playlists.`,
-			"Playlist Not Found"
+			i18n.cmd("Could not find a playlist matching `{query}`.", { query: playlistQuery }) + "\n\n" +
+			i18n.cmd("**Your playlists:**\n{list}", { list: list || i18n.cmd("*(none)*") }) + "\n\n" +
+			i18n.cmd("Use `my-playlists` to see all of your playlists."),
+			i18n.translateTitle("Playlist Not Found")
 		);
 	}
 
@@ -195,13 +196,13 @@ class DeletePlaylistCommand extends Command {
 		const note = phrases.get("playlistDeleted");
 		const content =
 			`**${note}**\n\n` +
-			`**${emoji.get("cross")} Name:** ${playlist.name}\n` +
-			`**${emoji.get("info")} ID:** ${playlistId}\n` +
-			`**${emoji.get("music")} Tracks Lost:** ${playlist.track_count || 0} songs\n` +
-			`**${emoji.get("check")} Deleted:** ${deletedDate}\n\n` +
-			`**${emoji.get("folder")} Next Steps:**\n` +
-			`└─ Use \`create-playlist\` to make new ones\n` +
-			`└─ Use \`my-playlists\` to see remaining playlists`;
+			i18n.cmd("**{emoji} Name:** {name}\n", { emoji: emoji.get("cross"), name: playlist.name }) +
+			i18n.cmd("**{emoji} ID:** {id}\n", { emoji: emoji.get("info"), id: playlistId }) +
+			i18n.cmd("**{emoji} Tracks Lost:** {count} songs\n", { emoji: emoji.get("music"), count: playlist.track_count || 0 }) +
+			i18n.cmd("**{emoji} Deleted:** {date}\n\n", { emoji: emoji.get("check"), date: deletedDate }) +
+			i18n.cmd("**{emoji} Next Steps:**\n", { emoji: emoji.get("folder") }) +
+			i18n.cmd("└─ Use `create-playlist` to make new ones\n") +
+			i18n.cmd("└─ Use `my-playlists` to see remaining playlists");
 
 		return buildSuccess(content, "Playlist Deleted Successfully");
 	}

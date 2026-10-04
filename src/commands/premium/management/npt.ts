@@ -2,11 +2,13 @@ import { Command, CommandContext } from '#core/Command';
 import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder } from "discord.js";
 import type { Message } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import { config } from "#config/config";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class NoPrefixToggleCommand extends Command {
   constructor() {
@@ -41,52 +43,52 @@ class NoPrefixToggleCommand extends Command {
   }
 
   _createUIContainer(username: any, currentStatus: any, action: string | null = null) {
-    const statusText = currentStatus ? "Enabled" : "Disabled";
+    const statusText = currentStatus ? i18n.cmd("Enabled") : i18n.cmd("Disabled");
     const statusEmoji = currentStatus ? emoji.get("check") : emoji.get("cross");
 
-    let content = `**Hello ${username}!** Manage your personal no-prefix mode here.\n\n`;
+    let content = i18n.cmd("**Hello {user}!** Manage your personal no-prefix mode here.\n\n", { user: username });
 
     if (action) {
       const note = phrases.get("modeToggled");
-      content += `${emoji.get("check")} **Action Result**\nYour no-prefix mode has been **${action}**!\n*${note}*\n\n`;
+      content += i18n.cmd("{emoji} **Action Result**\nYour no-prefix mode has been **{action}**!\n*{note}*\n\n", { emoji: emoji.get("check"), action, note });
     }
 
-    content += `**${emoji.get("folder")} Current Status:** ${statusText} ${statusEmoji}\n\n`;
+    content += i18n.cmd("**{emoji} Current Status:** {status} {statusEmoji}\n\n", { emoji: emoji.get("folder"), status: statusText, statusEmoji });
 
-    content += `**${emoji.get("add")} How it works:**\n`;
+    content += i18n.cmd("**{emoji} How it works:**\n", { emoji: emoji.get("add") });
     if (currentStatus) {
-      content += `└─ You can use commands without any prefix\n`;
-      content += `└─ Example: Type \`ping\` instead of \`.ping\`\n`;
-      content += `└─ Or \`play song\` instead of \`.play song\`\n`;
-      content += `└─ Basically, the bot will respond to commands without any prefix!\n\n`;
+      content += i18n.cmd("└─ You can use commands without any prefix\n");
+      content += i18n.cmd("└─ Example: Type `ping` instead of `.ping`\n");
+      content += i18n.cmd("└─ Or `play song` instead of `.play song`\n");
+      content += i18n.cmd("└─ Basically, the bot will respond to commands without any prefix!\n\n");
     } else {
-      content += `└─ You need to use a server's prefix or mention me\n`;
-      content += `└─ Example: Use \`.ping\` or \`@Yuna ping\`\n`;
-      content += `└─ Enable this to use commands without prefixes\n`;
-      content += `└─ Premium feature for enhanced convenience\n\n`;
+      content += i18n.cmd("└─ You need to use a server's prefix or mention me\n");
+      content += i18n.cmd("└─ Example: Use `.ping` or `@Yuna ping`\n");
+      content += i18n.cmd("└─ Enable this to use commands without prefixes\n");
+      content += i18n.cmd("└─ Premium feature for enhanced convenience\n\n");
     }
 
-    content += `**${emoji.get("reset")} Benefits:**\n`;
-    content += `└─ Faster command usage without typing prefixes\n`;
-    content += `└─ Works across all servers instantly\n`;
-    content += `└─ Toggle on/off anytime you want\n`;
-    content += `└─ Premium exclusive feature`;
+    content += i18n.cmd("**{emoji} Benefits:**\n", { emoji: emoji.get("reset") });
+    content += i18n.cmd("└─ Faster command usage without typing prefixes\n");
+    content += i18n.cmd("└─ Works across all servers instantly\n");
+    content += i18n.cmd("└─ Toggle on/off anytime you want\n");
+    content += i18n.cmd("└─ Premium exclusive feature");
 
     const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("npt_toggle")
-        .setLabel(currentStatus ? "Disable No-Prefix" : "Enable No-Prefix")
+        .setLabel(currentStatus ? i18n.cmd("Disable No-Prefix") : i18n.cmd("Enable No-Prefix"))
         .setStyle(currentStatus ? ButtonStyle.Danger : ButtonStyle.Success)
         .setEmoji(currentStatus ? emoji.get("cross") : emoji.get("check")),
       new ButtonBuilder()
         .setCustomId("npt_help")
-        .setLabel("Help & Info")
+        .setLabel(i18n.cmd("Help & Info"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get("info")),
     );
 
     return buildContainer({
-      title: "No-Prefix Mode",
+      title: i18n.translateTitle("No-Prefix Mode"),
       content,
       thumbnail: config.assets.defaultThumbnail,
       icon: emoji.get("info"),
@@ -96,16 +98,16 @@ class NoPrefixToggleCommand extends Command {
 
   _createHelpContainer() {
     const content =
-      `**What is No-Prefix Mode?**\nA premium feature that allows you to use bot commands without typing a prefix.\n\n` +
-      `**${emoji.get("check")} How it works:**\n` +
-      `└─ Instead of \`.ping\`, just type \`ping\`\n` +
-      `└─ Instead of \`.play song\`, just type \`play song\`\n` +
-      `└─ Your personal commands are now prefix-free!\n\n` +
-      `**${emoji.get("folder")} Examples:**\n` +
-      `└─ \`help\` → Shows help menu\n` +
-      `└─ \`play never gonna give you up\` → Plays music\n` +
-      `└─ \`queue\` → Shows music queue\n` +
-      `└─ \`botinfo\` → Shows bot information\n\n` +
+      i18n.cmd("**What is No-Prefix Mode?**\nA premium feature that allows you to use bot commands without typing a prefix.\n\n") +
+      i18n.cmd("**{emoji} How it works:**\n", { emoji: emoji.get("check") }) +
+      i18n.cmd("└─ Instead of `.ping`, just type `ping`\n") +
+      i18n.cmd("└─ Instead of `.play song`, just type `play song`\n") +
+      i18n.cmd("└─ Your personal commands are now prefix-free!\n\n") +
+      i18n.cmd("**{emoji} Examples:**\n", { emoji: emoji.get("folder") }) +
+      i18n.cmd("└─ `help` → Shows help menu\n") +
+      i18n.cmd("└─ `play never gonna give you up` → Plays music\n") +
+      i18n.cmd("└─ `queue` → Shows music queue\n") +
+      i18n.cmd("└─ `botinfo` → Shows bot information\n\n") +
       `**${emoji.get("add")} Benefits:**\n` +
       `└─ Faster command execution\n` +
       `└─ More convenient for frequent users\n` +
@@ -115,13 +117,13 @@ class NoPrefixToggleCommand extends Command {
     const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("npt_back")
-        .setLabel("Back to Settings")
+        .setLabel(i18n.cmd("Back to Settings"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get("reset")),
     );
 
     return buildContainer({
-      title: "No-Prefix Help",
+      title: i18n.translateTitle("No-Prefix Help"),
       content,
       thumbnail: config.assets.defaultThumbnail,
       icon: emoji.get("info"),
@@ -200,7 +202,7 @@ class NoPrefixToggleCommand extends Command {
 
   _setupCollector(message: Message, author: any) {
     const filter = (i: any) => i.user.id === author.id;
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 300_000,
     });
@@ -383,9 +385,7 @@ class NoPrefixToggleCommand extends Command {
 
   async autocomplete({ interaction }: any) {
     const focusedValue = interaction.options.getFocused();
-    const choices = [
-      { name: "Enable no-prefix mode", value: "on" },
-      { name: "Disable no-prefix mode", value: "off" },
+    const choices = [{ name: i18n.cmd("Enable no-prefix mode"), value: "on" }, { name: i18n.cmd("Disable no-prefix mode"), value: "off" },
     ];
     const filtered = choices.filter((choice) =>
       choice.name.toLowerCase().includes(focusedValue.toLowerCase()),

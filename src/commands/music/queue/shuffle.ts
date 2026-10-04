@@ -15,10 +15,12 @@ import {
 import { config } from '#config/config';
 import { Command } from '#core/Command';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
 import phrases from '#utils/phrases';
 import { PlayerManager } from '#audio/PlayerManager';
+import { i18n } from "#utils/i18n";
 
 class ShuffleCommand extends Command {
   constructor() {
@@ -65,7 +67,7 @@ class ShuffleCommand extends Command {
 
   async _handleShuffle(context: any, pm: any) {
     if (pm.queueSize < 1) {
-      return this._reply(context, this._createErrorContainer("There are no tracks in the queue to shuffle."));
+      return this._reply(context, this._createErrorContainer(i18n.cmd("There are no tracks in the queue to shuffle.")));
     }
 
     await pm.shuffleQueue();
@@ -88,18 +90,18 @@ class ShuffleCommand extends Command {
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId('shuffle_again')
-        .setLabel('Shuffle Again')
+        .setLabel(i18n.cmd('Shuffle Again'))
         .setStyle(ButtonStyle.Primary)
         .setEmoji(emoji.get('shuffle') || "🔀"),
       new ButtonBuilder()
         .setCustomId('shuffle_back')
-        .setLabel('Back')
+        .setLabel(i18n.cmd('Back'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get('reset') || "↩️")
     );
 
     return buildContainer({ image: undefined,
-      title: "Shuffle Guide",
+      title: i18n.translateTitle("Shuffle Guide"),
       content,
       components: [buttons],
       icon: emoji.get('info') || "ℹ️"
@@ -109,11 +111,14 @@ class ShuffleCommand extends Command {
   _createSuccessContainer(pm: any) {
     const shuffleNote = phrases.get("shuffleSuccess");
     const content = `${emoji.get("check") || "✨"} **${shuffleNote}**\n\n` +
-      `└─ **${emoji.get("folder") || "📁"} Tracks in Queue:** ${pm.queueSize}\n` +
-      `└─ **${emoji.get("music") || "🎵"} Now Playing:** ${pm.currentTrack?.info?.title || "None"}`;
+      i18n.cmd("└─ **{emoji} Tracks in Queue:** {count}", { emoji: emoji.get("folder") || "📁", count: pm.queueSize }) + "\n" +
+      i18n.cmd("└─ **{emoji} Now Playing:** {title}", {
+        emoji: emoji.get("music") || "🎵",
+        title: pm.currentTrack?.info?.title || i18n.cmd("None"),
+      });
 
     const container = buildContainer({ image: undefined,
-      title: "Queue Shuffled",
+      title: i18n.translateTitle("Queue Shuffled"),
       content: content,
       thumbnail: config.assets.defaultThumbnail || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "ℹ️"
@@ -126,12 +131,12 @@ class ShuffleCommand extends Command {
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId('shuffle_again')
-        .setLabel('Shuffle Again')
+        .setLabel(i18n.cmd('Shuffle Again'))
         .setStyle(ButtonStyle.Primary)
         .setEmoji(emoji.get('shuffle') || "🔀"),
       new ButtonBuilder()
         .setCustomId('shuffle_help')
-        .setLabel('Help')
+        .setLabel(i18n.cmd('Help'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get('info') || "ℹ️")
     );
@@ -146,7 +151,7 @@ class ShuffleCommand extends Command {
 
   _setupCollector(message: any, author: any) {
     const filter = (i: any) => i.user.id === author.id;
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 300_000,
     });
@@ -159,14 +164,14 @@ class ShuffleCommand extends Command {
           const player = interaction.client.music?.getPlayer(interaction.guild.id);
           if (!player) {
             await interaction.editReply({
-              components: [this._createErrorContainer('Queue is empty or player unavailable.')],
+              components: [this._createErrorContainer(i18n.cmd('Queue is empty or player unavailable.'))],
             });
             return;
           }
           const currentPm = new PlayerManager(player);
           if (currentPm.queueSize < 1) {
             await interaction.editReply({
-              components: [this._createErrorContainer('Queue is empty or player unavailable.')],
+              components: [this._createErrorContainer(i18n.cmd('Queue is empty or player unavailable.'))],
             });
             return;
           }

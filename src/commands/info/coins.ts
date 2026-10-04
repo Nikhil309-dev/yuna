@@ -5,6 +5,7 @@ import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class CoinsCommand extends Command {
   constructor() {
@@ -29,8 +30,8 @@ class CoinsCommand extends Command {
     const coins = db.economy ? db.economy.getCoins(userId) : 0;
 
     const container = buildContainer({
-      title: "Your Balance",
-      content: `You currently have **${coins}** coins.\n\n*Tip: You earn 5 coins per minute listening to music and 1 coin per command used!*`,
+      title: i18n.translateTitle("Your Balance"),
+      content: i18n.cmd("You currently have **{coins}** coins.\n\n*Tip: You earn 5 coins per minute listening to music and 1 coin per command used!*", { coins }),
       thumbnail: message.author.displayAvatarURL(),
       icon: emoji.get("add") || '💰'
     });
@@ -46,13 +47,13 @@ class CoinsCommand extends Command {
     const coins = db.economy ? db.economy.getCoins(userId) : 0;
 
     const container = buildContainer({
-      title: "Your Balance",
-      content: `You currently have **${coins}** coins.\n\n*Tip: You earn 5 coins per minute listening to music and 1 coin per command used!*`,
+      title: i18n.translateTitle("Your Balance"),
+      content: i18n.cmd("You currently have **{coins}** coins.\n\n*Tip: You earn 5 coins per minute listening to music and 1 coin per command used!*", { coins }),
       thumbnail: interaction.user.displayAvatarURL(),
       icon: emoji.get("add") || '💰'
     });
 
-    return interaction.reply({
+    return interaction.editReply({
       components: [container],
       flags: MessageFlags.IsComponentsV2
     });

@@ -4,6 +4,7 @@ import { Command, CommandContext } from '#core/Command';
 import emoji from "#config/emoji";
 import { buildContainer, buildError } from '#ui/Theme';
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 import { PlayerManager } from '#audio/PlayerManager';
 
 class ResumeCommand extends Command {
@@ -49,14 +50,14 @@ class ResumeCommand extends Command {
     if (!pm.isPaused) {
       return this._reply(
         context,
-        buildError({ issue: "The player is not paused.", tip: "Use `/pause` to pause the current song.", title: "Player Active" }),
+        buildError({ issue: i18n.cmd("The player is not paused."), tip: i18n.cmd("Use `/pause` to pause the current song."), title: i18n.translateTitle("Player Active") }),
       );
     }
 
     try {
       await pm.resume();
     } catch (err: any) {
-      return this._reply(context, buildError({ issue: `Failed to resume: ${err.message}`, title: 'Resume Error' }));
+      return this._reply(context, buildError({ issue: `Failed to resume: ${err.message}`, title: i18n.translateTitle("Resume Error") }));
     }
 
     const { currentTrack } = pm;
@@ -64,15 +65,15 @@ class ResumeCommand extends Command {
     const resumeNote = phrases.get("playbackResumed");
 
     const content =
-      `**Track Information**\n\n` +
-      `└─ **${emoji.get("music")} Title:** ${currentTrack.info.title}\n` +
-      `└─ **${emoji.get("folder")} Artist:** ${currentTrack.info.author || "Unknown"}\n` +
-      `└─ **${emoji.get("info")} Duration:** ${this._formatDuration(duration)}\n` +
-      `└─ **${emoji.get("check")} Status:** Playback resumed\n\n` +
+      i18n.cmd("**Track Information**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music"), title: currentTrack.info.title }) + "\n" +
+      i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: emoji.get("folder"), author: currentTrack.info.author || i18n.cmd("Unknown") }) + "\n" +
+      i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get("info"), duration: this._formatDuration(duration) }) + "\n" +
+      i18n.cmd("└─ **{emoji} Status:** Playback resumed", { emoji: emoji.get("check") }) + "\n\n" +
       `*${resumeNote}*`;
 
     const container = buildContainer({
-        title: "Player Resumed",
+        title: i18n.translateTitle("Player Resumed"),
         content,
         thumbnail: currentTrack?.info?.artworkUrl || config.assets.defaultTrackArtwork,
         icon: emoji.get("music") || "▶️"

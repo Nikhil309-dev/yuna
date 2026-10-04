@@ -4,6 +4,7 @@ import { Command, CommandContext } from '#core/Command';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class AutoplayCommand extends Command {
   constructor() {
@@ -82,13 +83,13 @@ class AutoplayCommand extends Command {
     if (!isEnabled) {
       return buildContainer({
         title: "Autoplay",
-        content: `Autoplay has been turned **off**.\n\n*${apNote}*`,
+        content: i18n.cmd("Autoplay has been turned **off**.\n\n*{note}*", { note: apNote }),
         thumbnail: config.assets?.defaultThumbnail,
         icon: "⏹️"
       });
     }
 
-    return buildSuccess(`Autoplay has been turned **on**. Similar songs will play when the queue ends.\n\n*${apNote}*`, "Autoplay");
+    return buildSuccess(i18n.cmd("Autoplay has been turned **on**. Similar songs will play when the queue ends.\n\n*{note}*", { note: apNote }), "Autoplay");
   }
 
   async _reply(context: CommandContext, container: any) {

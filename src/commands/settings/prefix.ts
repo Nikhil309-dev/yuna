@@ -22,7 +22,9 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const PREMIUM_PREFIX_LIMIT = 5;
 const COMMON_PREFIXES = ["!", ".", "?", "$", "%", "^", "&", "*"];
@@ -31,7 +33,7 @@ class PrefixCommand extends Command {
   constructor() {
     super({
       name: "prefix",
-      description: "View or change the bot prefix for this server.",
+      description: i18n.cmd("View or change the bot prefix for this server."),
       usage: "prefix [new prefix]",
       aliases: ["setprefix"],
       category: "settings",
@@ -45,11 +47,11 @@ class PrefixCommand extends Command {
         enabled: true,
         data: {
           name: "prefix",
-          description: "View or change the bot prefix for this server.",
+          description: i18n.cmd("View or change the bot prefix for this server."),
           options: [
             {
               name: "set",
-              description: "Set a new prefix. This will overwrite it for standard servers.",
+              description: i18n.cmd("Set a new prefix. This will overwrite it for standard servers."),
               type: 3,
               required: false,
               max_length: 5,
@@ -89,16 +91,16 @@ class PrefixCommand extends Command {
 
     if (isPremium) {
       if (prefixes.includes(newPrefix)) {
-        return this._sendError(ctx, "Prefix Exists", `The prefix \`${newPrefix}\` is already set for this server.`);
+        return this._sendError(ctx, i18n.translateTitle("Prefix Exists"), i18n.cmd('The prefix `{prefix}` is already set for this server.', { prefix: newPrefix }));
       }
       if (prefixes.length >= PREMIUM_PREFIX_LIMIT) {
-        return this._sendError(ctx, "Prefix Limit Reached", `Premium servers can have a maximum of ${PREMIUM_PREFIX_LIMIT} prefixes.`);
+        return this._sendError(ctx, i18n.translateTitle("Prefix Limit Reached"), i18n.cmd("Premium servers can have a maximum of {max} prefixes.", { max: PREMIUM_PREFIX_LIMIT }));
       }
       prefixes.push(newPrefix);
-      updateMessage = `Successfully added new prefix: \`${newPrefix}\``;
+      updateMessage = i18n.cmd('Successfully added new prefix: `{prefix}`', { prefix: newPrefix });
     } else {
       prefixes = [newPrefix];
-      updateMessage = `Server prefix has been updated to \`${newPrefix}\``;
+      updateMessage = i18n.cmd('Server prefix has been updated to `{prefix}`', { prefix: newPrefix });
     }
 
     db.setPrefixes(ctx.guild.id, prefixes);
@@ -140,19 +142,19 @@ class PrefixCommand extends Command {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${emoji.get("info")} **Server Prefix**`)
+      new TextDisplayBuilder().setContent(i18n.cmd("{emoji} **{title}**", { emoji: emoji.get("info"), title: i18n.translateTitle("Server Prefix") }))
     );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
     );
 
-    const content = `**${emoji.get("check")} Current Default Prefix:** \`${prefix}\`\n\n` +
-      `This prefix is used for all bot commands in this server.\n\n` +
-      `**${emoji.get("folder")} Usage Examples:**\n` +
-      `├─ \`${prefix}prefix new!\`\n` +
-      `└─ \`/prefix set:new!\`\n\n` +
-      `**${emoji.get("add")} Premium Features:**\n` +
+    const content = i18n.cmd("**{emoji} Current Default Prefix:** `{prefix}`", { emoji: emoji.get("check"), prefix }) + "\n\n" +
+      i18n.cmd("This prefix is used for all bot commands in this server.") + "\n\n" +
+      i18n.cmd("**{emoji} Usage Examples:**", { emoji: emoji.get("folder") }) + "\n" +
+      i18n.cmd("├─ `{prefix}prefix new!`", { prefix }) + "\n" +
+      i18n.cmd("└─ `/prefix set:new!`") + "\n\n" +
+      i18n.cmd("**{emoji} Premium Features:**", { emoji: emoji.get("add") }) + "\n" +
       `└─ Multiple prefix support available with premium`;
 
     const section = new SectionBuilder()
@@ -172,20 +174,25 @@ class PrefixCommand extends Command {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${emoji.get("add")} **Premium Prefix Management**`)
+      new TextDisplayBuilder().setContent(i18n.cmd("{emoji} **{title}**", { emoji: emoji.get("add"), title: i18n.translateTitle("Premium Prefix Management") }))
     );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
     );
 
-    const prefixList = prefixes.map((p: any) => `\`${p}\``).join(" ") || "None";
-    const content = `**${emoji.get("check")} Current Prefixes (${prefixes.length}/${PREMIUM_PREFIX_LIMIT}):**\n${prefixList}\n\n` +
-      `**${emoji.get("folder")} Premium Features:**\n` +
-      `├─ Multiple prefix support\n` +
-      `├─ Quick prefix switching\n` +
-      `├─ Advanced customization\n` +
-      `└─ Priority support access`;
+    const prefixList = prefixes.map((p: any) => `\`${p}\``).join(" ") || i18n.cmd("None");
+    const content = i18n.cmd("**{emoji} Current Prefixes ({count}/{max}):**\n{list}", {
+      emoji: emoji.get("check"),
+      count: prefixes.length,
+      max: PREMIUM_PREFIX_LIMIT,
+      list: prefixList,
+    }) + "\n\n" +
+      i18n.cmd("**{emoji} Premium Features:**", { emoji: emoji.get("folder") }) + "\n" +
+      i18n.cmd("├─ Multiple prefix support") + "\n" +
+      i18n.cmd("├─ Quick prefix switching") + "\n" +
+      i18n.cmd("├─ Advanced customization") + "\n" +
+      i18n.cmd("└─ Priority support access");
 
     const section = new SectionBuilder()
       .addTextDisplayComponents(new TextDisplayBuilder().setContent(content))
@@ -200,14 +207,14 @@ class PrefixCommand extends Command {
     if (prefixes.length > 0) {
       const selectMenu = new StringSelectMenuBuilder()
         .setCustomId("prefix_remove")
-        .setPlaceholder("Select prefixes to remove...")
+        .setPlaceholder(i18n.cmd("Select prefixes to remove..."))
         .setMinValues(1)
         .setMaxValues(Math.min(prefixes.length, 5))
         .addOptions(
           prefixes.map((prefix: any) => ({
-            label: `Remove ${prefix}`,
+            label: i18n.cmd("Remove {prefix}", { prefix }),
             value: prefix,
-            description: `Remove the prefix "${prefix}" from this server`,
+            description: i18n.cmd('Remove the prefix "{prefix}" from this server', { prefix }),
             emoji: emoji.get("cross"),
           }))
         );
@@ -220,13 +227,13 @@ class PrefixCommand extends Command {
     const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("prefix_add")
-        .setLabel("Set New")
+        .setLabel(i18n.cmd("Set New"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get("add"))
         .setDisabled(prefixes.length >= PREMIUM_PREFIX_LIMIT),
       new ButtonBuilder()
         .setCustomId("prefix_reset")
-        .setLabel("Reset to Default")
+        .setLabel(i18n.cmd("Reset to Default"))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get("reset")),
     );
@@ -237,7 +244,7 @@ class PrefixCommand extends Command {
   }
 
   _setupCollector(message: Message, userId: any, guildId: any) {
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter: (i: any) => i.user.id === userId,
       time: 300_000,
     });
@@ -247,16 +254,16 @@ class PrefixCommand extends Command {
         if (interaction.customId === "prefix_add") {
           const modal = new ModalBuilder()
             .setCustomId("prefix_add_modal")
-            .setTitle("Add New Prefix")
+            .setTitle(i18n.cmd("Add New Prefix"))
             .addComponents(
               new ActionRowBuilder<TextInputBuilder>().addComponents(
                 new TextInputBuilder()
                   .setCustomId("new_prefix_input")
-                  .setLabel("New prefix (max 5 characters)")
+                  .setLabel(i18n.cmd("New prefix (max 5 characters)"))
                   .setStyle(TextInputStyle.Short)
                   .setRequired(true)
                   .setMaxLength(5)
-                  .setPlaceholder("Enter a new prefix...")
+                  .setPlaceholder(i18n.cmd("Enter a new prefix..."))
               ),
             );
 
@@ -272,14 +279,14 @@ class PrefixCommand extends Command {
 
           if (!newPrefix) {
             return modalSubmit.reply({
-              content: `${emoji.get("cross")} Error: Prefix cannot be empty.`,
+              content: `${emoji.get("cross")} ${i18n.cmd("Error: Prefix cannot be empty.")}`,
               ephemeral: true,
             });
           }
 
           if (newPrefix.length > 5) {
             return modalSubmit.reply({
-              content: `${emoji.get("cross")} Error: Prefix is too long (max 5 characters).`,
+              content: `${emoji.get("cross")} ${i18n.cmd("Error: Prefix is too long (max 5 characters).")}`,
               ephemeral: true,
             });
           }
@@ -288,14 +295,14 @@ class PrefixCommand extends Command {
 
           if (prefixes.includes(newPrefix)) {
             return modalSubmit.reply({
-              content: `${emoji.get("cross")} Error: This prefix already exists.`,
+              content: `${emoji.get("cross")} ${i18n.cmd("Error: This prefix already exists.")}`,
               ephemeral: true,
             });
           }
 
           if (prefixes.length >= PREMIUM_PREFIX_LIMIT) {
             return modalSubmit.reply({
-              content: `${emoji.get("cross")} Error: Prefix limit reached.`,
+              content: `${emoji.get("cross")} ${i18n.cmd("Error: Prefix limit reached.")}`,
               ephemeral: true,
             });
           }
@@ -359,7 +366,7 @@ class PrefixCommand extends Command {
     const note = phrases.get("prefixUpdated");
     let fullDescription = `${description}\n\n*${note}*`;
     if (COMMON_PREFIXES.includes(prefix)) {
-      fullDescription += `\n\n**${emoji.get("folder")} Warning:** Using a common prefix like \`${prefix}\` may cause conflicts with other bots.`;
+      fullDescription += i18n.cmd("\n\n**{emoji} Warning:** Using a common prefix like `{prefix}` may cause conflicts with other bots.", { emoji: emoji.get("folder"), prefix });
     }
 
     const container = buildSuccess(fullDescription, title);

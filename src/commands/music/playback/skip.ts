@@ -19,7 +19,9 @@ import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import { buildContainer, buildError } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class SkipCommand extends Command {
 	constructor() {
@@ -90,7 +92,7 @@ class SkipCommand extends Command {
 			return this._reply(
 				context,
 				this._createErrorContainer(
-					`Cannot skip ${amount} tracks. Only ${queueSize} tracks are in the queue.`,
+					i18n.cmd("Cannot skip {amount} tracks. Only {queue} tracks are in the queue.", { amount, queue: queueSize }),
 				),
 			);
 		}
@@ -101,16 +103,16 @@ class SkipCommand extends Command {
 
 			if (autoplayEnabled) {
 				const container = buildContainer({
-					title: "Track Skipped",
-					content: `Skipped **${skippedTrack?.info?.title || 'track'}**. Autoplay is fetching the next song...`,
+					title: i18n.translateTitle("Track Skipped"),
+					content: i18n.tr("body.skippedAutoplay", { title: skippedTrack?.info?.title || 'track' }),
 					thumbnail: skippedTrack?.info?.artworkUrl || config.assets.defaultTrackArtwork,
 					icon: "⏭️"
 				});
 				return this._reply(context, container);
 			} else {
 				const container = buildContainer({
-					title: "Track Skipped",
-					content: `Skipped **${skippedTrack?.info?.title || 'track'}**. Queue has ended.`,
+					title: i18n.translateTitle("Track Skipped"),
+					content: i18n.tr("body.skippedEnded", { title: skippedTrack?.info?.title || 'track' }),
 					thumbnail: skippedTrack?.info?.artworkUrl || config.assets.defaultTrackArtwork,
 					icon: "⏹️"
 				});
@@ -143,25 +145,25 @@ class SkipCommand extends Command {
 
 	_createSuccessContainer(skipped: any, current: any, amount: number) {
 		let content =
-			`**Skipped Track Information**\n\n` +
-			`└─ **${emoji.get("info")} Title:** ${skipped.info.title}\n` +
-			`└─ **${emoji.get("folder")} Artist:** ${skipped.info.author || "Unknown"}\n` +
-			`└─ **${emoji.get("check")} Duration:** ${this._formatDuration(skipped.info.duration)}\n` +
-			`└─ **${emoji.get("reset")} Status:** Successfully skipped\n\n` +
-			`*Track has been skipped from queue*\n\n`;
+			i18n.cmd("**Skipped Track Information**") + "\n\n" +
+			i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("info"), title: skipped.info.title }) + "\n" +
+			i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: emoji.get("folder"), author: skipped.info.author || i18n.cmd("Unknown") }) + "\n" +
+			i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get("check"), duration: this._formatDuration(skipped.info.duration) }) + "\n" +
+			i18n.cmd("└─ **{emoji} Status:** Successfully skipped", { emoji: emoji.get("reset") }) + "\n\n" +
+			i18n.cmd("*Track has been skipped from queue*") + "\n\n";
 
 		if (current) {
 			content +=
-				`**Now Playing**\n\n` +
-				`└─ **${emoji.get("music")} Title:** ${current.info.title}\n` +
-				`└─ **${emoji.get("folder")} Artist:** ${current.info.author || "Unknown"}\n` +
-				`└─ **${emoji.get("info")} Duration:** ${this._formatDuration(current.info.duration)}\n` +
-				`└─ **${emoji.get("check")} Status:** Currently playing\n\n` +
-				`*Now streaming in voice channel*`;
+				i18n.cmd("**Now Playing**") + "\n\n" +
+				i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music"), title: current.info.title }) + "\n" +
+				i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: emoji.get("folder"), author: current.info.author || i18n.cmd("Unknown") }) + "\n" +
+				i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get("info"), duration: this._formatDuration(current.info.duration) }) + "\n" +
+				i18n.cmd("└─ **{emoji} Status:** Currently playing", { emoji: emoji.get("check") }) + "\n\n" +
+				i18n.cmd("*Now streaming in voice channel*");
 		}
 
 		return buildContainer({
-			title: amount === 1 ? "Track Skipped" : `Skipped ${amount} Tracks`,
+			title: amount === 1 ? i18n.translateTitle("Track Skipped") : i18n.cmd("Skipped {amount} Tracks", { amount }),
 			content,
 			thumbnail: (current || skipped).info.artworkUrl || config.assets.defaultTrackArtwork,
 			icon: emoji.get("music") || "⏭️"
@@ -171,21 +173,21 @@ class SkipCommand extends Command {
 	_createSkipToMenu(pm: PlayerManager) {
 		const options = pm.queue.tracks.slice(0, 25).map((track, index) => ({
 			label: track.info.title.substring(0, 100),
-			description: `by ${track.info.author || "Unknown"}`.substring(0, 100),
+			description: i18n.cmd("by {author}", { author: track.info.author || i18n.cmd("Unknown") }).substring(0, 100),
 			value: `${index}`,
 		}));
 
 		return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
 			new StringSelectMenuBuilder()
 				.setCustomId(`skip_to_track_${pm.guildId}`)
-				.setPlaceholder("Or skip directly to another track...")
+				.setPlaceholder(i18n.cmd("Or skip directly to another track..."))
 				.addOptions(options),
 		);
 	}
 
 	async _setupCollector(message: Message, client: any, guildId: any) {
 		const filter = (i: any) => i.customId === `skip_to_track_${guildId}`;
-		const collector = message.createMessageComponentCollector({
+		const collector = componentCollectorSource(message).createMessageComponentCollector({
 			filter,
 			time: 60_000,
 			max: 1,
@@ -197,7 +199,7 @@ class SkipCommand extends Command {
 
 			if (!player || !player.playing) {
 				return interaction.editReply({
-					content: "The player is no longer active.",
+					content: i18n.tr("body.playerInactive"),
 					components: [],
 				});
 			}
@@ -207,7 +209,7 @@ class SkipCommand extends Command {
 
 			if (trackIndex >= pm.queueSize) {
 				return interaction.editReply({
-					content: "This track is no longer in the queue.",
+					content: i18n.tr("body.trackNotInQueue"),
 					components: [],
 				});
 			}
@@ -216,15 +218,15 @@ class SkipCommand extends Command {
 			await pm.skip(trackIndex + 1);
 
 			const content =
-				`**Now Playing**\n\n` +
-				`└─ **${emoji.get("music")} Title:** ${targetTrack.info.title}\n` +
-				`└─ **${emoji.get("folder")} Artist:** ${targetTrack.info.author || "Unknown"}\n` +
-				`└─ **${emoji.get("info")} Duration:** ${this._formatDuration(targetTrack.info.duration)}\n` +
-				`└─ **${emoji.get("check")} Status:** Successfully skipped to track\n\n` +
-				`*Now streaming in voice channel*`;
+				i18n.cmd("**Now Playing**") + "\n\n" +
+				i18n.cmd("└─ **{emoji} Title:** {title}", { emoji: emoji.get("music"), title: targetTrack.info.title }) + "\n" +
+				i18n.cmd("└─ **{emoji} Artist:** {author}", { emoji: emoji.get("folder"), author: targetTrack.info.author || i18n.cmd("Unknown") }) + "\n" +
+				i18n.cmd("└─ **{emoji} Duration:** {duration}", { emoji: emoji.get("info"), duration: this._formatDuration(targetTrack.info.duration) }) + "\n" +
+				i18n.cmd("└─ **{emoji} Status:** Successfully skipped to track", { emoji: emoji.get("check") }) + "\n\n" +
+				i18n.cmd("*Now streaming in voice channel*");
 
 			const container = buildContainer({
-				title: "Skipped to Track",
+				title: i18n.translateTitle("Skipped to Track"),
 				content,
 				thumbnail: targetTrack.info.artworkUrl || config.assets.defaultTrackArtwork,
 				icon: emoji.get("music") || "⏭️"

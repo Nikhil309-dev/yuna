@@ -2,6 +2,8 @@ import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-clie
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
+import musicSource from "#config/sources";
+import { i18n } from "#utils/i18n";
 import {
 	ContainerBuilder,
 	TextDisplayBuilder,
@@ -37,7 +39,7 @@ export default {
 							.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
 							.addTextDisplayComponents(
 								new TextDisplayBuilder().setContent(
-									`Attempting to recover: **${track?.info?.title || "Track"}**`,
+									i18n.cmd("Attempting to recover: **{title}**", { title: track?.info?.title || i18n.cmd("Track") }),
 								),
 							);
 
@@ -57,7 +59,7 @@ export default {
 				.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
 				.addTextDisplayComponents(
 					new TextDisplayBuilder().setContent(
-						"Audio playback is experiencing issues. Attempting to recover automatically...",
+						i18n.cmd("Audio playback is experiencing issues. Attempting to recover automatically..."),
 					),
 				);
 
@@ -99,12 +101,19 @@ export default {
 
 								logger.info("TrackStuck", `Attempting stream recovery for stuck track: "${searchQuery}"`);
 
-								let fallbackRes = await client.music.search(`jssearch:${searchQuery}`);
-								let sourceUsed = 'JioSaavn';
-
-								if (!fallbackRes?.tracks?.length) {
-									fallbackRes = await client.music.search(`scsearch:${searchQuery}`);
-									sourceUsed = 'SoundCloud';
+								// Try every configured source prefix instead of hardcoding
+								// plugins the Lavalink node may not have installed.
+								let fallbackRes: any = null;
+								let sourceUsed = '';
+								for (const prefix of musicSource.getPrefixList()) {
+									try {
+										const res = await client.music.search(searchQuery, { source: prefix.replace(':', '') });
+										if (res?.tracks?.length) {
+											fallbackRes = res;
+											sourceUsed = prefix.replace(':', '');
+											break;
+										}
+									} catch { /* try the next source */ }
 								}
 
 								if (fallbackRes?.tracks?.length > 0) {

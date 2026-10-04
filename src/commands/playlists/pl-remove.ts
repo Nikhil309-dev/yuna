@@ -7,6 +7,7 @@ import { db } from "#database/Database";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class RemoveTrackCommand extends Command {
 	constructor() {
@@ -31,13 +32,13 @@ class RemoveTrackCommand extends Command {
 					options: [
 						{
 							name: "playlist",
-							description: "The ID or name of the playlist",
+							description: i18n.cmd("The ID or name of the playlist"),
 							type: 3,
 							required: true,
 						},
 						{
 							name: "positions",
-							description: "Track numbers or ranges to remove (e.g., 5, 8-10)",
+							description: i18n.cmd("Track numbers or ranges to remove (e.g., 5, 8-10)"),
 							type: 3,
 							required: true,
 						},
@@ -77,13 +78,13 @@ class RemoveTrackCommand extends Command {
 			return this._reply(
 				context,
 				this._createErrorContainer(
-					`Playlist not found for query\`${query}\``,
+					i18n.cmd('Playlist not found for query`{query}`', { query }),
 				),
 			);
 		if (playlist.tracks.length === 0)
 			return this._reply(
 				context,
-				this._createErrorContainer("This playlist is empty."),
+				this._createErrorContainer(i18n.cmd("This playlist is empty.")),
 			);
 
 		const indicesToRemove = this._parseTrackIndices(
@@ -94,7 +95,7 @@ class RemoveTrackCommand extends Command {
 			return this._reply(
 				context,
 				this._createErrorContainer(
-					"Invalid or out-of-range track numbers provided.",
+					i18n.cmd("Invalid or out-of-range track numbers provided."),
 				),
 			);
 		}
@@ -169,7 +170,7 @@ class RemoveTrackCommand extends Command {
 
 	_findPlaylist(userId: any, query: any) {
 		const userPlaylists = db.playlists.getUserPlaylists(userId);
-		const trimmedQuery = query.trim();
+		const trimmedQuery = String(query ?? "").trim();
 		if (trimmedQuery.startsWith("pl_"))
 			return userPlaylists.find((p) => p.id === trimmedQuery);
 		if (trimmedQuery.length <= 16 && !trimmedQuery.includes(" ")) {
@@ -183,7 +184,7 @@ class RemoveTrackCommand extends Command {
 
 	_createSuccessContainer(playlist: any, removedTracks: any, success: any, failed: any) {
 		const note = phrases.get("playlistUpdated");
-		const content = `Successfully removed **${success}** track(s) from **${playlist.name}**.\n\n*${note}*`;
+		const content = i18n.cmd("Successfully removed **{count}** track(s) from **{name}**.\n\n*{note}*", { count: success, name: playlist.name, note });
 
 		return buildSuccess(content, "Tracks Removed");
 	}

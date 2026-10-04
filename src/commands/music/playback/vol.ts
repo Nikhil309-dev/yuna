@@ -17,7 +17,9 @@ import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class VolumeCommand extends Command {
   constructor() {
@@ -102,15 +104,18 @@ class VolumeCommand extends Command {
       pm.currentTrack?.info?.artworkUrl || config.assets.defaultTrackArtwork;
 
     const content =
-      `**Current Settings**\n\n` +
-      `└─ **${emoji.get("info")} Volume Level:** ${volume}%\n` +
-      `└─ **${emoji.get("check")} Status:** ${volume === 0 ? "Muted" : "Active"}\n` +
-      `└─ **${emoji.get("folder")} Range:** 0% - 150%\n` +
-      `└─ **${emoji.get("reset")} Visual:** \`${volumeBar}\`\n\n` +
-      `*Use the buttons below to adjust volume*`;
+      i18n.cmd("**Current Settings**") + "\n\n" +
+      i18n.cmd("└─ **{emoji} Volume Level:** {volume}%", { emoji: emoji.get("info"), volume }) + "\n" +
+      i18n.cmd("└─ **{emoji} Status:** {status}", {
+        emoji: emoji.get("check"),
+        status: volume === 0 ? i18n.cmd("Muted") : i18n.cmd("Active"),
+      }) + "\n" +
+      i18n.cmd("└─ **{emoji} Range:** 0% - 150%", { emoji: emoji.get("folder") }) + "\n" +
+      i18n.cmd("└─ **{emoji} Visual:** `{bar}`", { emoji: emoji.get("reset"), bar: volumeBar }) + "\n\n" +
+      i18n.cmd("*Use the buttons below to adjust volume*");
 
     return buildContainer({
-        title: "Volume Control",
+        title: i18n.translateTitle("Volume Control"),
         content,
         thumbnail: artworkUrl,
         components: [this._createButtons(pm)],
@@ -143,7 +148,7 @@ class VolumeCommand extends Command {
   async _setupCollector(message: Message, client: any, guildId: any) {
     const filter = (i: any) =>
       i.customId.startsWith("vol_") && i.customId.endsWith(guildId);
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 120_000,
     });

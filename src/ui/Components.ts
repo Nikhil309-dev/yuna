@@ -11,6 +11,74 @@ import {
   MediaGalleryItemBuilder
 } from 'discord.js';
 import { formatDuration } from './Formatters';
+import { i18n } from '#utils/i18n.js';
+import { localeFor, runWithLocale } from '#utils/locale.js';
+
+// Button/select text is localized through `i18n.tr`, which reads the locale of
+// the current request context (user → guild → en-US).
+const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
+
+/**
+ * Runs a collector listener inside the locale scope of the user/guild that
+ * created it.
+ *
+ * Discord.js collector callbacks fire from the gateway event loop, which is
+ * detached from the command's async context. Without this re-binding, every
+ * `i18n.tr()` / `translateTitle()` inside a collector would silently fall back
+ * to en-US regardless of the user's chosen language.
+ */
+export function withLocaleCollector<T>(collector: T, userId?: string | null, guildId?: string | null): T {
+  if (!collector || typeof (collector as any).on !== 'function') return collector;
+  const locale = localeFor(userId, guildId);
+  for (const event of ['on', 'once'] as const) {
+    const original = (collector as any)[event].bind(collector);
+    (collector as any)[event] = (name: string, handler: any) => {
+      if (typeof handler !== 'function') return original(name, handler);
+      return original(name, (...args: any[]) => runWithLocale(locale, () => handler(...args)));
+    };
+  }
+  return collector;
+}
+
+/**
+ * Resolves the object a message-component collector can be created from.
+ *
+ * Slash-command interactions do NOT expose `createMessageComponentCollector`
+ * directly (only `interaction.response` does), while plain messages do. Callers
+ * frequently pass either one, so route collectors through this helper to keep
+ * buttons working from both slash commands and prefix commands.
+ *
+ * The collector it produces is additionally bound to the caller's locale so
+ * localized strings keep working inside the collector callbacks.
+ */
+export function componentCollectorSource(messageOrInteraction: any): any {
+  const target = messageOrInteraction;
+  if (!target) return target;
+
+  let collectorTarget = target;
+  if (typeof collectorTarget.createMessageComponentCollector !== 'function') {
+    if (target.response && typeof target.response.createMessageComponentCollector === 'function') {
+      collectorTarget = target.response;
+    } else {
+      return target;
+    }
+  }
+
+  const userId = target.user?.id ?? target.author?.id ?? target.member?.id ?? null;
+  const guildId = target.guildId ?? target.guild?.id ?? null;
+  if (!collectorTarget.__localeBound && (userId || guildId)) {
+    const original = collectorTarget.createMessageComponentCollector.bind(collectorTarget);
+    const bound = (options: any) => withLocaleCollector(original(options), userId, guildId);
+    Object.defineProperty(collectorTarget, 'createMessageComponentCollector', {
+      value: bound,
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(collectorTarget, '__localeBound', { value: true, configurable: true });
+  }
+
+  return collectorTarget;
+}
 
 export function createPlayerControls(options: any = {}) {
   const { mode = 'default' } = options;
@@ -21,16 +89,16 @@ export function createPlayerControls(options: any = {}) {
       new ButtonBuilder().setCustomId('yuna:music:rewind5').setLabel('-5s').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId('yuna:music:forward5').setLabel('+5s').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId('yuna:music:forward10').setLabel('+10s').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('yuna:music:replay').setLabel('Replay').setStyle(ButtonStyle.Primary)
+      new ButtonBuilder().setCustomId('yuna:music:replay').setLabel(tr('btn.replay')).setStyle(ButtonStyle.Primary)
     );
   }
 
   return new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('yuna:music:previous').setLabel('Prev').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('yuna:music:pause').setLabel('Pause / Resume').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('yuna:music:skip').setLabel('Skip').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('yuna:music:stop').setLabel('Stop').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('yuna:music:like').setLabel('Like').setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId('yuna:music:previous').setLabel(tr('btn.previous')).setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('yuna:music:pause').setLabel(tr('btn.pause')).setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('yuna:music:skip').setLabel(tr('btn.skip')).setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('yuna:music:stop').setLabel(tr('btn.stop')).setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('yuna:music:like').setLabel(tr('btn.like')).setStyle(ButtonStyle.Success)
   );
 }
 
@@ -38,12 +106,12 @@ export function createPaginationRow(currentPage: any, totalPages: any, prefix: a
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`yuna:${prefix}:first`)
-      .setLabel('First')
+      .setLabel(tr('btn.first'))
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(currentPage === 1),
     new ButtonBuilder()
       .setCustomId(`yuna:${prefix}:prev`)
-      .setLabel('Previous')
+      .setLabel(tr('btn.prev'))
       .setStyle(ButtonStyle.Primary)
       .setDisabled(currentPage === 1),
     new ButtonBuilder()
@@ -53,12 +121,12 @@ export function createPaginationRow(currentPage: any, totalPages: any, prefix: a
       .setDisabled(true),
     new ButtonBuilder()
       .setCustomId(`yuna:${prefix}:next`)
-      .setLabel('Next')
+      .setLabel(tr('btn.next'))
       .setStyle(ButtonStyle.Primary)
       .setDisabled(currentPage === totalPages),
     new ButtonBuilder()
       .setCustomId(`yuna:${prefix}:last`)
-      .setLabel('Last')
+      .setLabel(tr('btn.last'))
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(currentPage === totalPages)
   );
@@ -68,23 +136,25 @@ export function createConfirmRow(confirmId = 'yuna:confirm:yes', cancelId = 'yun
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(confirmId)
-      .setLabel('Confirm')
+      .setLabel(tr('btn.confirm'))
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId(cancelId)
-      .setLabel('Cancel')
+      .setLabel(tr('btn.cancel'))
       .setStyle(ButtonStyle.Danger)
   );
 }
 
 export function createFilterSelect(presets: any = []) {
   if (presets.length === 0) {
+    // Values must map to real FilterEngine presets (`filter_<preset>`) or the
+    // special `filter_reset`, otherwise applying them fails at runtime.
     presets = [
       { label: 'Reset Filters', description: 'Clear all active audio filters', value: 'filter_reset' },
-      { label: 'Bassboost', description: 'Enhanced bass profile', value: 'filter_bass' },
+      { label: 'Bassboost', description: 'Enhanced bass profile', value: 'filter_bassboost' },
+      { label: 'Deep Bass', description: 'Heavy sub-bass profile', value: 'filter_deepbass' },
       { label: 'Nightcore', description: 'Faster pitch & tempo', value: 'filter_nightcore' },
       { label: 'Vaporwave', description: 'Slow & relaxed retro vibe', value: 'filter_vaporwave' },
-      { label: '8D Audio', description: 'Surround 8D spatial sound', value: 'filter_8d' },
       { label: 'Pop EQ', description: 'Vocal & pop acoustics', value: 'filter_pop' },
       { label: 'Rock EQ', description: 'Rock & heavy instruments', value: 'filter_rock' },
       { label: 'Treble Boost', description: 'Crisp high frequencies', value: 'filter_treble' }
@@ -93,7 +163,7 @@ export function createFilterSelect(presets: any = []) {
 
   const menu = new StringSelectMenuBuilder()
     .setCustomId('yuna:music:filter')
-    .setPlaceholder('Select an Audio Filter...');
+    .setPlaceholder(tr('sel.filter.placeholder'));
 
   presets.forEach((preset: any) => {
     menu.addOptions({
@@ -109,7 +179,7 @@ export function createFilterSelect(presets: any = []) {
 export function createFeatureSelect() {
   const menu = new StringSelectMenuBuilder()
     .setCustomId('yuna:music:feature')
-    .setPlaceholder('Player Options...')
+    .setPlaceholder(tr('sel.feature.placeholder'))
     .addOptions(
       { label: 'Default Controls', description: 'Prev / Pause / Skip / Stop / Like', value: 'mode_default' },
       { label: 'Playback Controls', description: 'Seek / Rewind / Forward / Replay', value: 'mode_playback' },

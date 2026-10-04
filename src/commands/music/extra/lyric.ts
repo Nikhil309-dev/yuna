@@ -16,8 +16,10 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
 import { Client as LrcClient, type Query, type Search } from "lrclib-api";
+import { i18n } from "#utils/i18n";
 
 const lrclib = new LrcClient();
 
@@ -52,7 +54,7 @@ class LyricsCommand extends Command {
 					options: [
 						{
 							name: "query",
-							description: "Search lyrics by song name (optional — uses current song if empty)",
+							description: i18n.cmd("Search lyrics by song name (optional — uses current song if empty)"),
 							type: 3,
 							required: false,
 						},
@@ -105,13 +107,17 @@ class LyricsCommand extends Command {
 				return await loadingMsg.edit(notFoundPayload);
 			}
 
+			// Slash commands must hand the INTERACTION to the display helpers (they
+			// call editReply/fetchReply); prefix commands hand the reply Message.
+			// Passing the awaited reply Message here made /lyrics silently stall.
+			const displayTarget = interaction || loadingMsg;
 			await this._handleLyricsDisplay(
-				loadingMsg, lyricsData, track, activePlayer, client,
+				displayTarget, lyricsData, track, activePlayer, client,
 				context.guild.id, (context.user || context.author).id, !!interaction,
 			);
 		} catch (error) {
 			logger.error("LyricsCommand", `Error in lyrics command: ${(error as Error).message}`, error);
-			const errorContainer = this._createErrorContainer("An error occurred while fetching lyrics.");
+			const errorContainer = this._createErrorContainer(i18n.cmd("An error occurred while fetching lyrics."));
 			const payload = { components: [errorContainer], flags: MessageFlags.IsComponentsV2 };
 			if (context.editReply && (context.deferred || context.replied)) {
 				await context.editReply(payload).catch(() => {});
@@ -190,7 +196,7 @@ class LyricsCommand extends Command {
 						plainLyrics: data.text || syncedLines.map((l: any) => l.text).join("\n"),
 						syncedLyrics: "",
 						syncedLines,
-						source: "NodeLink Native API"
+						source: i18n.cmd("NodeLink Native API")
 					};
 				}
 			}
@@ -311,8 +317,8 @@ class LyricsCommand extends Command {
 			try { return player.position || 0; } catch { return 0; }
 		};
 
-		const title = track?.info?.title || 'Unknown Track';
-		const artist = track?.info?.author || 'Unknown Artist';
+		const title = track?.info?.title || i18n.cmd('Unknown Track');
+		const artist = track?.info?.author || i18n.cmd('Unknown Artist');
 		const artworkUrl = track?.info?.artworkUrl || track?.info?.uri;
 
 		const buildLiveContainer = (positionMs: any) => {
@@ -336,7 +342,7 @@ class LyricsCommand extends Command {
 
 		const albumInfo = lyricsData.albumName ? `  •  💿 ${lyricsData.albumName}` : "";
 		container.addTextDisplayComponents(
-			new TextDisplayBuilder().setContent(`-# 📖 Source: LRCLIB${albumInfo}`)
+			new TextDisplayBuilder().setContent(i18n.cmd("-# 📖 Source: LRCLIB{album}", { album: albumInfo }))
 		);
 
 		return container;
@@ -418,8 +424,8 @@ class LyricsCommand extends Command {
 	}
 
 	async _displayStaticLyrics(msgOrInt: any, lyricsData: any, track: any, guildId: any, userId: any, isInteraction: any) {
-		const title = track?.info?.title || lyricsData.trackName || 'Unknown Track';
-		const artist = track?.info?.author || lyricsData.artistName || 'Unknown Artist';
+		const title = track?.info?.title || lyricsData.trackName || i18n.cmd('Unknown Track');
+		const artist = track?.info?.author || lyricsData.artistName || i18n.cmd('Unknown Artist');
 		const artworkUrl = track?.info?.artworkUrl || track?.info?.uri;
 
 		const chunks = this._chunkLyrics(lyricsData.plainLyrics || "");
@@ -437,7 +443,7 @@ class LyricsCommand extends Command {
 			container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 			const albumInfo = lyricsData.albumName ? `  •  💿 ${lyricsData.albumName}` : "";
 			container.addTextDisplayComponents(
-				new TextDisplayBuilder().setContent(`-# 📖 Source: LRCLIB${albumInfo}`)
+				new TextDisplayBuilder().setContent(i18n.cmd("-# 📖 Source: LRCLIB{album}", { album: albumInfo }))
 			);
 			return container;
 		};
@@ -460,7 +466,7 @@ class LyricsCommand extends Command {
 		const filter = (i: any) =>
 			(i.customId === `lyp_prev_${guildId}` || i.customId === `lyp_next_${guildId}`) && i.user.id === userId;
 
-		const collector = message.createMessageComponentCollector({ filter, time: 300_000 });
+		const collector = componentCollectorSource(message).createMessageComponentCollector({ filter, time: 300_000 });
 
 		collector.on("collect", async (interaction: any) => {
 			try {
@@ -486,10 +492,10 @@ class LyricsCommand extends Command {
 	}
 
 	_createLoadingContainer() {
-		const info = "**Searching Lyric Libraries**\n└─ Fetching synchronized lyrics...";
+		const info = i18n.cmd("**Searching Lyric Libraries**\n└─ Fetching synchronized lyrics...");
 		const container = buildContainer({
-      title: "Fetching Lyrics",
-      content: `${info}\n\n*Try using \`lyrics Artist - Song Name\` for better results*`,
+      title: i18n.translateTitle("Fetching Lyrics"),
+      content: `${info}\n\n${i18n.cmd("*Try using `lyrics Artist - Song Name` for better results*")}`,
       thumbnail: config.assets?.defaultTrackArtwork,
       icon: emoji.get("loading") || "ℹ️"
     });
@@ -501,7 +507,7 @@ class LyricsCommand extends Command {
 		return new ActionRowBuilder().addComponents(
 			new ButtonBuilder()
 				.setCustomId(`lyp_prev_${guildId}`)
-				.setLabel("Previous")
+				.setLabel(i18n.cmd("Previous"))
 				.setEmoji("◀️")
 				.setStyle(ButtonStyle.Secondary)
 				.setDisabled(page === 0),
@@ -512,7 +518,7 @@ class LyricsCommand extends Command {
 				.setDisabled(true),
 			new ButtonBuilder()
 				.setCustomId(`lyp_next_${guildId}`)
-				.setLabel("Next")
+				.setLabel(i18n.cmd("Next"))
 				.setEmoji("▶️")
 				.setStyle(ButtonStyle.Secondary)
 				.setDisabled(page === total - 1),
@@ -534,7 +540,7 @@ class LyricsCommand extends Command {
 		}
 
 		if (current.trim()) chunks.push(current.trim());
-		return chunks.length > 0 ? chunks : ["No lyrics available"];
+		return chunks.length > 0 ? chunks : [i18n.cmd("No lyrics available")];
 	}
 
 	_createProgressBar(currentMs: any, totalMs: any, length = 16) {

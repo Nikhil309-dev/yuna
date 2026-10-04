@@ -23,6 +23,7 @@ import {
 } from "discord.js";
 import type { Client, Message } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { CommandCard } from "#ui/cards/CommandCard";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
@@ -32,6 +33,7 @@ import { pathToFileURL } from "url";
 import { isOwner } from '#core/AccessControl';
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class HelpCommand extends Command {
   constructor() {
@@ -183,7 +185,7 @@ class HelpCommand extends Command {
 
       const command = {
         name: instance.name,
-        description: instance.description || 'No description provided',
+        description: instance.description || i18n.cmd('No description provided'),
         usage: instance.usage || instance.name,
         aliases: instance.aliases || [],
         category: categoryName,
@@ -244,7 +246,7 @@ class HelpCommand extends Command {
 
         const cmdData = {
           name: cmd.name,
-          description: cmd.description || 'No description provided',
+          description: cmd.description || i18n.cmd('No description provided'),
           usage: cmd.usage || cmd.name,
           aliases: cmd.aliases || [],
           category: cat,
@@ -253,9 +255,9 @@ class HelpCommand extends Command {
           enabledSlash: !!(cmd.slash?.enabled ?? cmd.enabledSlash),
           slashData: cmd.slash?.data || cmd.slashData || null,
           ownerOnly: !!cmd.access?.ownerOnly,
-          userPrem: !!cmd.access?.userPremium,
-          guildPrem: !!cmd.access?.guildPremium,
-          anyPrem: !!cmd.access?.anyPremium,
+          userPrem: cmd.access?.premium === 'user' || cmd.access?.premium === 'any',
+          guildPrem: cmd.access?.premium === 'guild' || cmd.access?.premium === 'any',
+          anyPrem: !!cmd.access?.premium,
           voiceRequired: !!cmd.access?.voice,
           sameVoiceRequired: !!cmd.access?.sameVoice,
           playerRequired: !!cmd.access?.player,
@@ -313,7 +315,7 @@ class HelpCommand extends Command {
         } else {
           return message.reply({
             components: [
-              this._createErrorContainer(`Command "${commandName}" not found.`),
+              this._createErrorContainer(i18n.cmd('Command "{name}" not found.', { name: commandName })),
             ],
             flags: MessageFlags.IsComponentsV2,
           });
@@ -322,7 +324,7 @@ class HelpCommand extends Command {
 
       if (categories.size === 0) {
         return message.reply({
-          components: [this._createErrorContainer("No commands available.")],
+          components: [this._createErrorContainer(i18n.cmd("No commands available."))],
           flags: MessageFlags.IsComponentsV2,
         });
       }
@@ -351,7 +353,7 @@ class HelpCommand extends Command {
       await message
         .reply({
           components: [
-            this._createErrorContainer("An error occurred while loading help."),
+            this._createErrorContainer(i18n.cmd("An error occurred while loading help.")),
           ],
           flags: MessageFlags.IsComponentsV2,
         })
@@ -379,30 +381,27 @@ class HelpCommand extends Command {
             subcategories,
           );
         } else {
-          return interaction.reply({
+          return interaction.editReply({
             components: [
-              this._createErrorContainer(`Command "${commandName}" not found.`),
+              this._createErrorContainer(i18n.cmd('Command "{name}" not found.', { name: commandName })),
             ],
             flags: MessageFlags.IsComponentsV2,
-            ephemeral: true,
           });
         }
       }
 
       if (categories.size === 0) {
-        return interaction.reply({
-          components: [this._createErrorContainer("No commands available.")],
+        return interaction.editReply({
+          components: [this._createErrorContainer(i18n.cmd("No commands available."))],
           flags: MessageFlags.IsComponentsV2,
-          ephemeral: true,
         });
       }
 
-      const helpMessage = await interaction.reply({
+      const helpMessage = await interaction.editReply({
         components: [
           this._createMainContainer(commands, categories, subcategories),
         ],
         flags: MessageFlags.IsComponentsV2,
-        fetchReply: true,
       });
 
       this._setupCollector(
@@ -424,18 +423,17 @@ class HelpCommand extends Command {
           await interaction.editReply({
             components: [
               this._createErrorContainer(
-                "An error occurred while loading help.",
+                i18n.cmd("An error occurred while loading help."),
               ),
             ],
           });
         } else {
-          await interaction.reply({
+          await interaction.editReply({
             components: [
               this._createErrorContainer(
-                "An error occurred while loading help.",
+                i18n.cmd("An error occurred while loading help."),
               ),
             ],
-            ephemeral: true,
           });
         }
       } catch (e) {
@@ -486,7 +484,7 @@ class HelpCommand extends Command {
 
       container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `${emoji.get("info")} **Help Menu**`,
+          i18n.cmd("{emoji} **{title}**", { emoji: emoji.get("info"), title: i18n.translateTitle("Help Menu") }),
         ),
       );
 
@@ -496,9 +494,9 @@ class HelpCommand extends Command {
 
       let content = `**Bot Command Information**\n\n`;
       content += `┌─ **${emoji.get("info")} Statistics**\n`;
-      content += `├─ Prefix Commands: ${uniqueCommands.length}\n`;
-      content += `├─ Slash Commands: ${slashCommands.length}\n`;
-      content += `└─ Categories: ${categoryArray.length}\n\n`;
+      content += i18n.cmd("├─ Prefix Commands: {count}\n", { count: uniqueCommands.length });
+      content += i18n.cmd("├─ Slash Commands: {count}\n", { count: slashCommands.length });
+      content += `└─ ${i18n.cmd("Categories:")} ${categoryArray.length}\n\n`;
 
       content += `**Available Categories:**\n`;
 
@@ -524,12 +522,12 @@ class HelpCommand extends Command {
       );
 
       if (categoryArray.length === 0) {
-        return this._createErrorContainer("No command categories available.");
+        return this._createErrorContainer(i18n.cmd("No command categories available."));
       }
 
       const selectMenu = new StringSelectMenuBuilder()
         .setCustomId("help_category_select")
-        .setPlaceholder("Select a category")
+        .setPlaceholder(i18n.cmd("Select a category"))
         .addOptions(
           categoryArray.map((category: any) => {
             const categoryCommands = categories.get(category) || [];
@@ -552,12 +550,12 @@ class HelpCommand extends Command {
         new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("help_switch_buttons")
-            .setLabel("Button Menu")
+            .setLabel(i18n.cmd("Button Menu"))
             .setStyle(ButtonStyle.Secondary)
             .setEmoji("🔘"),
           new ButtonBuilder()
             .setCustomId("help_close")
-            .setLabel("Close")
+            .setLabel(i18n.cmd("Close"))
             .setStyle(ButtonStyle.Danger),
         ),
       );
@@ -565,7 +563,7 @@ class HelpCommand extends Command {
       return container;
     } catch (error: any) {
       logger.error("HelpCommand", "Error creating main container:", error);
-      return this._createErrorContainer("Unable to load help menu.");
+      return this._createErrorContainer(i18n.cmd("Unable to load help menu."));
     }
   }
 
@@ -582,14 +580,14 @@ class HelpCommand extends Command {
       );
 
       if (categoryArray.length === 0) {
-        return this._createErrorContainer("No command categories available.");
+        return this._createErrorContainer(i18n.cmd("No command categories available."));
       }
 
       const container = new ContainerBuilder();
 
       container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `${emoji.get("info")} **Help Menu** — Button Mode`,
+          i18n.cmd("{emoji} **{title} — Button Mode**", { emoji: emoji.get("info"), title: i18n.translateTitle("Help Menu") }),
         ),
       );
 
@@ -599,11 +597,11 @@ class HelpCommand extends Command {
 
       let content = `**Bot Command Information**\n\n`;
       content += `┌─ **${emoji.get("info")} Statistics**\n`;
-      content += `├─ Prefix Commands: ${uniqueCommands.length}\n`;
-      content += `├─ Slash Commands: ${slashCommands.length}\n`;
-      content += `└─ Categories: ${categoryArray.length}\n\n`;
+      content += i18n.cmd("├─ Prefix Commands: {count}\n", { count: uniqueCommands.length });
+      content += i18n.cmd("├─ Slash Commands: {count}\n", { count: slashCommands.length });
+      content += `└─ ${i18n.cmd("Categories:")} ${categoryArray.length}\n\n`;
 
-      content += `**All Categories:**\n`;
+      content += `**${i18n.cmd("All Categories:")}**\n`;
       categoryArray.forEach((category, index) => {
         const isLast = index === categoryArray.length - 1;
         const prefix = isLast ? "└─" : "├─";
@@ -628,16 +626,16 @@ class HelpCommand extends Command {
         new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("help_page_next")
-            .setLabel("Start Browsing ▶")
+            .setLabel(i18n.cmd("Start Browsing ▶"))
             .setStyle(ButtonStyle.Primary),
           new ButtonBuilder()
             .setCustomId("help_switch_dropdown")
-            .setLabel("Dropdown Menu")
+            .setLabel(i18n.cmd("Dropdown Menu"))
             .setStyle(ButtonStyle.Secondary)
             .setEmoji("📋"),
           new ButtonBuilder()
             .setCustomId("help_close")
-            .setLabel("Close")
+            .setLabel(i18n.cmd("Close"))
             .setStyle(ButtonStyle.Danger),
         ),
       );
@@ -645,7 +643,7 @@ class HelpCommand extends Command {
       return container;
     } catch (error: any) {
       logger.error("HelpCommand", "Error creating button mode home container:", error);
-      return this._createErrorContainer("Unable to load help menu.");
+      return this._createErrorContainer(i18n.cmd("Unable to load help menu."));
     }
   }
 
@@ -667,7 +665,7 @@ class HelpCommand extends Command {
 
       if (allCommands.length === 0) {
         return this._createErrorContainer(
-          `No commands found in category: "${category}".`,
+          i18n.cmd('No commands found in category: "{category}".', { category }),
         );
       }
 
@@ -716,7 +714,7 @@ class HelpCommand extends Command {
       if (paginatedCommands.length > 0) {
         const selectMenu = new StringSelectMenuBuilder()
           .setCustomId(`help_command_select_${category}`)
-          .setPlaceholder(`Select a command for detailed info`)
+          .setPlaceholder(i18n.cmd("Select a command for detailed info"))
           .addOptions(
             paginatedCommands.map((cmd) => ({
               label: cmd.name,
@@ -738,12 +736,12 @@ class HelpCommand extends Command {
         cmdButtonRow.addComponents(
           new ButtonBuilder()
             .setCustomId(isButtonMode ? `help_btn_cmd_prev_${category}_${safePage - 1}` : `help_cat_page_${category}_${safePage - 1}`)
-            .setLabel("◀ Prev Cmds")
+            .setLabel(i18n.cmd("◀ Prev Cmds"))
             .setStyle(ButtonStyle.Primary)
             .setDisabled(safePage === 0),
           new ButtonBuilder()
             .setCustomId(isButtonMode ? `help_btn_cmd_next_${category}_${safePage + 1}` : `help_cat_page_${category}_${safePage + 1}`)
-            .setLabel("Next Cmds ▶")
+            .setLabel(i18n.cmd("Next Cmds ▶"))
             .setStyle(ButtonStyle.Primary)
             .setDisabled(safePage >= totalPages - 1)
         );
@@ -795,7 +793,7 @@ class HelpCommand extends Command {
         const closeRow = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId("help_close")
-            .setLabel("Close")
+            .setLabel(i18n.cmd("Close"))
             .setStyle(ButtonStyle.Danger)
         );
         container.addActionRowComponents(closeRow);
@@ -803,11 +801,11 @@ class HelpCommand extends Command {
         navButtonRow.addComponents(
           new ButtonBuilder()
             .setCustomId("help_back_main")
-            .setLabel("Back")
+            .setLabel(i18n.cmd("Back"))
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("help_close")
-            .setLabel("Close")
+            .setLabel(i18n.cmd("Close"))
             .setStyle(ButtonStyle.Danger)
         );
 
@@ -817,19 +815,19 @@ class HelpCommand extends Command {
       return container;
     } catch (error: any) {
       logger.error("HelpCommand", "Error creating category container:", error);
-      return this._createErrorContainer("Unable to load category commands.");
+      return this._createErrorContainer(i18n.cmd("Unable to load category commands."));
     }
   }
 
   async _createCommandContainer(command: any, category: any) {
     try {
-      if (!command) return { components: [this._createErrorContainer("Command not found.")] };
+      if (!command) return { components: [this._createErrorContainer(i18n.cmd("Command not found."))] };
 
       const container = new ContainerBuilder();
 
       container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `${emoji.get("info") || "🌸"} **Command Details: ${command.name.toUpperCase()}**`,
+          i18n.cmd('{emoji} **Command Details: {name}**', { emoji: emoji.get("info") || "🌸", name: command.name.toUpperCase() }),
         ),
       );
 
@@ -865,7 +863,7 @@ class HelpCommand extends Command {
           .setCustomId(
             `help_back_category_${category || command.category || "misc"}`,
           )
-          .setLabel("Back")
+          .setLabel(i18n.cmd("Back"))
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId("help_back_main")
@@ -882,7 +880,7 @@ class HelpCommand extends Command {
       };
     } catch (error: any) {
       logger.error("HelpCommand", "Error creating command container payload:", error);
-      return { components: [this._createErrorContainer("Unable to load command info.")] };
+      return { components: [this._createErrorContainer(i18n.cmd("Unable to load command info."))] };
     }
   }
 
@@ -897,7 +895,7 @@ class HelpCommand extends Command {
 
       container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `${emoji.get("info")} **Slash Command: ${command.name}**`,
+          i18n.cmd("{emoji} **Slash Command: {name}**", { emoji: emoji.get("info"), name: command.name }),
         ),
       );
 
@@ -952,7 +950,7 @@ class HelpCommand extends Command {
             .setCustomId(
               `help_back_command:${command.name}:${category || command.category || "misc"}`,
             )
-            .setLabel("Back")
+            .setLabel(i18n.cmd("Back"))
             .setStyle(ButtonStyle.Secondary),
           new ButtonBuilder()
             .setCustomId("help_back_main")
@@ -965,11 +963,11 @@ class HelpCommand extends Command {
     } catch (error: any) {
       logger.error(
         "HelpCommand",
-        "Error creating slash info container:",
+        i18n.cmd("Error creating slash info container:"),
         error,
       );
       return this._createErrorContainer(
-        "Unable to load slash command information.",
+        i18n.cmd("Unable to load slash command information."),
       );
     }
   }
@@ -986,7 +984,7 @@ class HelpCommand extends Command {
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small),
       );
 
-      const content = `**Something went wrong**\n\n┌─ **${emoji.get("info")} Issue:** ${message}\n└─ **${emoji.get("reset")} Action:** Try again or contact support\n\n*Please check your input and try again*`;
+      const content = i18n.cmd("**Something went wrong**\n\n┌─ **{info} Issue:** {message}\n└─ **{reset} Action:** Try again or contact support\n\n*Please check your input and try again*", { info: emoji.get("info"), reset: emoji.get("reset"), message });
 
       const section = new SectionBuilder()
         .addTextDisplayComponents(
@@ -1010,7 +1008,7 @@ class HelpCommand extends Command {
       const fallbackContainer = new ContainerBuilder();
       fallbackContainer.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `${emoji.get("cross")} **Error**\n*Help system unavailable*`,
+          i18n.cmd("{emoji} **{title}**\n*{tip}*", { emoji: emoji.get("cross"), title: i18n.translateTitle("Error"), tip: i18n.cmd("Help system unavailable") }),
         ),
       );
       return fallbackContainer;
@@ -1036,10 +1034,9 @@ class HelpCommand extends Command {
           subcategories,
         );
       } else {
-        const helpMessage = await messageOrInteraction.reply({
+        const helpMessage = await messageOrInteraction.editReply({
           ...payload,
           flags: MessageFlags.IsComponentsV2,
-          fetchReply: true,
         });
         this._setupCollector(
           helpMessage,
@@ -1061,7 +1058,7 @@ class HelpCommand extends Command {
       let currentCategoryIndex = -1;
       const categoryArray = Array.from(categories.keys());
 
-      const collector = message.createMessageComponentCollector({
+      const collector = componentCollectorSource(message).createMessageComponentCollector({
         time: 300_000,
       });
 
@@ -1299,7 +1296,7 @@ class HelpCommand extends Command {
 
           try {
             await interaction.followUp({
-              content: "An error occurred while processing your request. Please try again.",
+              content: i18n.cmd("An error occurred while processing your request. Please try again."),
               ephemeral: true,
             });
           } catch (followUpError: any) {
@@ -1323,7 +1320,7 @@ class HelpCommand extends Command {
           if (!currentMessage?.components?.length) {
             logger.debug(
               "HelpCommand",
-              "No message or components found for disabling",
+              i18n.cmd("No message or components found for disabling"),
             );
             return;
           }

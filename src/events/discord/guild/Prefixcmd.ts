@@ -1,10 +1,10 @@
 import { AttachmentBuilder, MessageFlags, ButtonBuilder, ButtonStyle, ActionRowBuilder } from "discord.js";
 import { Middleware } from "#core/Middleware";
 import { logger } from "#utils/logger";
-import { localeStore } from "#utils/localeStore.js";
 import { DiscordLogger } from "#utils/DiscordLogger";
 import { db } from "#database/Database";
 import { i18n } from "#utils/i18n.js";
+import { localeFor, runWithLocale } from "#utils/locale.js";
 import { PlayerManager } from "#audio/PlayerManager";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
@@ -69,16 +69,18 @@ export default {
 
     const mentionRegex = new RegExp(`^<@!?${client.user.id}>\\s*$`);
     if (mentionRegex.test(message.content.trim())) {
+      const mentionLocale = localeFor(message.author.id, message.guild.id);
+      const mt = (key: string, replacements: Record<string, any> = {}) => i18n.ui(mentionLocale, key, replacements);
       const guildPrefixes = db.getPrefixes(message.guild.id);
       const userPrefixes = db.getUserPrefixes(message.author.id);
 
       const supportButton = new ButtonBuilder()
-        .setLabel("Support Server")
+        .setLabel(mt("mention.support"))
         .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
         .setStyle(ButtonStyle.Link);
 
       const inviteButton = new ButtonBuilder()
-        .setLabel("Invite Me")
+        .setLabel(mt("mention.invite"))
         .setURL(`https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot%20applications.commands`)
         .setStyle(ButtonStyle.Link);
 
@@ -87,37 +89,37 @@ export default {
       const memoryUsage = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
       const guildCount = client.guilds.cache.size;
 
-      let lavalinkStatus = "Disconnected";
+      let lavalinkStatus = mt("mention.lavalinkDisconnected");
       let lavalinkColor = emoji.get("cross") || "❌";
 
       if (client.music && client.music.lavalink) {
         const connectedNodes = Array.from((client.music.lavalink as any).nodeManager.nodes.values()).filter((n: any) => n.connected);
         if (connectedNodes.length > 0) {
-          lavalinkStatus = "Connected";
+          lavalinkStatus = mt("mention.lavalinkConnected");
           lavalinkColor = emoji.get("check") || "✅";
         }
       }
 
-      let content = `**Advanced Music & Utility Bot**\n\n`;
-      content += `┌─ **${emoji.get("info")} Configuration**\n`;
-      content += `├─ My Prefix: \`${guildPrefixes[0]}\` (or \`yuna\`)\n`;
+      let content = `**${mt("mention.tagline")}**\n\n`;
+      content += `┌─ **${emoji.get("info")} ${mt("mention.configuration")}**\n`;
+      content += `├─ ${mt("mention.myPrefix")}: \`${guildPrefixes[0]}\` (${mt("mention.or")} \`yuna\`)\n`;
       if (userPrefixes.length > 0) {
-        content += `├─ Your Prefixes: ${userPrefixes.map((p: string) => `\`${p}\``).join(', ')}\n`;
+        content += `├─ ${mt("mention.yourPrefixes")}: ${userPrefixes.map((p: string) => `\`${p}\``).join(', ')}\n`;
       }
-      content += `├─ Slash Commands: Fully Supported (\`/help\`, \`/play\`)\n`;
-      content += `└─ Help Command: \`${guildPrefixes[0]}help\` or \`/help\`\n\n`;
+      content += `├─ ${mt("mention.slashSupported")} (\`/help\`, \`/play\`)\n`;
+      content += `└─ ${mt("mention.helpCommand")}: \`${guildPrefixes[0]}help\` ${mt("mention.or")} \`/help\`\n\n`;
 
-      content += `┌─ **${emoji.get("music")} System Statistics**\n`;
-      content += `├─ Servers: ${guildCount.toLocaleString()}\n`;
-      content += `├─ Memory: ${memoryUsage} MB\n`;
-      content += `└─ Lavalink: ${lavalinkStatus} ${lavalinkColor}`;
+      content += `┌─ **${emoji.get("music")} ${mt("mention.systemStats")}**\n`;
+      content += `├─ ${mt("mention.servers")}: ${guildCount.toLocaleString()}\n`;
+      content += `├─ ${mt("mention.memory")}: ${memoryUsage} MB\n`;
+      content += `└─ ${mt("mention.lavalink")}: ${lavalinkStatus} ${lavalinkColor}`;
 
       try {
         const bannerBuffer = BannerCard ? await BannerCard.renderBanner() : null;
         const attachment = bannerBuffer ? new AttachmentBuilder(bannerBuffer, { name: 'yuna-banner.png' }) : null;
 
         const containerOpts = {
-          title: `${client.user.username} Information`,
+          title: mt("mention.title", { bot: client.user.username }),
           content: content,
           thumbnail: client.user.displayAvatarURL({ size: 256 }),
           components: [row],
@@ -141,7 +143,7 @@ export default {
       } catch (err) {
         logger.error('MentionResponse', 'Error rendering banner:', err);
         const fallbackContainer = buildYunaContainer({
-          title: `${client.user.username} Information`,
+          title: mt("mention.title", { bot: client.user.username }),
           content: content,
           thumbnail: client.user.displayAvatarURL({ size: 256 }),
           components: [row],
@@ -182,12 +184,12 @@ export default {
       player,
 
       pm: player ? new PlayerManager(player) : null,
-      locale: db?.user?.getLocale(message?.author?.id) || db?.guild?.getLocale(message?.guild?.id) || 'en-US',
-      t: (category: string, replacements: Record<string, unknown> = {}) => i18n.t(db?.user?.getLocale(message?.author?.id) || db?.guild?.getLocale(message?.guild?.id) || 'en-US', category, replacements)
+      locale: localeFor(message?.author?.id, message?.guild?.id),
+      t: (category: string, replacements: Record<string, unknown> = {}) => i18n.t(localeFor(message?.author?.id, message?.guild?.id), category, replacements)
     };
 
     try {
-      const middlewareResult = await Middleware.run(ctx, command);
+      const middlewareResult = await runWithLocale(ctx.locale, () => Middleware.run(ctx, command));
       if (!middlewareResult.pass) {
         return message.reply(middlewareResult.response);
       }
@@ -199,7 +201,7 @@ export default {
       const proceed = await command.beforeExecute(ctx);
       if (!proceed) return;
 
-      await localeStore.run({ locale: ctx.locale || db?.guild?.getLocale(ctx.guild?.id) || 'en-US' }, async () => {
+      await runWithLocale(ctx.locale, async () => {
           await command.execute(ctx);
         });
       await command.afterExecute(ctx);
@@ -211,8 +213,9 @@ export default {
         await command.onError(ctx, error);
       } else {
         logger.error("MessageCreate", `Error executing command '${command.name}'`, error);
-        await message.reply("An unexpected error occurred while running the command.").catch(()=>{});
       }
+      // The base onError() only logs — make sure the user still gets feedback.
+      await message.reply(i18n.ui(ctx.locale, "common.unexpected")).catch(() => {});
     }
   },
 };

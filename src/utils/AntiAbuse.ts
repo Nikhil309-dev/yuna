@@ -72,18 +72,22 @@ export class AntiAbuse {
     prior.push(now);
     this.violations.set(key, prior);
 
+    // Prefer the persisted, cross-shard violation count when available so the
+    // auto-blacklist threshold isn't defeated by sharding / restarts.
+    let effectiveCount = prior.length;
     if (this.cooldownRepo) {
-      this.cooldownRepo.recordViolation(userId, commandName, guildId, VIOLATION_WINDOW_MS);
+      const persisted = this.cooldownRepo.recordViolation(userId, commandName, guildId, VIOLATION_WINDOW_MS);
+      effectiveCount = Math.max(effectiveCount, persisted);
     }
 
-    if (prior.length >= MAX_VIOLATIONS) {
+    if (effectiveCount >= MAX_VIOLATIONS) {
       this.blacklist.set(key, Date.now() + BLACKLIST_TTL_MS);
       logger.warn(
         'AntiAbuse',
-        `Auto-blacklisted ${key} for ${BLACKLIST_TTL_MS / 1000}s after ${prior.length} violations in ${VIOLATION_WINDOW_MS}ms`,
+        `Auto-blacklisted ${key} for ${BLACKLIST_TTL_MS / 1000}s after ${effectiveCount} violations in ${VIOLATION_WINDOW_MS}ms`,
       );
     }
-    return prior.length;
+    return effectiveCount;
   }
 
   /**

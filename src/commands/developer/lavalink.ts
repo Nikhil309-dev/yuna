@@ -17,7 +17,9 @@ import { Command } from "#core/Command";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class LavalinkCommand extends Command {
 	constructor() {
@@ -53,7 +55,7 @@ class LavalinkCommand extends Command {
 		const container = new ContainerBuilder();
 
 		container.addTextDisplayComponents(
-			new TextDisplayBuilder().setContent(`### ${emoji.get("music")} **Lavalink Nodes Dashboard**`),
+			new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} **{title}**", { emoji: emoji.get("music"), title: i18n.translateTitle("Lavalink Nodes Dashboard") })),
 		);
 
 		container.addSeparatorComponents(
@@ -66,7 +68,7 @@ class LavalinkCommand extends Command {
 		if (nodeCount === 0) {
 			const emptySection = new SectionBuilder()
 				.addTextDisplayComponents(
-					new TextDisplayBuilder().setContent("**No Lavalink nodes connected.**\n\nCheck Lavalink server configuration in `.env`."),
+					new TextDisplayBuilder().setContent(i18n.cmd("**No Lavalink nodes connected.**\n\nCheck Lavalink server configuration in `.env`.")),
 				)
 				.setThumbnailAccessory(
 					new ThumbnailBuilder().setURL(config.assets?.defaultThumbnail || config.assets?.defaultTrackArtwork),
@@ -93,21 +95,21 @@ class LavalinkCommand extends Command {
 				const uptimeMs = stats.uptime || 0;
 
 				const statusDot = isConnected ? "🟢" : "🔴";
-				const hostStr = `${node.options?.host || "Host"}:${node.options?.port || "9000"}`;
+				const hostStr = `${node.options?.host || i18n.cmd("Host")}:${node.options?.port || "9000"}`;
 
-				nodeDetails += `${statusDot} **Node:** \`${name}\` (${hostStr})\n` +
-					`├─ **Status:** ${isConnected ? "Connected" : "Disconnected"}\n` +
-					`├─ **Players:** ${playing} playing / ${players} total\n` +
-					`├─ **CPU Load:** Lavalink ${cpuLavalink} | System ${cpuSystem}\n` +
-					`├─ **Memory:** ${memUsedMb} MB used / ${memFreeMb} MB free\n` +
-					`└─ **Node Uptime:** ${this._formatUptime(uptimeMs)}\n\n`;
+				nodeDetails += i18n.cmd("{dot} **Node:** `{name}` ({host})\n", { dot: statusDot, name, host: hostStr }) +
+					i18n.cmd("├─ **Status:** {status}\n", { status: isConnected ? i18n.cmd("Connected") : i18n.cmd("Disconnected") }) +
+					i18n.cmd("├─ **Players:** {playing} playing / {total} total\n", { playing, total: players }) +
+					i18n.cmd("├─ **CPU Load:** Lavalink {lavalink} | System {system}\n", { lavalink: cpuLavalink, system: cpuSystem }) +
+					i18n.cmd("├─ **Memory:** {used} MB used / {free} MB free\n", { used: memUsedMb, free: memFreeMb }) +
+					i18n.cmd("└─ **Node Uptime:** {uptime}\n\n", { uptime: this._formatUptime(uptimeMs) });
 			});
 
-			const overview = `**Overall Overview**\n` +
-				`├─ **Connected Nodes:** ${nodeCount}\n` +
-				`├─ **Total Players:** ${totalPlayers}\n` +
-				`└─ **Active Playbacks:** ${playingPlayers}\n\n` +
-				`**Connected Node Details:**\n` + nodeDetails.trim();
+			const overview = i18n.cmd("**Overall Overview**\n") +
+				i18n.cmd("├─ **Connected Nodes:** {count}\n", { count: nodeCount }) +
+				i18n.cmd("├─ **Total Players:** {count}\n", { count: totalPlayers }) +
+				i18n.cmd("└─ **Active Playbacks:** {count}\n\n", { count: playingPlayers }) +
+				i18n.cmd("**Connected Node Details:**\n") + nodeDetails.trim();
 
 			const section = new SectionBuilder()
 				.addTextDisplayComponents(
@@ -126,11 +128,11 @@ class LavalinkCommand extends Command {
 
 		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 				.setCustomId("node_refresh")
-				.setLabel("Refresh Stats")
+				.setLabel(i18n.cmd("Refresh Stats"))
 				.setStyle(ButtonStyle.Primary),
 			new ButtonBuilder()
 				.setCustomId("node_reconnect")
-				.setLabel("Reconnect Nodes")
+				.setLabel(i18n.cmd("Reconnect Nodes"))
 				.setStyle(ButtonStyle.Secondary),
 		);
 
@@ -140,12 +142,12 @@ class LavalinkCommand extends Command {
 	}
 
 	_setupCollector(messageInstance: Message, userId: string, client: YunaClient) {
-		const collector = messageInstance.createMessageComponentCollector({
-			filter: (i) => i.user.id === userId,
+		const collector = componentCollectorSource(messageInstance).createMessageComponentCollector({
+			filter: (i: any) => i.user.id === userId,
 			time: 120_000,
 		});
 
-		collector.on("collect", async (interaction) => {
+		collector.on("collect", async (interaction: any) => {
 			try {
 				if (interaction.customId === "node_refresh") {
 					const updatedContainer = this._createNodeStatusContainer(client);
@@ -178,7 +180,7 @@ class LavalinkCommand extends Command {
 	_createErrorContainer(msg: string) {
 		const container = new ContainerBuilder();
 		container.addTextDisplayComponents(
-			new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} **Lavalink Error**`),
+			new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} **{title}**", { emoji: emoji.get("cross"), title: i18n.translateTitle("Lavalink Error") })),
 		);
 		container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 		container.addSectionComponents(

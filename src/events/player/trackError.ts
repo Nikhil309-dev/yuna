@@ -4,6 +4,8 @@ import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
 import { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags, ButtonBuilder, ButtonStyle, SectionBuilder } from "discord.js";
 import emoji from "#config/emoji";
+import musicSource from "#config/sources";
+import { i18n } from "#utils/i18n";
 
 export default {
   name: "trackError",
@@ -16,7 +18,7 @@ export default {
         guildId: player.guildId
       });
 
-      const errorMsg = payload?.exception?.message || payload?.error || 'Unknown Lavalink error';
+      const errorMsg = payload?.exception?.message || payload?.error || i18n.cmd('Unknown Lavalink error');
       const title = track?.info?.title;
       const author = track?.info?.author;
 
@@ -28,12 +30,19 @@ export default {
 
           logger.info('TrackException', `Attempting stream recovery for "${searchQuery}" in guild ${player.guildId}`);
 
-          let fallbackRes = await client.music.search(`jssearch:${searchQuery}`);
-          let sourceUsed = 'JioSaavn';
-
-          if (!fallbackRes?.tracks?.length) {
-            fallbackRes = await client.music.search(`scsearch:${searchQuery}`);
-            sourceUsed = 'SoundCloud';
+          // Try every configured source prefix instead of hardcoding plugins
+          // the Lavalink node may not have installed.
+          let fallbackRes: any = null;
+          let sourceUsed = '';
+          for (const prefix of musicSource.getPrefixList()) {
+            try {
+              const res = await client.music.search(searchQuery, { source: prefix.replace(':', '') });
+              if (res?.tracks?.length) {
+                fallbackRes = res;
+                sourceUsed = prefix.replace(':', '');
+                break;
+              }
+            } catch { /* try the next source */ }
           }
 
           if (fallbackRes?.tracks?.length > 0) {
@@ -47,9 +56,9 @@ export default {
               .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
               .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                  `YouTube stream was blocked (HTTP 403 / bot protection).\n\n` +
-                  `├─ 🎵 **Original Track:** ${title}\n` +
-                  `└─ ⚡ **Auto-Fallback:** Switched to ${sourceUsed} stream automatically!`
+                  i18n.cmd("YouTube stream was blocked (HTTP 403 / bot protection).\n\n") +
+                  i18n.cmd("├─ 🎵 **Original Track:** {title}\n", { title }) +
+                  i18n.cmd("└─ ⚡ **Auto-Fallback:** Switched to {source} stream automatically!", { source: sourceUsed })
                 )
               );
 
@@ -64,7 +73,7 @@ export default {
       }
 
       const button = new ButtonBuilder()
-        .setLabel("Support")
+        .setLabel(i18n.cmd("Support"))
         .setURL("https://discord.gg/XYwwyDKhec")
         .setStyle(ButtonStyle.Link);
 
@@ -74,7 +83,7 @@ export default {
         .addSectionComponents(
           new SectionBuilder()
             .addTextDisplayComponents(
-              new TextDisplayBuilder().setContent(`Lavalink failed to play: **${track?.info?.title || 'Unknown'}**\n\n**Reason:** ${errorMsg}`)
+              new TextDisplayBuilder().setContent(i18n.cmd("Lavalink failed to play: **{title}**\n\n**Reason:** {reason}", { title: track?.info?.title || i18n.cmd('Unknown'), reason: errorMsg }))
             )
             .setButtonAccessory(button)
         );

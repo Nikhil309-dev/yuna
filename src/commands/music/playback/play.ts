@@ -17,11 +17,13 @@ import {
 } from "discord.js";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import { PlayerManager } from '#audio/PlayerManager';
 import { db } from '#database/Database';
 import { config } from "#config/config";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 import musicSource from "#config/sources";
 
 class PlayCommand extends Command {
@@ -51,14 +53,14 @@ class PlayCommand extends Command {
           options: [
             {
               name: "query",
-              description: "Song name, URL, or search query",
+              description: i18n.cmd("Song name, URL, or search query"),
               type: 3,
               required: true,
               autocomplete: true,
             },
             {
               name: "source",
-              description: "Music source to search from",
+              description: i18n.cmd("Music source to search from"),
               type: 3,
               required: false,
               choices: [
@@ -71,14 +73,14 @@ class PlayCommand extends Command {
             },
             {
               name: "position",
-              description: "Position in queue to add the song (1 = next)",
+              description: i18n.cmd("Position in queue to add the song (1 = next)"),
               type: 4,
               required: false,
               min_value: 1,
             },
             {
               name: "next",
-              description: "Add this song to the front of the queue (plays next)",
+              description: i18n.cmd("Add this song to the front of the queue (plays next)"),
               type: 5,
               required: false,
             },
@@ -108,18 +110,24 @@ class PlayCommand extends Command {
           ]);
         }
 
-        const source = interaction.options.getString("source") || "sp";
+        const source = interaction.options.getString("source") || musicSource.PRIMARY_PREFIX.replace(":", "");
         const searchSource = this._normalizeSource(source);
 
         try {
-          const searchResult = await client.music.search(query, {
+          let searchResult = await client.music.search(query, {
             source: searchSource,
             limit: 10,
           });
 
+          // Mirror playback's fallback so autocomplete still works when the
+          // configured primary source has no plugin backing it.
+          if ((!searchResult || !searchResult.tracks?.length) && searchSource !== "ytsearch") {
+            searchResult = await client.music.search(query, { source: "ytsearch", limit: 10 });
+          }
+
           if (!searchResult || !searchResult.tracks?.length) {
             return interaction.respond([
-              { name: `No results found for "${query}"`, value: query },
+              { name: i18n.cmd('No results found for "{query}"', { query }), value: query },
             ]);
           }
 
@@ -172,7 +180,7 @@ class PlayCommand extends Command {
         if (args.length === 0) {
           return message.reply({
             components: [
-              this._createErrorContainer("Please provide a song name or URL."),
+              this._createErrorContainer(i18n.cmd("Please provide a song name or URL.")),
             ],
             flags: MessageFlags.IsComponentsV2,
           });
@@ -184,7 +192,7 @@ class PlayCommand extends Command {
       }
 
       if (!query || !query.trim()) {
-        const errorContainer = this._createErrorContainer("Please provide a song name or URL.");
+        const errorContainer = this._createErrorContainer(i18n.cmd("Please provide a song name or URL."));
         const payload = { components: [errorContainer], flags: MessageFlags.IsComponentsV2 };
         if (context.editReply && (context.deferred || context.replied)) {
           return await context.editReply(payload);
@@ -194,7 +202,7 @@ class PlayCommand extends Command {
 
       const voiceChannel = context.member?.voice?.channel;
       if (!voiceChannel) {
-        const errorContainer = this._createErrorContainer("You must be in a voice channel.");
+        const errorContainer = this._createErrorContainer(i18n.cmd("You must be in a voice channel."));
         const payload = { components: [errorContainer], flags: MessageFlags.IsComponentsV2 };
         if (context.editReply && (context.deferred || context.replied)) {
           return await context.editReply(payload);
@@ -271,7 +279,7 @@ class PlayCommand extends Command {
         error,
       );
       const errorContainer = this._createErrorContainer(
-        "An error occurred. Please try again.",
+        i18n.cmd("An error occurred. Please try again."),
       );
       const payload = { components: [errorContainer], flags: MessageFlags.IsComponentsV2 };
       if (context.editReply && (context.deferred || context.replied)) {
@@ -497,8 +505,11 @@ class PlayCommand extends Command {
 
     if (availableSlots <= 0) {
       const limitMessage = premiumStatus.hasPremium
-        ? `Premium queue is full. You can have up to ${premiumStatus.maxSongs} songs in queue.`
-        : `Free tier queue is full. You can have up to ${premiumStatus.maxSongs} songs in queue. Upgrade to premium for up to ${config.queue.maxSongs.premium} songs.`;
+        ? i18n.cmd("Premium queue is full. You can have up to {max} songs in queue.", { max: premiumStatus.maxSongs })
+        : i18n.cmd(
+            "Free tier queue is full. You can have up to {max} songs in queue. Upgrade to premium for up to {premium} songs.",
+            { max: premiumStatus.maxSongs, premium: config.queue.maxSongs.premium },
+          );
 
       return {
         allowed: false,
@@ -521,12 +532,10 @@ class PlayCommand extends Command {
     };
   }
 
-  _createLoadingContainer(query: any) {
-    const content =
-      `**Searching Music Libraries**\n\n` +
-      `└─ **Query:-** \`${query}\`\n` +
-
-      `-# Connecting With Lavalink...`;
+  _createLoadingContainer(query: any) {const content =
+      i18n.cmd("**Searching Music Libraries**") + "\n\n" +
+      i18n.cmd("└─ **Query:-** `{query}`", { query }) + "\n" +
+      `-# ${i18n.cmd("Connecting With Lavalink...")}`;
 
     return buildContainer({ image: undefined,
         title: "Fetching Track",
@@ -543,24 +552,49 @@ class PlayCommand extends Command {
   _createSuccessContainer(result: any) {
     if (result.type === "playing" || result.type === "queued") {
       const { track, premiumStatus } = result;
-      const title = result.type === "playing" ? "Now Playing" : "Added to Queue";
+      const title =
+        result.type === "playing"
+          ? i18n.translateTitle("Now Playing")
+          : i18n.translateTitle("Added to Queue");
 
       let content =
-        `**Track Information**\n\n` +
-        `└─ **Title:- ** ${track.info.title}\n` +
-        `└─ **Artist:- ** ${track.info.author || "Unknown"}\n` +
-        `└─ **Duration:- ** ${this._formatDuration(track.info.duration)}\n` +
-        `└─ **Status:-** ${result.type === "playing" ? "Now playing" : `Position ${result.queuePosition || 0}`}\n\n` +
-        `${result.type === "playing" ? "*Currently streaming in voice channel*" : "*Track has been queued successfully*"}`;
+        i18n.cmd("**Track Information**") + "\n\n" +
+        i18n.cmd("└─ **Title:- ** {title}", { title: track.info.title }) + "\n" +
+        i18n.cmd("└─ **Artist:- ** {author}", { author: track.info.author || i18n.cmd("Unknown") }) + "\n" +
+        i18n.cmd("└─ **Duration:- ** {duration}", { duration: this._formatDuration(track.info.duration) }) + "\n" +
+        i18n.cmd("└─ **Status:-** {status}", {
+          status:
+            result.type === "playing"
+              ? i18n.cmd("Now playing")
+              : i18n.cmd("Position {position}", { position: result.queuePosition || 0 }),
+        }) + "\n\n" +
+        (result.type === "playing"
+          ? i18n.cmd("*Currently streaming in voice channel*")
+          : i18n.cmd("*Track has been queued successfully*"));
 
       if (result.type === "queued" && premiumStatus) {
         content +=
-          `\n\n**Queue Information**\n\n` +
-          `└─ **${emoji.get("add")} Position:** ${result.queuePosition || 0}\n` +
-          `└─ **${emoji.get("folder")} Queue Type:** ${premiumStatus.hasPremium ? "Premium" : "Free"}\n` +
-          `└─ **${emoji.get("info")} Usage:** ${result.queuePosition || 0}/${premiumStatus.maxSongs} songs\n` +
-          `└─ **${emoji.get("check")} Status:** ${premiumStatus.hasPremium ? "Premium active" : "Free tier"}\n\n` +
-          `${!premiumStatus.hasPremium ? `*Upgrade to premium for ${config.queue.maxSongs.premium} song limit*` : "*Premium features unlocked*"}`;
+          "\n\n" + i18n.cmd("**Queue Information**") + "\n\n" +
+          i18n.cmd("└─ **{emoji} Position:** {position}", {
+            emoji: emoji.get("add") || "➕",
+            position: result.queuePosition || 0,
+          }) + "\n" +
+          i18n.cmd("└─ **{emoji} Queue Type:** {type}", {
+            emoji: emoji.get("folder") || "📁",
+            type: premiumStatus.hasPremium ? i18n.cmd("Premium") : i18n.cmd("Free"),
+          }) + "\n" +
+          i18n.cmd("└─ **{emoji} Usage:** {used}/{max} songs", {
+            emoji: emoji.get("info") || "ℹ️",
+            used: result.queuePosition || 0,
+            max: premiumStatus.maxSongs,
+          }) + "\n" +
+          i18n.cmd("└─ **{emoji} Status:** {status}", {
+            emoji: emoji.get("check") || "✅",
+            status: premiumStatus.hasPremium ? i18n.cmd("Premium active") : i18n.cmd("Free tier"),
+          }) + "\n\n" +
+          (!premiumStatus.hasPremium
+            ? i18n.cmd("*Upgrade to premium for {count} song limit*", { count: config.queue.maxSongs.premium })
+            : i18n.cmd("*Premium features unlocked*"));
       }
 
       return buildContainer({ image: undefined,
@@ -575,34 +609,42 @@ class PlayCommand extends Command {
 
       let title, description;
       if (result.type === "playlist_playing") {
-        title = "Playing Playlist";
-        description = "Started playlist playback";
+        title = i18n.translateTitle("Playing Playlist");
+        description = i18n.cmd("Started playlist playback");
       } else if (result.type === "playlist_playing_partial") {
-        title = "Playing Playlist";
-        description = "Partial playlist loaded";
+        title = i18n.translateTitle("Playing Playlist");
+        description = i18n.cmd("Partial playlist loaded");
       } else if (result.type === "playlist_queued_partial") {
-        title = "Queued Playlist";
-        description = "Partial playlist queued";
+        title = i18n.translateTitle("Queued Playlist");
+        description = i18n.cmd("Partial playlist queued");
       } else {
-        title = "Queued Playlist";
-        description = "Playlist added to queue";
+        title = i18n.translateTitle("Queued Playlist");
+        description = i18n.cmd("Playlist added to queue");
       }
 
       let content =
-        `**Playlist Information**\n\n` +
-        `└─ **${emoji.get("check")} Name:** ${playlist.name}\n` +
-        `└─ **${emoji.get("add")} Tracks Added:** ${trackCount}\n` +
-        `└─ **${emoji.get("info")} Total Tracks:** ${totalTracks || trackCount}\n` +
-        `└─ **${emoji.get("folder")} Status:** ${description}\n\n` +
-        `${limitWarning || "*All tracks processed successfully*"}`;
+        i18n.cmd("**Playlist Information**") + "\n\n" +
+        i18n.cmd("└─ **{emoji} Name:** {name}", { emoji: emoji.get("check") || "✅", name: playlist.name }) + "\n" +
+        i18n.cmd("└─ **{emoji} Tracks Added:** {count}", { emoji: emoji.get("add") || "➕", count: trackCount }) + "\n" +
+        i18n.cmd("└─ **{emoji} Total Tracks:** {count}", { emoji: emoji.get("info") || "ℹ️", count: totalTracks || trackCount }) + "\n" +
+        i18n.cmd("└─ **{emoji} Status:** {status}", { emoji: emoji.get("folder") || "📁", status: description }) + "\n\n" +
+        (limitWarning || i18n.cmd("*All tracks processed successfully*"));
 
       if ((result.type === "playlist_queued" || result.type === "playlist_queued_partial" || result.type === "playlist_playing_partial") && premiumStatus) {
         content +=
-          `\n\n**Queue Status**\n\n` +
-          `└─ **${emoji.get("folder")} Queue Type:** ${premiumStatus.hasPremium ? "Premium" : "Free"}\n` +
-          `└─ **${emoji.get("info")} Limit:** ${premiumStatus.maxSongs} songs maximum\n` +
-          `└─ **${emoji.get("check")} Status:** ${premiumStatus.hasPremium ? "Premium active" : "Free tier active"}\n\n` +
-          `${!premiumStatus.hasPremium ? `*Upgrade to premium for ${config.queue.maxSongs.premium} song limit*` : "*Premium queue features enabled*"}`;
+          "\n\n" + i18n.cmd("**Queue Status**") + "\n\n" +
+          i18n.cmd("└─ **{emoji} Queue Type:** {type}", {
+            emoji: emoji.get("folder") || "📁",
+            type: premiumStatus.hasPremium ? i18n.cmd("Premium") : i18n.cmd("Free"),
+          }) + "\n" +
+          i18n.cmd("└─ **{emoji} Limit:** {max} songs maximum", { emoji: emoji.get("info") || "ℹ️", max: premiumStatus.maxSongs }) + "\n" +
+          i18n.cmd("└─ **{emoji} Status:** {status}", {
+            emoji: emoji.get("check") || "✅",
+            status: premiumStatus.hasPremium ? i18n.cmd("Premium active") : i18n.cmd("Free tier active"),
+          }) + "\n\n" +
+          (!premiumStatus.hasPremium
+            ? i18n.cmd("*Upgrade to premium for {count} song limit*", { count: config.queue.maxSongs.premium })
+            : i18n.cmd("*Premium queue features enabled*"));
       }
 
       return buildContainer({ image: undefined,
@@ -618,15 +660,15 @@ class PlayCommand extends Command {
     return new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId(`play_now_${trackIndex}_${guildId}`)
-        .setLabel("Play Now")
+        .setLabel(i18n.cmd("Play Now"))
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId(`play_next_${trackIndex}_${guildId}`)
-        .setLabel("Play Next")
+        .setLabel(i18n.cmd("Play Next"))
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(`remove_track_${trackIndex}_${guildId}`)
-        .setLabel("Remove")
+        .setLabel(i18n.cmd("Remove"))
         .setStyle(ButtonStyle.Danger),
     );
   }
@@ -688,6 +730,7 @@ class PlayCommand extends Command {
       await interaction.editReply({
         content: "",
         components: [container],
+        flags: MessageFlags.IsComponentsV2,
       });
 
       if (result.success && result.showButtons && result.queuePosition) {
@@ -703,9 +746,9 @@ class PlayCommand extends Command {
   }
 
   _setupButtonCollector(messageOrInteraction: any, guildId: any, client: any, userId: any) {
-    const message = messageOrInteraction.fetchReply
-      ? messageOrInteraction
-      : messageOrInteraction;
+    // Slash interactions expose collectors only through `.response`; plain
+    // messages expose them directly. Without this the /play buttons never fired.
+    const message = componentCollectorSource(messageOrInteraction);
     const filter = (i: any) =>
       i.user.id === userId && i.customId.endsWith(`_${guildId}`);
     const collector = message.createMessageComponentCollector({
@@ -746,7 +789,7 @@ class PlayCommand extends Command {
         if (!interaction.member?.voice?.channel) {
           await interaction
             .followUp({
-              content: "You must be in a voice channel to use this action.",
+              content: i18n.tr("body.voiceRequired"),
               ephemeral: true,
             })
             .catch(() => {});
@@ -757,7 +800,7 @@ class PlayCommand extends Command {
         if (!player) {
           await interaction
             .followUp({
-              content: "No active music player found.",
+              content: i18n.tr("body.noPlayer"),
               ephemeral: true,
             })
             .catch(() => {});
@@ -769,7 +812,7 @@ class PlayCommand extends Command {
         if (trackIndex < 0 || trackIndex >= player.queue.tracks.length) {
           await interaction
             .followUp({
-              content: "Track no longer exists in queue.",
+              content: i18n.tr("body.trackGone"),
               ephemeral: true,
             })
             .catch(() => {});
@@ -784,9 +827,9 @@ class PlayCommand extends Command {
           case "play_now":
             await pm.queue.move(trackIndex, 0);
             await pm.skip();
-            actionMessage = `Now playing: ${track.info.title}`;
+            actionMessage = i18n.tr("body.nowPlaying", { title: track.info.title });
             newContainer = this._createActionResultContainer(
-              "Track Updated",
+              "title.trackUpdated",
               actionMessage,
             );
             actionCompleted = true;
@@ -794,9 +837,9 @@ class PlayCommand extends Command {
 
           case "play_next":
             await pm.queue.move(trackIndex, 0);
-            actionMessage = `Will play next: ${track.info.title}`;
+            actionMessage = i18n.tr("body.willPlayNext", { title: track.info.title });
             newContainer = this._createActionResultContainer(
-              "Queue Updated",
+              "title.queueUpdated",
               actionMessage,
             );
             actionCompleted = true;
@@ -804,9 +847,9 @@ class PlayCommand extends Command {
 
           case "remove_track":
             await pm.queue.remove(trackIndex);
-            actionMessage = `Removed: ${track.info.title}`;
+            actionMessage = i18n.tr("body.removedTrack", { title: track.info.title });
             newContainer = this._createActionResultContainer(
-              "Track Removed",
+              "title.trackRemoved",
               actionMessage,
             );
             actionCompleted = true;
@@ -816,7 +859,7 @@ class PlayCommand extends Command {
             client.logger?.warn("PlayCommand", `Unknown action: ${action}`);
             await interaction
               .followUp({
-                content: "Unknown action requested.",
+                content: i18n.tr("body.unknownAction"),
                 ephemeral: true,
               })
               .catch(() => {});
@@ -844,8 +887,7 @@ class PlayCommand extends Command {
         try {
           if (!actionCompleted) {
             await interaction.followUp({
-              content:
-                "An error occurred while processing your request. Please try again.",
+              content: i18n.tr("body.actionFailed"),
               ephemeral: true,
             });
           }
@@ -867,10 +909,7 @@ class PlayCommand extends Command {
         );
 
         if (!currentMessage?.components?.length) {
-          client.logger?.debug(
-            "PlayCommand",
-            "No message or components found for disabling",
-          );
+          client.logger?.debug("PlayCommand", "No message or components found for disabling");
           return;
         }
 

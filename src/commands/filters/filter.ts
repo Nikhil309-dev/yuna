@@ -3,6 +3,7 @@ import { Command, CommandContext } from '#core/Command';
 import { FilterEngine } from '#audio/FilterEngine';
 import { buildContainer, buildError } from '#ui/Theme';
 import emoji from '#config/emoji';
+import { i18n } from '#utils/i18n';
 
 class FilterCommand extends Command {
     constructor() {
@@ -26,12 +27,12 @@ class FilterCommand extends Command {
                     options: [
                         {
                             name: 'apply',
-                            description: 'Apply a specific filter preset',
+                            description: i18n.cmd('Apply a specific filter preset'),
                             type: ApplicationCommandOptionType.Subcommand,
                             options: [
                                 {
                                     name: 'preset',
-                                    description: 'The filter preset to apply',
+                                    description: i18n.cmd('The filter preset to apply'),
                                     type: ApplicationCommandOptionType.String,
                                     required: true,
                                     autocomplete: true
@@ -106,9 +107,9 @@ class FilterCommand extends Command {
             const success = await FilterEngine.apply(targetPlayer, presetName);
             if (success) {
                 const container = buildContainer({
-                    title: 'Filter Applied',
-                    content: `**${presetName}** filter has been applied to the player.\n\n` +
-                             `└─ **${emoji.get('music') || '🎵'} Effect:** ${info.description}`,
+                    title: i18n.translateTitle('Filter Applied'),
+                    content: i18n.tr("body.filterApplied", { preset: presetName }) + "\n\n" +
+                             i18n.cmd("└─ **{emoji} Effect:** {effect}", { emoji: emoji.get('music') || '🎵', effect: info.description }),
                     icon: emoji.get('check') || '✅'
                 });
                 return this._reply(context, container);
@@ -119,9 +120,9 @@ class FilterCommand extends Command {
             const success = await FilterEngine.reset(targetPlayer);
             if (success) {
                 const container = buildContainer({
-                    title: 'Filters Reset',
-                    content: `All audio filters have been cleared.\n\n` +
-                             `└─ **${emoji.get('music') || '🎵'} Effect:** Audio back to original quality`,
+                    title: i18n.translateTitle('Filters Reset'),
+                    content: i18n.tr("body.filtersCleared") + "\n\n" +
+                             i18n.cmd("└─ **{emoji} Effect:** {effect}", { emoji: emoji.get('music') || '🎵', effect: i18n.cmd('Audio back to original quality') }),
                     icon: emoji.get('check') || '✅'
                 });
                 return this._reply(context, container);
@@ -133,8 +134,8 @@ class FilterCommand extends Command {
             const list = presets.map(p => `\`${p}\``).join(', ');
 
             const container = buildContainer({
-                title: 'Available Filters',
-                content: `Here are the available filter presets:\n\n${list}`,
+                title: i18n.translateTitle('Available Filters'),
+                content: i18n.tr("body.filterPresets") + "\n\n" + list,
                 icon: emoji.get('music') || '🎵'
             });
             return this._reply(context, container);

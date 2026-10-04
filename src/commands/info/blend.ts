@@ -5,6 +5,7 @@ import { db } from '#database/Database';
 import emoji from '#config/emoji';
 import BlendCard from '#ui/cards/BlendCard';
 import { logger } from '#utils/logger';
+import { i18n } from "#utils/i18n";
 
 class BlendCommand extends Command {
   constructor() {
@@ -24,7 +25,7 @@ class BlendCommand extends Command {
           options: [
             {
               name: 'user',
-              description: 'The user to compare music tastes with',
+              description: i18n.cmd('The user to compare music tastes with'),
               type: 6,
               required: true
             }
@@ -46,13 +47,13 @@ class BlendCommand extends Command {
     }
 
     if (!targetUser) {
-      const err = buildError(ctx.t("pleaseMention"));
+      const err = buildError(ctx.t("pleaseMentionUser"));
       if (interaction) return interaction.editReply({ components: [err], flags: MessageFlags.IsComponentsV2 });
       return message.reply({ components: [err], flags: MessageFlags.IsComponentsV2 });
     }
 
     if (targetUser.id === author.id) {
-      const err = buildError(ctx.t("youCannotBlen"));
+      const err = buildError(ctx.t("cannotBlendSelf"));
       if (interaction) return interaction.editReply({ components: [err], flags: MessageFlags.IsComponentsV2 });
       return message.reply({ components: [err], flags: MessageFlags.IsComponentsV2 });
     }
@@ -84,7 +85,7 @@ class BlendCommand extends Command {
 
       const container = buildContainer({
         title: 'Spotify Taste Blend',
-        content: `**${author.displayName || author.username}** & **${targetUser.displayName || targetUser.username}** have a **${score}%** music taste compatibility!`,
+        content: i18n.cmd("**{author}** & **{target}** have a **{score}%** music taste compatibility!", { author: author.displayName || author.username, target: targetUser.displayName || targetUser.username, score }),
         icon: emoji.get('music') || '🎵'
       });
 
@@ -100,7 +101,7 @@ class BlendCommand extends Command {
       return await message.reply(payload);
     } catch (err) {
       logger.error('BlendCommand', 'Failed to generate blend card:', err);
-      const errContainer = buildError(ctx.t("failedToGener"));
+      const errContainer = buildError(ctx.t("failedToGenerateBlend"));
       if (interaction) return interaction.editReply({ components: [errContainer], flags: MessageFlags.IsComponentsV2 });
       return message.reply({ components: [errContainer], flags: MessageFlags.IsComponentsV2 });
     }

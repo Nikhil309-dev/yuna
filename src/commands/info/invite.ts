@@ -11,6 +11,7 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class InviteCommand extends Command {
 	constructor() {
@@ -41,7 +42,7 @@ class InviteCommand extends Command {
 		} catch (error: any) {
 			logger.error("InviteCommand", `Error in prefix command: ${error.message}`, error);
 			await message.reply({
-				components: [this._createErrorContainer("An error occurred while generating invite link.")],
+				components: [this._createErrorContainer(i18n.cmd("An error occurred while generating invite link."))],
 				flags: MessageFlags.IsComponentsV2,
 			}).catch(() => {});
 		}
@@ -49,14 +50,14 @@ class InviteCommand extends Command {
 
 	async slashExecute({ client, interaction }: any) {
 		try {
-			await interaction.reply({
+			await interaction.editReply({
 				components: [this._createInviteContainer(client)],
 				flags: MessageFlags.IsComponentsV2,
 			});
 		} catch (error: any) {
 			logger.error("InviteCommand", `Error in slash command: ${error.message}`, error);
 			const errorPayload = {
-				components: [this._createErrorContainer("An error occurred while generating invite link.")],
+				components: [this._createErrorContainer(i18n.cmd("An error occurred while generating invite link."))],
 				ephemeral: true,
 			};
 			if (interaction.replied || interaction.deferred) {

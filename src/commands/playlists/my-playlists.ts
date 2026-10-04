@@ -3,11 +3,13 @@ import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, SectionBuilder, ThumbnailBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 const PLAYLISTS_PER_PAGE = 5;
 
@@ -30,7 +32,7 @@ class MyPlaylistsCommand extends Command {
 					options: [
 						{
 							name: "page",
-							description: "The page number to view",
+							description: i18n.cmd("The page number to view"),
 							type: 4,
 							required: false,
 						},
@@ -80,14 +82,14 @@ class MyPlaylistsCommand extends Command {
 
 		container.addTextDisplayComponents(
 			new TextDisplayBuilder().setContent(
-				`${emoji.get("folder")} **Your Custom Playlists**`,
+				i18n.cmd("{emoji} **{title}**", { emoji: emoji.get("folder"), title: i18n.translateTitle("Your Custom Playlists") }),
 			),
 		);
 		container.addSeparatorComponents(
 			new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small),
 		);
 
-		let content = `**Page ${page} of ${totalPages}** (${playlists.length} total playlists)\n\n`;
+		let content = i18n.cmd("**Page {page} of {total}** ({count} total playlists)\n\n", { page, total: totalPages, count: playlists.length });
 		pagePlaylists.forEach((pl: any, index: any) => {
 			const globalIndex = startIdx + index + 1;
 			const shortId = pl.id.replace("pl_", "").substring(0, 8);
@@ -110,13 +112,13 @@ class MyPlaylistsCommand extends Command {
 		if (totalPages > 1) {
 			const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 					.setCustomId(`mypl_prev_${page}`)
-					.setLabel("Previous")
+					.setLabel(i18n.cmd("Previous"))
 					.setStyle(ButtonStyle.Secondary)
 					.setEmoji(emoji.get("left"))
 					.setDisabled(page <= 1),
 				new ButtonBuilder()
 					.setCustomId(`mypl_next_${page}`)
-					.setLabel("Next")
+					.setLabel(i18n.cmd("Next"))
 					.setStyle(ButtonStyle.Secondary)
 					.setEmoji(emoji.get("right"))
 					.setDisabled(page >= totalPages),
@@ -128,7 +130,7 @@ class MyPlaylistsCommand extends Command {
 	}
 
 	_setupCollector(message: any, userId: any, playlists: any, initialPage: any) {
-		const collector = message.createMessageComponentCollector({
+		const collector = componentCollectorSource(message).createMessageComponentCollector({
 			time: 300000,
 		});
 		let currentPage = initialPage;
@@ -167,7 +169,7 @@ class MyPlaylistsCommand extends Command {
 				if (error.code !== 10008)
 					logger.error(
 						"MyPlaylists",
-						"Failed to clear components on end",
+						i18n.cmd("Failed to clear components on end"),
 						error,
 					);
 			}
@@ -176,15 +178,15 @@ class MyPlaylistsCommand extends Command {
 
 	_createExpiredContainer() {
 		return buildContainer({
-			title: "Interaction Expired",
-			content: `${emoji.get("info")} **This menu has expired. Run \`/my-playlists\` again.**`,
+			title: i18n.translateTitle("Interaction Expired"),
+			content: `${emoji.get("info")} ${i18n.cmd("**This menu has expired. Run `/my-playlists` again.**")}`,
 			icon: emoji.get("info") || "ℹ️"
 		});
 	}
 	_createNoPlaylistsContainer() {
 		return buildError(
-			`You don't have any custom playlists yet.\n\nUse \`/create-playlist <name>\` to get started!`,
-			"No Playlists Found"
+			i18n.cmd("You don't have any custom playlists yet.\n\nUse `/create-playlist <name>` to get started!"),
+			i18n.translateTitle("No Playlists Found")
 		);
 	}
 

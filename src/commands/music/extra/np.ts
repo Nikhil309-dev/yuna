@@ -6,6 +6,7 @@ import { db } from '#database/Database';
 import { logger } from '#utils/logger';
 import { buildError, buildSuccess } from '#ui/Theme';
 import phrases from '#utils/phrases';
+import { i18n } from "#utils/i18n";
 
 class NowPlayingCommand extends Command {
   private musicCard: MusicCard;
@@ -79,7 +80,7 @@ class NowPlayingCommand extends Command {
       await this._reply(context, { files: [attachment] });
     } catch (error) {
       logger.error('NowPlayingCommand', `Failed to create or send canvas: ${(error as Error).message}`, error);
-      return this._replyError(context, 'An error occurred while creating the Now Playing card.');
+      return this._replyError(context, i18n.cmd('An error occurred while creating the Now Playing card.'));
     }
   }
 

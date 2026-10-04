@@ -10,6 +10,7 @@ import { buildYunaContainer } from '#ui/Theme';
 import { ContainerBuilder, TextDisplayBuilder, SectionBuilder, SeparatorBuilder, SeparatorSpacingSize, ButtonBuilder, ButtonStyle, ThumbnailBuilder, MessageFlags } from "discord.js";
 import emoji from "#config/emoji";
 import AutoplayEngine from "#audio/AutoplayEngine";
+import { i18n } from "#utils/i18n";
 
 let autoplayEngine: AutoplayEngine | null = null;
 
@@ -45,9 +46,9 @@ export default {
 
           const failContainer = buildYunaContainer({
             title: "Autoplay Failed",
-            content: `Unable to find similar songs. Queue has ended.\n\n` +
-                     `├─ **Reason:** ${autoplayError.message || 'Unknown error'}\n` +
-                     `└─ **Tip:** Try playing a different song and enable autoplay again.`,
+            content: i18n.cmd("Unable to find similar songs. Queue has ended.\n\n") +
+                     i18n.cmd("├─ **Reason:** {reason}\n", { reason: autoplayError.message || i18n.cmd('Unknown error') }) +
+                     i18n.cmd("└─ **Tip:** Try playing a different song and enable autoplay again."),
             thumbnail: config.assets?.defaultThumbnail,
             icon: "⚠️"
           });
@@ -72,19 +73,19 @@ export default {
         logger.debug('QueueEnd', 'Could not check guild disconnect settings:', dbError);
       }
 
-      let content = `**All songs in the queue have finished playing.**\n\n`;
+      let content = i18n.cmd("**All songs in the queue have finished playing.**\n\n");
       if (is247Mode) {
-        content += `├─ **${emoji.get("info") || '♾️'} Mode:** 24/7 Active\n`;
-        content += `└─ **${emoji.get("check") || '✅'} Status:** Staying connected to voice channel\n`;
+        content += i18n.cmd("├─ **{emoji} Mode:** 24/7 Active\n", { emoji: emoji.get("info") || '♾️' });
+        content += i18n.cmd("└─ **{emoji} Status:** Staying connected to voice channel\n", { emoji: emoji.get("check") || '✅' });
       } else if (shouldDisconnect) {
-        content += `├─ **${emoji.get("info") || '⏰'} Timeout:** 3 minutes\n`;
-        content += `└─ **${emoji.get("cross") || '👋'} Action:** Disconnecting soon to save resources\n`;
+        content += i18n.cmd("├─ **{emoji} Timeout:** 3 minutes\n", { emoji: emoji.get("info") || '⏰' });
+        content += i18n.cmd("└─ **{emoji} Action:** Disconnecting soon to save resources\n", { emoji: emoji.get("cross") || '👋' });
       } else {
-        content += `└─ **${emoji.get("check") || '✅'} Status:** Awaiting new songs\n`;
+        content += i18n.cmd("└─ **{emoji} Status:** Awaiting new songs\n", { emoji: emoji.get("check") || '✅' });
       }
 
       const button = new ButtonBuilder()
-        .setLabel("Yuna Music")
+        .setLabel(i18n.cmd("Yuna Music"))
         .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
         .setStyle(ButtonStyle.Link);
 
@@ -129,9 +130,9 @@ export default {
               .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
               .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                  `Queue finished. Disconnected from voice channel.\n\n` +
-                  `🎵 **Session Summary:**\n` +
-                  `Played **${totalTracks}** tracks${durationString}.`
+                  i18n.cmd("Queue finished. Disconnected from voice channel.\n\n") +
+                  i18n.cmd("🎵 **Session Summary:**\n") +
+                  i18n.cmd("Played **{count}** tracks{duration}.", { count: totalTracks, duration: durationString })
                 )
               );
 
@@ -200,7 +201,7 @@ async function handleAutoplay(player: Player, lastTrack: Track, client: YunaClie
   const recommendations = await autoplayEngine.getRecommendations(player, lastTrack, 3);
 
   if (!recommendations?.length) {
-    throw new Error(`No similar tracks found for "${lastTrack.info.title}" by ${lastTrack.info.author}`);
+    throw new Error(i18n.cmd('No similar tracks found for "{title}" by {author}', { title: lastTrack.info.title, author: lastTrack.info.author }));
   }
 
   const rec = recommendations[0];
@@ -216,7 +217,7 @@ async function handleAutoplay(player: Player, lastTrack: Track, client: YunaClie
   }
 
   if (!trackInfoToAdd) {
-    throw new Error(`Failed to resolve autoplay track for "${rec.name}" by ${rec.artist}`);
+    throw new Error(i18n.cmd('Failed to resolve autoplay track for "{name}" by {artist}', { name: rec.name, artist: rec.artist }));
   }
 
   await pm.addTracks(trackInfoToAdd);

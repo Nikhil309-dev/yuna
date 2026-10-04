@@ -11,9 +11,11 @@ import { db } from '#database/Database';
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import AutoplayEngine from '#audio/AutoplayEngine';
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 let autoplayEngine: AutoplayEngine | null = null;
 function getAutoplayEngine(client: any): AutoplayEngine {
@@ -66,8 +68,8 @@ class RecommendationsCommand extends Command {
 
     const currentTrack = player.queue.current;
     const loadingContainer = buildContainer({
-      title: "Finding Recommendations",
-      content: `### 🔄 **Scanning Recommendation Engine**\n└─ Finding songs similar to **"${currentTrack.info.title}"**...`,
+      title: i18n.translateTitle("Finding Recommendations"),
+      content: i18n.cmd('### 🔄 **Scanning Recommendation Engine**\n└─ Finding songs similar to **"{title}"**...', { title: currentTrack.info.title }),
       thumbnail: currentTrack.info.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "🎵"
     });
@@ -79,7 +81,7 @@ class RecommendationsCommand extends Command {
       const recommendations = await engine.getRecommendations(player, currentTrack, 6);
 
       if (!recommendations || recommendations.length === 0) {
-        const noResultsContainer = buildError(`No recommendations found for "${currentTrack.info.title}" by ${currentTrack.info.author}.`, "No Results");
+        const noResultsContainer = buildError(i18n.cmd('No recommendations found for "{title}" by {author}.', { title: currentTrack.info.title, author: currentTrack.info.author }), "No Results");
         return this._updateMessage(loadingMessage, noResultsContainer, context);
       }
 
@@ -92,7 +94,7 @@ class RecommendationsCommand extends Command {
       }
     } catch (error) {
       logger.error("RecommendationsCommand", `Error fetching recommendations: ${(error as Error).message}`, error);
-      const errorContainer = buildError("Failed to fetch recommendations. Please try again later.", "Recommendation Error");
+      const errorContainer = buildError(i18n.cmd("Failed to fetch recommendations. Please try again later."), "Recommendation Error");
       await this._updateMessage(loadingMessage, errorContainer, context);
     }
   }
@@ -100,17 +102,17 @@ class RecommendationsCommand extends Command {
   _buildRecommendationsContainer(currentTrack: any, recommendations: any, guildId: any, userId: any) {
     const premiumStatus = this._getPremiumStatus(guildId, userId);
 
-    let content = `### 🎵 **Recommended Tracks**\n` +
-      `└─ Based on **"${currentTrack.info.title}"** by **${currentTrack.info.author}**\n\n`;
+    let content = i18n.cmd("### 🎵 **Recommended Tracks**\n") +
+      i18n.cmd('└─ Based on **"{title}"** by **{author}**\n\n', { title: currentTrack.info.title, author: currentTrack.info.author });
 
     recommendations.forEach((rec: any, idx: any) => {
       content += `├─ **${idx + 1}.** ${rec.name} — *${rec.artist}*\n`;
     });
 
-    content += `\n*Select up to ${Math.min(recommendations.length, 6)} songs below to queue them instantly.*`;
+    content += i18n.cmd("\n*Select up to {count} songs below to queue them instantly.*", { count: Math.min(recommendations.length, 6) });
 
     const container = buildContainer({
-      title: "Music Recommendations",
+      title: i18n.translateTitle("Music Recommendations"),
       content: content,
       thumbnail: currentTrack.info.artworkUrl || config.assets.defaultTrackArtwork,
       icon: emoji.get("music") || "🎵"
@@ -147,7 +149,7 @@ class RecommendationsCommand extends Command {
     return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`rec_select_${userId}`)
-        .setPlaceholder(`Select up to ${maxSelections} songs to add to queue`)
+        .setPlaceholder(i18n.cmd('Select up to {max} songs to add to queue', { max: maxSelections }))
         .setMinValues(1)
         .setMaxValues(maxSelections)
         .addOptions(options)
@@ -158,7 +160,7 @@ class RecommendationsCommand extends Command {
     const userId = context.user?.id || context.author?.id;
 
     const filter = (i: any) => i.customId === `rec_select_${userId}` && i.user.id === userId;
-    const collector = message.createMessageComponentCollector({ filter, time: 120_000 });
+    const collector = componentCollectorSource(message).createMessageComponentCollector({ filter, time: 120_000 });
 
     collector.on("collect", async (interaction: any) => {
       try {
@@ -200,7 +202,7 @@ class RecommendationsCommand extends Command {
           });
 
           const successContainer = buildContainer({
-            title: "Recommendations Added",
+            title: i18n.translateTitle("Recommendations Added"),
             content: successContent,
             thumbnail: config.assets.defaultThumbnail,
             icon: emoji.get("check") || "✅"

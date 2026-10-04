@@ -1,10 +1,10 @@
 import { InteractionType, MessageFlags } from "discord.js";
 import { Middleware } from "#core/Middleware";
 import { logger } from "#utils/logger";
-import { localeStore } from "#utils/localeStore.js";
 import { DiscordLogger } from "#utils/DiscordLogger";
 import { db } from "#database/Database";
 import { i18n } from "#utils/i18n.js";
+import { localeFor, runWithLocale } from "#utils/locale.js";
 import { PlayerManager } from "#audio/PlayerManager";
 
 function getCommandFile(interaction: any, client: any) {
@@ -34,9 +34,14 @@ export default {
 
     if (interaction.type !== InteractionType.ApplicationCommand) return;
 
+    // Resolve the requester's language (user → server → en-US) and bind it to
+    // the whole request so every reply below is translated for them.
+    const locale = localeFor(interaction.user?.id, interaction.guild?.id);
+    const tr = (key: string, replacements: Record<string, any> = {}) => i18n.ui(locale, key, replacements);
+
     if (!interaction.inGuild()) {
       return interaction.reply({
-        content: "Commands can only be used in a server.",
+        content: tr("common.guildOnly"),
         ephemeral: true,
       });
     }
@@ -44,7 +49,7 @@ export default {
     const command = getCommandFile(interaction, client);
     if (!command) {
       return interaction.reply({
-        content: "This command seems to be outdated or improperly configured.",
+        content: tr("common.outdated"),
         ephemeral: true,
       });
     }
@@ -64,12 +69,12 @@ export default {
       player,
 
       pm: player ? new PlayerManager(player) : null,
-      locale: db.user?.getLocale(interaction.user?.id) || db.guild?.getLocale(interaction.guild?.id) || 'en-US',
-      t: (category: string, replacements: Record<string, unknown> = {}) => i18n.t(db.user?.getLocale(interaction.user?.id) || db.guild?.getLocale(interaction.guild?.id) || 'en-US', category, replacements)
+      locale,
+      t: (category: string, replacements: Record<string, unknown> = {}) => i18n.t(locale, category, replacements)
     };
 
     try {
-      const middlewareResult = await Middleware.run(ctx, command);
+      const middlewareResult = await runWithLocale(locale, () => Middleware.run(ctx, command));
       if (!middlewareResult.pass) {
         const res = middlewareResult.response;
         const payload = res?.components
@@ -89,7 +94,7 @@ export default {
 
       const proceed = await command.beforeExecute(ctx);
       if (!proceed) {
-        const errorPayload = { content: "Command execution was cancelled.", ephemeral: true };
+        const errorPayload = { content: tr("common.cancelled"), ephemeral: true };
         if (interaction.deferred || interaction.replied) {
           await interaction.editReply(errorPayload).catch(() => {});
         } else {
@@ -98,7 +103,7 @@ export default {
         return;
       }
 
-      await localeStore.run({ locale: ctx.locale || db?.guild?.getLocale(ctx.guild?.id) || 'en-US' }, async () => {
+      await runWithLocale(ctx.locale, async () => {
         // Prefer the dedicated slash handler; fall back to the shared execute().
         if (typeof command.slashExecute === 'function') {
           await command.slashExecute(ctx);
@@ -115,13 +120,18 @@ export default {
         await command.onError(ctx, error);
       } else {
         logger.error("InteractionCreate", `Error executing slash command '${command.name}'`, error);
-        const errReply = { content: "An unexpected error occurred while running the command.", ephemeral: true };
-        if (interaction.deferred || interaction.replied) {
-          await interaction.followUp(errReply).catch(()=>{});
-        } else {
-          await interaction.reply(errReply).catch(()=>{});
-        }
       }
+
+      // Never leave the user staring at a bare "interaction failed". The base
+      // onError() only logs, so surface a localized fallback unless the command
+      // already produced its own response (editReply sets replied = true).
+      try {
+        if (!interaction.replied) {
+          const errReply = { content: tr("common.unexpected"), ephemeral: true };
+          if (interaction.deferred) await interaction.editReply(errReply);
+          else await interaction.reply(errReply);
+        }
+      } catch { /* response already sent / expired interaction */ }
     }
   },
 };

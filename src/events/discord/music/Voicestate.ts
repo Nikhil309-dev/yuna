@@ -1,5 +1,6 @@
 import { PlayerManager } from '#audio/PlayerManager';
 import { logger } from '#utils/logger';
+import { i18n } from '#utils/i18n';
 
 const aloneTimeouts = new Map();
 const muteStates = new Map();
@@ -232,9 +233,9 @@ async function sendMuteNotification(pm: any, isMuted: boolean, muteType: string 
 		let message;
 		if (isMuted) {
 			const type = muteType === 'server-muted' ? 'server-muted' : 'muted';
-			message = `⏸️ **Music paused** - Bot was ${type}`;
+			message = i18n.cmd("⏸️ **Music paused** - Bot was {type}", { type });
 		} else {
-			message = `▶️ **Music resumed** - Bot was unmuted`;
+			message = i18n.cmd("▶️ **Music resumed** - Bot was unmuted");
 		}
 
 		await channel.send(message);
@@ -253,14 +254,14 @@ async function send247StopNotification(pm: any, reason: any, client: any) {
 
 		let message;
 		switch (reason) {
-			case 'Alone in voice channel for 10 seconds':
-				message = '⏹️ **Music stopped** - I was alone in the voice channel (24/7 mode active)';
+			case 'Alone in voice channel for 120 seconds':
+				message = i18n.cmd('⏹️ **Music stopped** - I was alone in the voice channel (24/7 mode active)');
 				break;
 			case 'Bot disconnected from voice channel':
-				message = '⏹️ **Music stopped** - I was removed from the voice channel (24/7 mode active)';
+				message = i18n.cmd('⏹️ **Music stopped** - I was removed from the voice channel (24/7 mode active)');
 				break;
 			default:
-				message = `⏹️ **Music stopped** - ${reason} (24/7 mode active)`;
+				message = i18n.cmd('⏹️ **Music stopped** - {reason} (24/7 mode active)', { reason });
 				break;
 		}
 
@@ -280,7 +281,7 @@ async function sendDisconnectNotification(pm: any, reason: any, client: any) {
 
 		let message;
 		switch (reason) {
-			case 'Alone in voice channel for 10 seconds':
+			case 'Alone in voice channel for 120 seconds':
 				message = '👋 **Disconnected** - I was alone in the voice channel for too long';
 				break;
 			case 'Bot disconnected from voice channel':

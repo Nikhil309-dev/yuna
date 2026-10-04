@@ -10,8 +10,10 @@ import {
   ButtonStyle
 } from 'discord.js';
 import { buildContainer, buildSuccess, buildError } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
+import { i18n } from '#utils/i18n';
 
 class ReloadCommand extends Command {
   constructor() {
@@ -43,59 +45,59 @@ class ReloadCommand extends Command {
     const folderIcon = emoji.get('folder') || '📁';
     const checkIcon = emoji.get('check') || '✅';
 
-    let content = `┌─ **${infoIcon} Status:** Live Hot-Reload Engine Ready\n`;
-    content += `├─ **Commands:** ${client.commands.size} loaded (${client.commandLoader?.slashCommands?.size || 0} slash)\n`;
-    content += `├─ **Events:** ${client.events?.size || 12} registered listeners\n`;
-    content += `└─ **Target Modules:** 6 Subsystems Available\n\n`;
-    content += `*Select one or multiple subsystems from the menu below to hot-reload them with 0 downtime.*`;
+    let content = i18n.cmd("┌─ **{emoji} Status:** Live Hot-Reload Engine Ready\n", { emoji: infoIcon });
+    content += i18n.cmd("├─ **Commands:** {count} loaded ({slash} slash)\n", { count: client.commands.size, slash: client.commandLoader?.slashCommands?.size || 0 });
+    content += i18n.cmd("├─ **Events:** {count} registered listeners\n", { count: client.events?.size || 12 });
+    content += i18n.cmd("└─ **Target Modules:** 6 Subsystems Available\n\n");
+    content += i18n.cmd("*Select one or multiple subsystems from the menu below to hot-reload them with 0 downtime.*");
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('reload_subsystems_select')
-      .setPlaceholder('⚡ Select subsystems & folders to reload...')
+      .setPlaceholder(i18n.cmd('⚡ Select subsystems & folders to reload...'))
       .setMinValues(1)
       .setMaxValues(6)
       .addOptions([
         {
-          label: 'Commands (All)',
+          label: i18n.cmd('Commands (All)'),
           value: 'commands',
-          description: 'Reloads all 84 commands & updates slash registry',
+          description: i18n.cmd('Reloads all 84 commands & updates slash registry'),
           emoji: '📁'
         },
         {
-          label: 'Music & Playback Engine',
+          label: i18n.cmd('Music & Playback Engine'),
           value: 'music',
-          description: 'Reloads music playback, queue, search & favorites',
+          description: i18n.cmd('Reloads music playback, queue, search & favorites'),
           emoji: '🎵'
         },
         {
-          label: 'Audio Filters & DSP Presets',
+          label: i18n.cmd('Audio Filters & DSP Presets'),
           value: 'filters',
-          description: 'Reloads FilterEngine & 21 equalizer audio presets',
+          description: i18n.cmd('Reloads FilterEngine & 21 equalizer audio presets'),
           emoji: '🎛️'
         },
         {
-          label: 'Discord Gateway & Audio Events',
+          label: i18n.cmd('Discord Gateway & Audio Events'),
           value: 'events',
-          description: 'Reloads voice: State, raw, prefix, and slash handlers',
+          description: i18n.cmd('Reloads voice: State, raw, prefix, and slash handlers'),
           emoji: '⚡'
         },
         {
-          label: 'Canvas Cards & Visual Generators',
+          label: i18n.cmd('Canvas Cards & Visual Generators'),
           value: 'cards',
-          description: 'Reloads MusicCard, PingCard, BannerCard & CommandCard',
+          description: i18n.cmd('Reloads MusicCard, PingCard, BannerCard & CommandCard'),
           emoji: '🖼️'
         },
         {
-          label: 'Database SQLite Repositories',
-          value: 'data: base',
-          description: 'Refreshes DB repository instances and caches',
+          label: i18n.cmd('Database SQLite Repositories'),
+          value: 'database',
+          description: i18n.cmd('Refreshes DB repository instances and caches'),
           emoji: '💾'
         }
       ]);
 
     const closeButton = new ButtonBuilder()
       .setCustomId('reload_close_btn')
-      .setLabel('Close')
+      .setLabel(i18n.cmd('Close'))
       .setStyle(ButtonStyle.Secondary);
 
     const row1 = new ActionRowBuilder().addComponents(selectMenu);
@@ -114,14 +116,14 @@ class ReloadCommand extends Command {
       flags: MessageFlags.IsComponentsV2
     });
 
-    const collector = replyMsg.createMessageComponentCollector({
+    const collector = componentCollectorSource(replyMsg).createMessageComponentCollector({
       time: 120_000
     });
 
     collector.on('collect', async (interaction: any) => {
       if (interaction.user.id !== authorId) {
         return interaction.reply({
-          components: [buildError(ctx.t("onlyTheBotDe"))],
+          components: [buildError(ctx.t("onlyDeveloper"))],
           flags: MessageFlags.IsComponentsV2,
           ephemeral: true
         });
@@ -133,7 +135,7 @@ class ReloadCommand extends Command {
           components: [
             buildContainer({
               title: 'Hot-Reload Center Closed',
-              content: `> ${checkIcon} Hot-reload control session dismissed.`,
+              content: i18n.cmd('> {emoji} Hot-reload control session dismissed.', { emoji: checkIcon }),
               icon: '🔒'
             })
           ],
@@ -175,11 +177,11 @@ class ReloadCommand extends Command {
 
           const duration = (performance.now() - start).toFixed(1);
 
-          let resultBody = `┌─ **${checkIcon} Result:** Hot-Reload Executed Successfully\n`;
-          resultBody += `├─ **Reloaded Modules:** ${reloadedItems.join(', ')}\n`;
-          resultBody += `├─ **Execution Time:** \`${duration}ms\`\n`;
-          resultBody += `└─ **System State:** Operational with 0 downtime\n\n`;
-          resultBody += `*All updated code is now live and taking effect immediately.*`;
+          let resultBody = i18n.cmd("┌─ **{emoji} Result:** Hot-Reload Executed Successfully\n", { emoji: checkIcon });
+          resultBody += i18n.cmd("├─ **Reloaded Modules:** {modules}\n", { modules: reloadedItems.join(', ') });
+          resultBody += i18n.cmd("├─ **Execution Time:** `{time}ms`\n", { time: duration });
+          resultBody += i18n.cmd("└─ **System State:** Operational with 0 downtime\n\n");
+          resultBody += i18n.cmd("*All updated code is now live and taking effect immediately.*");
 
           const resultContainer = buildContainer({
             title: 'Hot-Reload Completed',
@@ -197,8 +199,8 @@ class ReloadCommand extends Command {
           logger.error('ReloadCommand', 'Multi-select reload failure:', err);
           const errCard = buildError({
             title: 'Hot-Reload Failed',
-            issue: err.message || 'An error occurred during module re-import.',
-            tip: 'Check server logs for the full stack trace.'
+            issue: err.message || i18n.cmd('An error occurred during module re-import.'),
+            tip: i18n.cmd('Check server logs for the full stack trace.')
           });
           await interaction.editReply({
             components: [errCard, row2],
@@ -227,10 +229,10 @@ class ReloadCommand extends Command {
       if (target === 'all' || target === 'commands') {
         await client.commandLoader.load();
         const duration = (performance.now() - start).toFixed(1);
-        let content = `┌─ **${checkIcon} Result:** Commands Reloaded\n`;
-        content += `├─ **Total Commands:** ${client.commands.size}\n`;
-        content += `├─ **Slash Commands:** ${client.commandLoader.slashCommands.size}\n`;
-        content += `└─ **Execution Time:** \`${duration}ms\``;
+        let content = i18n.cmd("┌─ **{emoji} Result:** Commands Reloaded\n", { emoji: checkIcon });
+        content += i18n.cmd("├─ **Total Commands:** {count}\n", { count: client.commands.size });
+        content += i18n.cmd("├─ **Slash Commands:** {count}\n", { count: client.commandLoader.slashCommands.size });
+        content += i18n.cmd("└─ **Execution Time:** `{time}ms`", { time: duration });
 
         const container = buildContainer({
           title: 'Hot-Reload Complete',
@@ -243,9 +245,9 @@ class ReloadCommand extends Command {
       if (target === 'events') {
         await client.eventLoader.load();
         const duration = (performance.now() - start).toFixed(1);
-        let content = `┌─ **${checkIcon} Result:** Events Reloaded\n`;
-        content += `├─ **Listeners:** ${client.events?.size || 12}\n`;
-        content += `└─ **Execution Time:** \`${duration}ms\``;
+        let content = i18n.cmd("┌─ **{emoji} Result:** Events Reloaded\n", { emoji: checkIcon });
+        content += i18n.cmd("├─ **Listeners:** {count}\n", { count: client.events?.size || 12 });
+        content += i18n.cmd("└─ **Execution Time:** `{time}ms`", { time: duration });
 
         const container = buildContainer({
           title: 'Events Reloaded',
@@ -262,9 +264,9 @@ class ReloadCommand extends Command {
         await import(`../../ui/cards/CommandCard.js?v=${Date.now()}`).catch(() => {});
         const duration = (performance.now() - start).toFixed(1);
 
-        let content = `┌─ **${checkIcon} Result:** All Canvas Cards Reloaded\n`;
-        content += `├─ **Cards:** MusicCard, PingCard, BannerCard, CommandCard\n`;
-        content += `└─ **Execution Time:** \`${duration}ms\``;
+        let content = i18n.cmd("┌─ **{emoji} Result:** All Canvas Cards Reloaded\n", { emoji: checkIcon });
+        content += i18n.cmd("├─ **Cards:** MusicCard, PingCard, BannerCard, CommandCard\n");
+        content += i18n.cmd("└─ **Execution Time:** `{time}ms`", { time: duration });
 
         const container = buildContainer({
           title: 'Canvas Cards Reloaded',
@@ -278,9 +280,9 @@ class ReloadCommand extends Command {
       if (!filePath) {
         return message.reply({
           components: [buildError({
-            title: 'Command Not Found',
-            issue: `Command \`${target}\` was not found in active registry.`,
-            tip: 'Check command spelling or use `.reload` without arguments for the full menu.'
+            title: i18n.translateTitle('Command Not Found'),
+            issue: i18n.cmd('Command `{name}` was not found in active registry.', { name: target }),
+            tip: i18n.cmd('Check command spelling or use `.reload` without arguments for the full menu.')
           })],
           flags: MessageFlags.IsComponentsV2
         });
@@ -295,13 +297,13 @@ class ReloadCommand extends Command {
       client.commands.set(freshCommand.name, freshCommand);
       const duration = (performance.now() - start).toFixed(1);
 
-      let content = `┌─ **${checkIcon} Result:** Single Command Reloaded\n`;
-      content += `├─ **Target:** \`.${freshCommand.name}\`\n`;
-      content += `├─ **Category:** ${freshCommand.category || 'general'}\n`;
-      content += `└─ **Execution Time:** \`${duration}ms\``;
+      let content = i18n.cmd("┌─ **{emoji} Result:** Single Command Reloaded\n", { emoji: checkIcon });
+      content += i18n.cmd("├─ **Target:** `.{name}`\n", { name: freshCommand.name });
+      content += i18n.cmd("├─ **Category:** {category}\n", { category: freshCommand.category || 'general' });
+      content += i18n.cmd("└─ **Execution Time:** `{time}ms`", { time: duration });
 
       const container = buildContainer({
-        title: 'Command Hot-Reloaded',
+        title: i18n.translateTitle('Command Hot-Reloaded'),
         content,
         icon: '🌸'
       });

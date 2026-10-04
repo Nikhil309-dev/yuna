@@ -17,7 +17,9 @@ import { Command } from "#core/Command";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class RebootCommand extends Command {
 	constructor() {
@@ -45,10 +47,10 @@ class RebootCommand extends Command {
 
 			const activePlayers = client.music?.lavalink?.players?.size || 0;
 			const warningText =
-				`Are you sure you want to reboot **Yuna**?\n\n` +
-				`├─ **Active Players:** ${activePlayers} active music sessions\n` +
-				`├─ **Connected Guilds:** ${client.guilds.cache.size}\n` +
-				`└─ **Action:** Save all sessions and restart node process gracefully.`;
+				i18n.cmd("Are you sure you want to reboot **Yuna**?") + "\n\n" +
+				i18n.cmd("├─ **Active Players:** {count} active music sessions\n", { count: activePlayers }) +
+				i18n.cmd("├─ **Connected Guilds:** {count}\n", { count: client.guilds.cache.size }) +
+				i18n.cmd("└─ **Action:** Save all sessions and restart node process gracefully.");
 
 			const section = new SectionBuilder()
 				.addTextDisplayComponents(new TextDisplayBuilder().setContent(warningText))
@@ -64,11 +66,11 @@ class RebootCommand extends Command {
 
 			const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
 					.setCustomId("reboot_confirm")
-					.setLabel("Confirm Reboot")
+					.setLabel(i18n.cmd("Confirm Reboot"))
 					.setStyle(ButtonStyle.Danger),
 				new ButtonBuilder()
 					.setCustomId("reboot_cancel")
-					.setLabel("Cancel")
+					.setLabel(i18n.cmd("Cancel"))
 					.setStyle(ButtonStyle.Secondary),
 			);
 
@@ -90,7 +92,7 @@ class RebootCommand extends Command {
 	}
 
 	_setupCollector(msgInstance: any, userId: any, client: any) {
-		const collector = msgInstance.createMessageComponentCollector({
+		const collector = componentCollectorSource(msgInstance).createMessageComponentCollector({
 			filter: (i: any) => i.user.id === userId,
 			time: 60_000,
 		});
@@ -100,12 +102,12 @@ class RebootCommand extends Command {
 				if (interaction.customId === "reboot_cancel") {
 					const container = new ContainerBuilder();
 					container.addTextDisplayComponents(
-						new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} **Reboot Cancelled**`),
+						new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} **{title}**", { emoji: emoji.get("cross"), title: i18n.translateTitle("Reboot Cancelled") })),
 					);
 					container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 					container.addSectionComponents(
 						new SectionBuilder()
-							.addTextDisplayComponents(new TextDisplayBuilder().setContent("Reboot sequence cancelled by developer."))
+							.addTextDisplayComponents(new TextDisplayBuilder().setContent(i18n.cmd("Reboot sequence cancelled by developer.")))
 							.setThumbnailAccessory(new ThumbnailBuilder().setURL(config.assets?.defaultThumbnail)),
 					);
 
@@ -145,7 +147,7 @@ class RebootCommand extends Command {
 	_createErrorContainer(msg: string) {
 		const container = new ContainerBuilder();
 		container.addTextDisplayComponents(
-			new TextDisplayBuilder().setContent(`### ${emoji.get("cross")} **Reboot Error**`),
+			new TextDisplayBuilder().setContent(i18n.cmd("### {emoji} **{title}**", { emoji: emoji.get("cross"), title: i18n.translateTitle("Reboot Error") })),
 		);
 		container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 		container.addSectionComponents(

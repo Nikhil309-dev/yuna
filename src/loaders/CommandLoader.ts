@@ -9,6 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import { Client } from "discord.js";
+import { i18n } from "#utils/i18n";
+import { SLASH_STRINGS } from "../locales/slash-strings.js";
 
 export class CommandLoader {
   client: any;
@@ -181,7 +183,83 @@ export class CommandLoader {
       };
 
       dataJson.name = finalName.toLowerCase();
+      this._applySlashLocalizations(dataJson);
       this.slashCommands.set(finalName.toLowerCase(), dataJson);
+    }
+  }
+
+  /**
+   * Attaches Discord `*_localizations` maps to a slash command payload so the
+   * client renders translated descriptions, option descriptions and choice
+   * names. Everything is looked up in the shared `cmd.` catalog by the exact
+   * English literal; anything without a translation is simply left out, which
+   * makes Discord fall back to the English text.
+   *
+   * Command *names* are only localized when the translation is still a legal
+   * Discord command name (lowercase, digits, `_`/`-`). Discord rejects the
+   * whole registration payload when a localized name breaks those rules, so a
+   * non-Latin translation is deliberately skipped rather than submitted.
+   *
+   * Discord validates localized descriptions with the same 1..100 range as the
+   * base description and fails the *entire* payload — not just the offending
+   * entry — when one is out of range. Every emitted value is therefore length
+   * checked here, so a too-long catalog entry degrades to the English fallback
+   * instead of breaking registration for all commands.
+   */
+  _applySlashLocalizations(dataJson: any) {
+    if (!dataJson) return;
+    const localeCodes = Array.from(i18n.getLocales().keys());
+    if (localeCodes.length === 0) return;
+
+    const lookup = (locale: string, english: string | undefined | null): string | null => {
+      if (!english || typeof english !== 'string') return null;
+      const fromSlash = SLASH_STRINGS[locale]?.[english];
+      if (typeof fromSlash === 'string' && fromSlash.length > 0 && fromSlash !== english) return fromSlash;
+      const key = `cmd.${english}`;
+      const translated = i18n.ui(locale, key);
+      return translated === key ? null : translated;
+    };
+
+    // Discord: 1-100 chars for descriptions, 1-32 for command names, and a
+    // localized name must keep the base name's lowercase [a-z0-9_-] shape.
+    const isValidCommandName = (value: string): boolean => /^[a-z0-9_-]{1,32}$/.test(value);
+    const isValidDescription = (value: string): boolean => value.length >= 1 && value.length <= 100;
+    const pick = (locale: string, english: string | undefined | null): string | null => {
+      const value = lookup(locale, english);
+      return value && isValidDescription(value) ? value : null;
+    };
+
+    for (const locale of localeCodes) {
+      if (locale === i18n.defaultLocale) continue;
+
+      const description = pick(locale, dataJson.description);
+      if (description) {
+        dataJson.description_localizations = dataJson.description_localizations || {};
+        dataJson.description_localizations[locale] = description;
+      }
+
+      const name = lookup(locale, dataJson.name);
+      if (name && isValidCommandName(name)) {
+        dataJson.name_localizations = dataJson.name_localizations || {};
+        dataJson.name_localizations[locale] = name;
+      }
+
+      if (!Array.isArray(dataJson.options)) continue;
+      for (const option of dataJson.options) {
+        const optionDescription = pick(locale, option?.description);
+        if (optionDescription) {
+          option.description_localizations = option.description_localizations || {};
+          option.description_localizations[locale] = optionDescription;
+        }
+        if (!Array.isArray(option?.choices)) continue;
+        for (const choice of option.choices) {
+          const choiceName = pick(locale, choice?.name);
+          if (choiceName) {
+            choice.name_localizations = choice.name_localizations || {};
+            choice.name_localizations[locale] = choiceName;
+          }
+        }
+      }
     }
   }
 

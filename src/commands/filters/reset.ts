@@ -1,10 +1,10 @@
 import { MessageFlags } from "discord.js";
-import phrases from "#utils/phrases";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
-import { config } from "#config/config";
+import { buildError } from "#ui/Theme";
+import { buildFilterResetContainer } from "#ui/filterCard";
+
 import { Command, CommandContext } from '#core/Command';
-import emoji from "#config/emoji";
 import { PlayerManager } from "#audio/PlayerManager";
+import { i18n } from "#utils/i18n";
 
 class ResetFilterCommand extends Command {
 	constructor() {
@@ -49,34 +49,16 @@ class ResetFilterCommand extends Command {
 		try {
 			await pm.player.filterManager.clearEQ();
 
-			return this._reply(context, this._createSuccessContainer());
+			return this._reply(context, buildFilterResetContainer());
 		} catch (error) {
 			return this._reply(
 				context,
-				this._createErrorContainer("Could not reset the audio filters."),
+				buildError(i18n.cmd("Could not reset the audio filters."), "Error"),
 			);
 		}
 	}
 
-	_createSuccessContainer() {
-		const content =
-			`**Reset Information**\n\n` +
-			`└─ **${emoji.get("music")} Filters:** All filters cleared\n` +
-			`└─ **${emoji.get("check")} Status:** Reset successfully\n` +
-			`└─ **${emoji.get("info")} Effect:** Audio back to original quality\n\n` +
-			`*${phrases.get("filterCleared")}*`;
-
-		return buildContainer({
-			title: "Filter Applied",
-			content: content,
-			thumbnail: config.assets?.defaultThumbnail || config.assets?.defaultTrackArtwork,
-			icon: emoji.get("music") || "ℹ️"
-		});
-	}
-
-	_createErrorContainer(message: string) {
-		return buildError(message, "Error");
-	}
+	
 
 	async _reply(context: CommandContext, container: any) {
 		const payload = {

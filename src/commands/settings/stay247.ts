@@ -19,6 +19,7 @@ import { db } from "#database/Database";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import phrases from "#utils/phrases";
+import { i18n } from "#utils/i18n";
 
 class Stay247Command extends Command {
   constructor() {
@@ -51,11 +52,11 @@ class Stay247Command extends Command {
               required: false,
               choices: [
                 {
-                  name: "Enable",
+                  name: i18n.cmd("Enable"),
                   value: "on"
                 },
                 {
-                  name: "Disable",
+                  name: i18n.cmd("Disable"),
                   value: "off"
                 }
               ]
@@ -99,7 +100,7 @@ class Stay247Command extends Command {
     } catch (error: any) {
       logger.error("Stay247Command", `Error in prefix command: ${error?.message}`, error);
       await message.reply({
-        components: [this._createErrorContainer("An error occurred while changing 24/7 settings.")],
+        components: [this._createErrorContainer(i18n.cmd("An error occurred while changing 24/7 settings."))],
         flags: MessageFlags.IsComponentsV2,
       }).catch(() => {});
     }
@@ -112,7 +113,7 @@ class Stay247Command extends Command {
       const action = interaction.options.getString("action");
 
       if (!action) {
-        await interaction.reply({
+        await interaction.editReply({
           components: [this._createStatusContainer(current247Settings, interaction.guild, interaction.client)],
           flags: MessageFlags.IsComponentsV2,
         });
@@ -120,20 +121,26 @@ class Stay247Command extends Command {
       }
 
       if (action === "on") {
-        await interaction.reply({
+        await interaction.editReply({
           components: [await this._handleEnable247(interaction, current247Settings)],
           flags: MessageFlags.IsComponentsV2,
         });
       } else if (action === "off") {
-        await interaction.reply({
+        await interaction.editReply({
           components: [await this._handleDisable247(interaction, current247Settings)],
+          flags: MessageFlags.IsComponentsV2,
+        });
+      } else {
+        // Unknown action → reply instead of leaving the interaction hanging.
+        await interaction.editReply({
+          components: [this._createErrorContainer("Invalid option. Use: `247 on` or `247 off`")],
           flags: MessageFlags.IsComponentsV2,
         });
       }
     } catch (error: any) {
       logger.error("Stay247Command", `Error in slash command: ${error?.message}`, error);
       const errorPayload = {
-        components: [this._createErrorContainer("An error occurred while changing 24/7 settings.")],
+        components: [this._createErrorContainer(i18n.cmd("An error occurred while changing 24/7 settings."))],
         ephemeral: true,
       };
       if (interaction.replied || interaction.deferred) {
@@ -148,32 +155,32 @@ class Stay247Command extends Command {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${emoji.get('info')} **24/7 Mode Status**`)
+      new TextDisplayBuilder().setContent(i18n.cmd("{emoji} **{title}**", { emoji: emoji.get('info'), title: i18n.translateTitle("24/7 Mode Status") }))
     );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
     );
 
-    let content = `**Current Status:** ${settings.enabled ? `${emoji.get('check')} Enabled` : `${emoji.get('cross')} Disabled`}\n\n`;
+    let content = i18n.cmd("**Current Status:** {status}\n\n", { status: settings.enabled ? i18n.cmd("{emoji} Enabled", { emoji: emoji.get('check') }) : i18n.cmd("{emoji} Disabled", { emoji: emoji.get('cross') }) });
 
     if (settings.enabled) {
       const voiceChannel = settings.voiceChannel ? guild.channels.cache.get(settings.voiceChannel) : null;
       const textChannel = settings.textChannel ? guild.channels.cache.get(settings.textChannel) : null;
 
-      content += `**${emoji.get('folder')} Configuration**\n`;
-      content += `├─ **Voice Channel:** ${voiceChannel ? `${voiceChannel.name}` : 'Channel not found'}\n`;
-      content += `├─ **Text Channel:** ${textChannel ? `${textChannel.name}` : 'Same as voice channel'}\n`;
-      content += `└─ **Auto Disconnect:** ${settings.autoDisconnect ? 'Enabled' : 'Disabled'}\n\n`;
+      content += i18n.cmd("**{emoji} Configuration**\n", { emoji: emoji.get('folder') });
+      content += i18n.cmd("├─ **Voice Channel:** {value}\n", { value: voiceChannel ? `${voiceChannel.name}` : i18n.cmd('Channel not found') });
+      content += i18n.cmd("├─ **Text Channel:** {value}\n", { value: textChannel ? `${textChannel.name}` : i18n.cmd('Same as voice channel') });
+      content += i18n.cmd("└─ **Auto Disconnect:** {value}\n\n", { value: settings.autoDisconnect ? i18n.cmd('Enabled') : i18n.cmd('Disabled') });
     }
 
     const player = (client as any).music?.getPlayer(guild.id);
     const connectionStatus = player && player.voiceChannelId
-      ? `${emoji.get('check')} Connected to <#${player.voiceChannelId}>`
-      : `${emoji.get('cross')} Not connected`;
+      ? i18n.cmd("{emoji} Connected to <#{channel}>", { emoji: emoji.get('check'), channel: player.voiceChannelId })
+      : i18n.cmd("{emoji} Not connected", { emoji: emoji.get('cross') });
 
-    content += `**${emoji.get('reset')} Connection Status**\n`;
-    content += `└─ ${connectionStatus}`;
+    content += i18n.cmd("**{emoji} Connection Status**\n", { emoji: emoji.get('reset') });
+    content += i18n.cmd("└─ {status}", { status: connectionStatus });
 
     const thumbnailUrl = config.assets?.defaultThumbnail || config.assets?.defaultTrackArtwork;
 
@@ -200,19 +207,21 @@ class Stay247Command extends Command {
     const targetTextChannel = channel;
 
     if (!targetVoiceChannel) {
-      return this._createErrorContainer("You must be in a voice channel to enable 24/7 mode.");
+      return this._createErrorContainer(i18n.cmd("You must be in a voice channel to enable 24/7 mode."));
     }
 
-    const botMember = guild.members.cache.get(client.user.id);
+    // `members.cache.get` is unreliable (uncached / partial guilds); use the
+    // canonical bot member which is always present in a guild we're in.
+    const botMember = guild.members.me ?? guild.members.cache.get(client.user.id);
     const voicePerms = targetVoiceChannel.permissionsFor(botMember);
 
     if (!voicePerms.has([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak])) {
-      return this._createErrorContainer(`Missing permissions for ${targetVoiceChannel.name}.\nI need \`Connect\` and \`Speak\` permissions in that voice channel.`);
+      return this._createErrorContainer(i18n.cmd("Missing permissions for {channel}.\nI need `Connect` and `Speak` permissions in that voice channel.", { channel: targetVoiceChannel.name }));
     }
 
     const textPerms = targetTextChannel.permissionsFor(botMember);
     if (!textPerms.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
-      return this._createErrorContainer(`Missing permissions for ${targetTextChannel.name}.\nI need \`View Channel\` and \`Send Messages\` permissions in that text channel.`);
+      return this._createErrorContainer(i18n.cmd("Missing permissions for {channel}.\nI need `View Channel` and `Send Messages` permissions in that text channel.", { channel: targetTextChannel.name }));
     }
 
     try {
@@ -237,32 +246,32 @@ class Stay247Command extends Command {
             await player.connect();
           }
 
-          connectionStatus = "Connected to voice channel";
+          connectionStatus = i18n.cmd("Connected to voice channel");
         } catch (connectError) {
           logger.error("Stay247Command", `Failed to connect to voice channel:`, connectError);
-          connectionStatus = "Failed to connect - will retry automatically";
+          connectionStatus = i18n.cmd("Failed to connect - will retry automatically");
         }
       } else if (player.voiceChannelId !== targetVoiceChannel.id) {
         try {
           await player.changeVoiceState({ voiceChannelId: targetVoiceChannel.id });
-          connectionStatus = "Moved to new voice channel";
+          connectionStatus = i18n.cmd("Moved to new voice channel");
         } catch (moveError) {
           logger.error("Stay247Command", `Failed to move to new voice channel:`, moveError);
-          connectionStatus = "Failed to move - will reconnect automatically";
+          connectionStatus = i18n.cmd("Failed to move - will reconnect automatically");
         }
       }
 
       return this._createSuccessContainer(
         "24/7 Mode Enabled",
-        `**${emoji.get('folder')} Configuration**\n` +
-        `├─ **Voice Channel:** ${targetVoiceChannel.name}\n` +
-        `├─ **Text Channel:** ${targetTextChannel.name}\n` +
-        `└─ **Status:** Bot will stay connected even when queue is empty\n\n` +
-        `**${emoji.get('check')} Connection:** ${connectionStatus}`
+        i18n.cmd("**{emoji} Configuration**\n", { emoji: emoji.get('folder') }) +
+        i18n.cmd("├─ **Voice Channel:** {channel}\n", { channel: targetVoiceChannel.name }) +
+        i18n.cmd("├─ **Text Channel:** {channel}\n", { channel: targetTextChannel.name }) +
+        i18n.cmd("└─ **Status:** Bot will stay connected even when queue is empty\n\n") +
+        i18n.cmd("**{emoji} Connection:** {status}", { emoji: emoji.get('check'), status: connectionStatus })
       );
     } catch (error) {
       logger.error("Stay247Command", "Error enabling 24/7 mode:", error);
-      return this._createErrorContainer("Failed to enable 24/7 mode. Please try again later.");
+      return this._createErrorContainer(i18n.cmd("Failed to enable 24/7 mode. Please try again later."));
     }
   }
 
@@ -281,11 +290,11 @@ class Stay247Command extends Command {
       return this._createSuccessContainer(
         "24/7 Mode Disabled",
         `**${emoji.get('cross')} Status:** Bot will disconnect when queue is empty\n\n` +
-        `Use \`247 on\` to re-enable 24/7 mode`
+        i18n.cmd("Use `247 on` to re-enable 24/7 mode")
       );
     } catch (error) {
       logger.error("Stay247Command", "Error disabling 24/7 mode:", error);
-      return this._createErrorContainer("Failed to disable 24/7 mode. Please try again later.");
+      return this._createErrorContainer(i18n.cmd("Failed to disable 24/7 mode. Please try again later."));
     }
   }
 

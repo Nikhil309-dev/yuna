@@ -15,16 +15,18 @@ import {
 import { config } from '#config/config';
 import { Command } from '#core/Command';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
 import phrases from '#utils/phrases';
 import { PlayerManager } from '#audio/PlayerManager';
+import { i18n } from "#utils/i18n";
 
 class RemoveCommand extends Command {
   constructor() {
     super({
       name: 'remove',
-      description: 'Remove a track from the queue',
+      description: i18n.cmd('Remove a track from the queue'),
       usage: 'remove <position>',
       aliases: ['rm', 'del'],
       category: 'music',
@@ -45,11 +47,11 @@ class RemoveCommand extends Command {
         autoDefer: true,
         data: {
           name: 'remove',
-          description: 'Remove a track from the queue',
+          description: i18n.cmd('Remove a track from the queue'),
           options: [
             {
               name: 'position',
-              description: 'Position of the track to remove (1-based)',
+              description: i18n.cmd('Position of the track to remove (1-based)'),
               type: 4,
               required: true,
               min_value: 1,
@@ -81,17 +83,17 @@ class RemoveCommand extends Command {
     }
 
     if (isNaN(position)) {
-      return this._sendError(context, 'Position must be a valid number.');
+      return this._sendError(context, i18n.cmd('Position must be a valid number.'));
     }
 
     const queue = activePlayer.queue.tracks;
 
     if (!queue || queue.length === 0) {
-      return this._sendError(context, 'There are no tracks in the queue to remove.');
+      return this._sendError(context, i18n.cmd('There are no tracks in the queue to remove.'));
     }
 
     if (position < 1 || position > queue.length) {
-      return this._sendError(context, `Position must be between 1 and ${queue.length}.`);
+      return this._sendError(context, i18n.cmd('Position must be between 1 and {max}.', { max: queue.length }));
     }
 
     const track = queue[position - 1];
@@ -110,9 +112,9 @@ class RemoveCommand extends Command {
   }
 
   _createSuccessContainer(track: any, position: any, remainingCount: any) {
-    const content = `Removed [${track.info.title}](${track.info.uri}) from position **${position}**.`;
+    const content = i18n.cmd("Removed [{title}]({uri}) from position **{position}**.", { title: track.info.title, uri: track.info.uri, position });
     const container = buildContainer({ image: undefined,
-      title: "Track Removed",
+      title: i18n.translateTitle("Track Removed"),
       content: content,
       thumbnail: config.assets.defaultThumbnail || config.assets.defaultTrackArtwork,
       icon: emoji.get("check") || "ℹ️"
@@ -125,7 +127,7 @@ class RemoveCommand extends Command {
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId('remove_back')
-        .setLabel('Back')
+        .setLabel(i18n.cmd('Back'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get('reset'))
     );
@@ -138,29 +140,32 @@ class RemoveCommand extends Command {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(`${emoji.get('info')} **Remove Help**`)
+      new TextDisplayBuilder().setContent(i18n.cmd("{emoji} **{title}**", { emoji: emoji.get('info'), title: i18n.translateTitle("Remove Help") }))
     );
 
     container.addSeparatorComponents(
       new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
     );
 
-    const content = `**Remove tracks from your music queue**\n\n` +
-      `**${emoji.get('check')} What it does:**\n` +
-      `└─ Permanently removes a track from the queue\n` +
-      `└─ Other tracks move up to fill the gap\n` +
-      `└─ Queue positions automatically adjust\n` +
-      `└─ Currently playing song is unaffected\n\n` +
-      `**${emoji.get('folder')} Command Examples:**\n` +
-      `└─ \`remove 1\` → Remove first queued track\n` +
-      `└─ \`rm 3\` → Remove track at position 3\n` +
-      `└─ \`del 10\` → Remove track at position 10\n` +
-      `└─ Use \`queue\` command to see positions\n\n` +
-      `**${emoji.get('add')} Tips:**\n` +
-      `└─ Check queue first to find track positions\n` +
-      `└─ Positions change after each removal\n` +
-      `└─ Cannot remove currently playing track\n` +
-      `└─ Use \`clear\` to remove all tracks`;
+    const content = i18n.cmd(
+      "**Remove tracks from your music queue**\n\n" +
+      "**{check} What it does:**\n" +
+      "└─ Permanently removes a track from the queue\n" +
+      "└─ Other tracks move up to fill the gap\n" +
+      "└─ Queue positions automatically adjust\n" +
+      "└─ Currently playing song is unaffected\n\n" +
+      "**{folder} Command Examples:**\n" +
+      "└─ `remove 1` → Remove first queued track\n" +
+      "└─ `rm 3` → Remove track at position 3\n" +
+      "└─ `del 10` → Remove track at position 10\n" +
+      "└─ Use `queue` command to see positions\n\n" +
+      "**{add} Tips:**\n" +
+      "└─ Check queue first to find track positions\n" +
+      "└─ Positions change after each removal\n" +
+      "└─ Cannot remove currently playing track\n" +
+      "└─ Use `clear` to remove all tracks",
+      { check: emoji.get('check'), folder: emoji.get('folder'), add: emoji.get('add') }
+    );
 
     const section = new SectionBuilder()
       .addTextDisplayComponents(new TextDisplayBuilder().setContent(content))
@@ -177,7 +182,7 @@ class RemoveCommand extends Command {
     const buttons = new ActionRowBuilder<any>().addComponents(
       new ButtonBuilder()
         .setCustomId('remove_back')
-        .setLabel('Back')
+        .setLabel(i18n.cmd('Back'))
         .setStyle(ButtonStyle.Secondary)
         .setEmoji(emoji.get('reset'))
     );
@@ -188,7 +193,7 @@ class RemoveCommand extends Command {
 
   _setupCollector(message: any, author: any) {
     const filter = (i: any) => i.user.id === author.id;
-    const collector = message.createMessageComponentCollector({
+    const collector = componentCollectorSource(message).createMessageComponentCollector({
       filter,
       time: 300_000,
     });
@@ -267,9 +272,9 @@ class RemoveCommand extends Command {
 
   _createUsageContainer() {
     return buildError({
-      title: "Invalid Usage",
-      issue: "Please provide the track position number to remove from the queue.",
-      tip: "Example: `/remove 3` or `.remove 1`"
+      title: i18n.translateTitle("Invalid Usage"),
+      issue: i18n.cmd("Please provide the track position number to remove from the queue."),
+      tip: i18n.cmd("Example: `/remove 3` or `.remove 1`")
     });
   }
 

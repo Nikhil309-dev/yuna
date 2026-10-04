@@ -1,6 +1,5 @@
 import { YunaClient } from '#core/YunaClient';
 import { logger } from '#utils/logger';
-import ErrorHandler from '#core/ErrorHandler';
 
 const client = new YunaClient();
 

@@ -3,6 +3,7 @@ import { MessageFlags } from 'discord.js';
 import { db } from '#database/Database';
 import { buildContainer } from '#ui/Theme';
 import { isOwner } from '#core/AccessControl';
+import { i18n } from '#utils/i18n';
 
 class Status247Command extends Command {
   constructor() {
@@ -14,6 +15,7 @@ class Status247Command extends Command {
       category: 'developer',
       examples: ['247status'],
       cooldown: 5,
+      access: { ownerOnly: true },
       slash: {
         enabled: true,
         autoDefer: true,
@@ -32,7 +34,7 @@ class Status247Command extends Command {
     if (!guilds247 || guilds247.length === 0) {
       const container = buildContainer({
         title: '24/7 Status',
-        content: 'No guilds currently have 24/7 mode active.',
+        content: i18n.cmd('No guilds currently have 24/7 mode active.'),
         icon: '📡'
       });
       return this._reply(ctx, { components: [container], flags: MessageFlags.IsComponentsV2 });
@@ -45,19 +47,19 @@ class Status247Command extends Command {
     for (const guildData of guilds247) {
       const player = ctx.client.music?.getPlayer(guildData.id);
       const guild = ctx.client.guilds.cache.get(guildData.id);
-      const name = guild ? guild.name : `Unknown (${guildData.id})`;
+      const name = guild ? guild.name : i18n.cmd("Unknown ({id})", { id: guildData.id });
 
       if (player && player.connected) {
         activeCount++;
-        details += `🟢 **${name}**: Connected (Ch: <#${player.voiceChannelId}>)\n`;
+        details += i18n.cmd("🟢 **{name}**: Connected (Ch: <#{channel}>)", { name, channel: player.voiceChannelId }) + "\n";
       } else {
         offlineCount++;
-        details += `🔴 **${name}**: Offline / Waiting to reconnect\n`;
+        details += i18n.cmd("🔴 **{name}**: Offline / Waiting to reconnect", { name }) + "\n";
       }
     }
 
-    const content = `**Total 24/7 Guilds:** ${guilds247.length}\n` +
-                    `**Active:** ${activeCount} | **Offline:** ${offlineCount}\n\n` +
+    const content = i18n.cmd("**Total 24/7 Guilds:** {count}\n", { count: guilds247.length }) +
+                    i18n.cmd("**Active:** {active} | **Offline:** {offline}\n\n", { active: activeCount, offline: offlineCount }) +
                     details.substring(0, 3000);
 
     const container = buildContainer({
@@ -73,7 +75,10 @@ class Status247Command extends Command {
     return this.execute(ctx);
   }
 
-  async _reply(context: any, payload: any) {
+  async _reply(ctx: any, payload: any) {
+    // `execute` hands us the whole command context, not a reply target —
+    // resolve the interaction/message first or every reply throws.
+    const context = ctx?.interaction || ctx?.message || ctx;
     if (context.editReply && (context.deferred || context.replied)) {
       return await context.editReply(payload);
     }

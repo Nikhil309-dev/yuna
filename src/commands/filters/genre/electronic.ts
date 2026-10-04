@@ -1,10 +1,6 @@
 import { MessageFlags } from "discord.js";
-import phrases from "#utils/phrases";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
-
-import { config } from "#config/config";
+import { buildFilterAppliedContainer, buildFilterError } from "#ui/filterCard";
 import { Command, CommandContext } from '#core/Command';
-import emoji from "#config/emoji";
 import { PlayerManager } from "#audio/PlayerManager";
 
 class ElectronicFilterCommand extends Command {
@@ -107,35 +103,11 @@ class ElectronicFilterCommand extends Command {
    }
 ]);
 
-			return this._reply(context, this._createSuccessContainer("Electronic"));
+			return this._reply(context, buildFilterAppliedContainer("Electronic"));
 		} catch (error) {
-			return this._reply(
-				context,
-				this._createErrorContainer("Could not apply the electronic filter."),
-			);
+			return this._reply(context, buildFilterError("electronic"));
 		}
 	}
-
-	_createSuccessContainer(filterName: any) {
-		const content =
-			`**Filter Information**\n\n` +
-			`└─ **${emoji.get("music")} Filter:** ${filterName} Equalizer\n` +
-			`└─ **${emoji.get("check")} Status:** Applied successfully\n` +
-			`└─ **${emoji.get("info")} Effect:** Enhanced for electronic music\n\n` +
-			`*${phrases.get("filterApplied")}*`;
-
-		return buildContainer({
-			title: "Filter Applied",
-			content: content,
-			thumbnail: config.assets?.defaultThumbnail || config.assets?.defaultTrackArtwork,
-			icon: emoji.get("music") || "ℹ️"
-		});
-	}
-
-	_createErrorContainer(message: string) {
-		return buildError(message, "Error");
-	}
-
 	async _reply(context: CommandContext, container: any) {
 		const payload = {
 			components: [container],

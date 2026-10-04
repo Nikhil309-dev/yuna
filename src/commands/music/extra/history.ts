@@ -20,8 +20,11 @@ import { db } from '#database/Database';
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { componentCollectorSource } from '#ui/Components';
 import emoji from '#config/emoji';
 import phrases from "#utils/phrases";
+import musicSource from '#config/sources';
+import { i18n } from "#utils/i18n";
 
 const TRACKS_PER_PAGE =  5;
 
@@ -47,7 +50,7 @@ class HistoryCommand extends Command {
           description: "View your personal listening history and re-play songs",
           options: [{
             name: "page",
-            description: "The page number of your history to view.",
+            description: i18n.cmd("The page number of your history to view."),
             type: 4,
             required: false,
             min_value: 1,
@@ -71,35 +74,9 @@ class HistoryCommand extends Command {
   }
 
   async _handleHistory(client: any, userId: any, page: any, context: CommandContext) {
-    logger.debug('HistoryCommand', '  ===HISTORY COMMAND DEBUG ===');
-    logger.debug('HistoryCommand', `User ID: ${userId}`);
-    logger.debug('HistoryCommand', `User ID type: ${typeof userId}`);
-    logger.debug('HistoryCommand', `Context user: ${context.user?.id || context.author?.id}`);
-
-    const userExists = db.user.getUser(userId);
-    logger.debug('HistoryCommand', `User exists in DB: ${!!userExists}`);
-    logger.debug('HistoryCommand', `User data: ${JSON.stringify(userExists)}`);
-
     let history = db.user.getHistory(userId);
-    logger.debug('HistoryCommand', `Raw history result: ${JSON.stringify(history)}`);
-    logger.debug('HistoryCommand', `History length: ${history?.length || 0}`);
-    logger.debug('HistoryCommand', `History type: ${typeof history}`);
 
-    try {
-      const directQuery = db.user.getUser(userId) as any;
-      logger.debug('HistoryCommand', `Direct DB query result: ${JSON.stringify(directQuery)}`);
-      if (directQuery?.history) {
-        const parsedDirect = JSON.parse(directQuery.history);
-        logger.debug('HistoryCommand', `Direct parsed history: ${JSON.stringify(parsedDirect)}`);
-        logger.debug('HistoryCommand', `Direct history length: ${parsedDirect.length}`);
-      }
-    } catch (e: any) {
-      logger.debug('HistoryCommand', `Direct query error: ${e.message}`);
-    }
-
-    logger.debug('HistoryCommand', '  ===END DEBUG ===');
-
-    if (!history || history.length ===0) {
+    if (!history || history.length === 0) {
       return this._reply(context, this._createErrorContainer(phrases.get("historyEmpty")));
     }
 
@@ -132,7 +109,7 @@ class HistoryCommand extends Command {
 
     const container = buildContainer({
       title: "`### Your Listening History`",
-      content: `**Page ${page} of ${maxPages}**\n*${history.length} total tracks in your history*`,
+      content: i18n.cmd("**Page {page} of {max}**\n*{total}*", { page, max: maxPages, total: i18n.cmd("{count} total tracks in your history", { count: history.length }) }),
       thumbnail: config.assets.defaultTrackArtwork,
       icon: "ℹ️"
     });
@@ -142,8 +119,8 @@ class HistoryCommand extends Command {
 
       paginatedTracks.forEach((track: any, index: any) => {
         const trueIndex = startIndex + index;
-        const title = track.title || 'Unknown Track';
-        const author = track.author || 'Unknown';
+        const title = track.title || i18n.cmd('Unknown Track');
+        const author = track.author || i18n.cmd('Unknown');
         const duration = this._formatDuration(track.duration);
 
         container.addSectionComponents(
@@ -160,11 +137,11 @@ class HistoryCommand extends Command {
 
       if (premiumStatus.hasPremium) {
         container.addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`*Premium Queue: Up to ${premiumStatus.maxSongs} songs*`)
+          new TextDisplayBuilder().setContent(i18n.cmd("*Premium Queue: Up to {count} songs*", { count: premiumStatus.maxSongs }))
         );
       } else {
         container.addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`*Free Queue: Up to ${premiumStatus.maxSongs} songs | Upgrade for ${config.queue.maxSongs.premium} songs*`)
+          new TextDisplayBuilder().setContent(i18n.cmd("*Free Queue: Up to {count} songs | Upgrade for {premium} songs*", { count: premiumStatus.maxSongs, premium: config.queue.maxSongs.premium }))
         );
       }
 
@@ -195,16 +172,16 @@ class HistoryCommand extends Command {
     const options = validTracks.map((track: any, index: any) => {
       const originalIndex = tracksOnPage.findIndex((t: any) => t && t.identifier ===track.identifier);
       return {
-        label: (track.title || 'Unknown Track').substring(0, 100),
+        label: (track.title || i18n.cmd('Unknown Track')).substring(0, 100),
         value: `${startIndex + originalIndex}`,
-        description: `by ${track.author || 'Unknown'}`.substring(0, 100),
+        description: i18n.cmd('by {author}', { author: track.author || i18n.cmd('Unknown') }).substring(0, 100),
       };
     });
 
     return new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId(`hist_play_${userId}`)
-        .setPlaceholder("Select up to 10 songs to add to queue")
+        .setPlaceholder(i18n.cmd("Select up to 10 songs to add to queue"))
         .setMinValues(1)
         .setMaxValues(Math.min(options.length, 10))
         .addOptions(options)
@@ -215,7 +192,7 @@ class HistoryCommand extends Command {
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(`hist_page_${currentPage - 1}_${userId}`)
-        .setLabel("Previous")
+        .setLabel(i18n.cmd("Previous"))
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(currentPage ===1),
       new ButtonBuilder()
@@ -225,7 +202,7 @@ class HistoryCommand extends Command {
         .setDisabled(true),
       new ButtonBuilder()
         .setCustomId(`hist_page_${currentPage + 1}_${userId}`)
-        .setLabel("Next")
+        .setLabel(i18n.cmd("Next"))
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(currentPage >= maxPages)
     );
@@ -235,8 +212,10 @@ class HistoryCommand extends Command {
     const userId = context.user?.id || context.author?.id;
     const guildId = context!.guild!.id;
 
-    const filter = (i: any) => i.user.id ===userId && i.customId.endsWith(userId);
-    const collector = message.createMessageComponentCollector({ filter, time: 300000 });
+    // Only claim history components (`hist_*`); otherwise this collector would
+    // swallow every button the user presses on any message ending in their id.
+    const filter = (i: any) => i.user.id === userId && i.customId.startsWith("hist_");
+    const collector = componentCollectorSource(message).createMessageComponentCollector({ filter, time: 300000 });
 
     let currentPage = context.options?.getInteger("page") || (context.args?.[0] ? parseInt(context.args[0]) : 1) || 1;
 
@@ -260,12 +239,12 @@ class HistoryCommand extends Command {
         const newContainer = this._buildHistoryContainer(history, currentPage, maxPages, userId, guildId);
         await interaction.editReply({ components: [newContainer] });
 
-      } else if (action ==='play' && interaction.isSelectMenu()) {
+      } else if (action ==='play' && interaction.isStringSelectMenu()) {
         const voiceChannel = interaction.member?.voice?.channel;
         if (!voiceChannel) {
           const errC = buildContainer({
-      title: "`### ⚠️ **Voice Channel Required**`",
-      content: "You must be in a voice channel to play music.",
+      title: `\`### ⚠️ **${i18n.translateTitle("Voice Channel Required")}**\``,
+      content: i18n.cmd("You must be in a voice channel to play music."),
       thumbnail: config.assets.defaultTrackArtwork,
       icon: emoji.get("info") || "ℹ️"
     });
@@ -318,11 +297,17 @@ class HistoryCommand extends Command {
         for (const track of tracksToAdd) {
           try {
             const query = track.uri || track.title;
-            const searchResult = await client.music.search(query, {
+            let searchResult = await client.music.search(query, {
               requester: interaction.user,
-              source: "spsearch"
+              source: musicSource.PRIMARY_PREFIX.replace(':', '')
             });
-            if (searchResult.tracks.length > 0) {
+            if (!searchResult?.tracks?.length) {
+              searchResult = await client.music.search(query, {
+                requester: interaction.user,
+                source: 'ytsearch'
+              });
+            }
+            if (searchResult?.tracks?.length > 0) {
               await pm.addTracks(searchResult.tracks[0]);
               addedCount++;
             }
@@ -335,13 +320,13 @@ class HistoryCommand extends Command {
           await pm.play();
         }
 
-        let responseMessage = `Added **${addedCount}** of **${tracksToPlay.length}** selected songs to the queue.`;
+        let responseMessage = i18n.cmd("Added **{added}** of **{total}** selected songs to the queue.", { added: addedCount, total: tracksToPlay.length });
 
         if (!queueLimitCheck.canAddAll) {
           const premiumStatus = queueLimitCheck.premiumStatus;
           const limitWarning = premiumStatus!.hasPremium
-            ? `\n*Premium queue limit reached*`
-            : `\n*Free tier limit reached - upgrade for ${config.queue.maxSongs.premium} songs*`;
+            ? i18n.cmd("\n*Premium queue limit reached*")
+            : i18n.cmd("\n*Free tier limit reached - upgrade for {count} songs*", { count: config.queue.maxSongs.premium });
           responseMessage += limitWarning;
         }
 
@@ -399,8 +384,11 @@ class HistoryCommand extends Command {
 
     if (availableSlots <= 0) {
       const limitMessage = premiumStatus.hasPremium
-        ? `Premium queue is full! You can have up to **${premiumStatus.maxSongs}** songs in queue.`
-        : `Free tier queue is full! You can have up to **${premiumStatus.maxSongs}** songs in queue.\n*Upgrade to premium for up to **${config.queue.maxSongs.premium}** songs!*`;
+        ? i18n.cmd("Premium queue is full! You can have up to **{max}** songs in queue.", { max: premiumStatus.maxSongs })
+        : i18n.cmd("Free tier queue is full! You can have up to **{max}** songs in queue.\n*Upgrade to premium for up to **{premium}** songs!*", {
+            max: premiumStatus.maxSongs,
+            premium: config.queue.maxSongs.premium,
+          });
 
       return {
         allowed: false,
