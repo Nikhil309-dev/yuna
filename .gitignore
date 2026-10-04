@@ -9,3 +9,8 @@ backups/
 
 database/*.yuna-shm
 database/*.yuna-wal
+
+# Runtime state — never commit live user/guild data
+database/data/
+database/scheduler.json
+database/*.yuna

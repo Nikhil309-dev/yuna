@@ -12,8 +12,9 @@
     "dev": "tsx --watch --expose-gc src/shard.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "bench": "node scripts/bench.js",
-    "setup": "cp .env.example .env && echo 'Created .env file. Please edit it with your configuration.'"
+    "bench": "tsx scripts/bench.js",
+    "setup": "cp .env.example .env && echo 'Created .env file. Please edit it with your configuration.'",
+    "test": "tsx scripts/runtime-test.ts"
   },
   "imports": {
     "#core/*": "./src/core/*.ts",
@@ -44,7 +45,6 @@
     "axios": "^1.11.0",
     "better-sqlite3": "^12.11.1",
     "chalk": "^5.4.1",
-    "crypto-js": "^4.2.0",
     "des.js": "^1.1.0",
     "discord-hybrid-sharding": "^2.2.6",
     "discord.js": "^14.27.0",

@@ -5,7 +5,7 @@ dotenv.config();
 
 export const config = {
 
-  token: process.env.TOKEN || process.env.token,
+  token: process.env.DISCORD_TOKEN || process.env.TOKEN || process.env.token,
   clientId: process.env.CLIENT_ID || "",
   prefix: process.env.PREFIX || '.',
   ownerIds: (process.env.OWNER_IDS || '').split(',').map(id => id.trim()).filter(Boolean),

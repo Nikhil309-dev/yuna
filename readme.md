@@ -40,7 +40,7 @@ The V2 codebase has been completely restructured for better maintainability and 
 3. **Configure Environment**
    Rename `.env.example` to `.env` and fill in your details:
    ```env
-   TOKEN=your_bot_token
+   DISCORD_TOKEN=your_bot_token
    CLIENT_ID=your_client_id
    ```
 

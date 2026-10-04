@@ -1,11 +1,13 @@
 import chalk from 'chalk';
 // Use a throwaway in-memory DB so benchmarks never touch the production database.
 process.env.DATABASE_PATH = ':memory:';
-const { db } = await import('../src/database/Database.js');
-const { TTLCache } = await import('../src/utils/cache.js');
-const { FilterEngine } = await import('../src/audio/FilterEngine.js');
-const { YunaBanner } = await import('../src/ui/cards/BannerCard.js');
-const BlendCard = (await import('../src/ui/cards/BlendCard.js')).default;
+process.env.DISCORD_TOKEN ??= 'x'.repeat(70);
+process.env.CLIENT_ID ??= '123456789012345678';
+const { db } = await import('../src/database/Database.ts');
+const { TTLCache } = await import('../src/utils/cache.ts');
+const { FilterEngine } = await import('../src/audio/FilterEngine.ts');
+const { YunaBanner } = await import('../src/ui/cards/BannerCard.ts');
+const BlendCard = (await import('../src/ui/cards/BlendCard.ts')).default;
 
 console.log(chalk.bold.magenta('\n⚡ Yuna V2 System Performance Benchmark\n'));
 
