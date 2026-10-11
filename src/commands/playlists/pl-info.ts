@@ -134,49 +134,99 @@ class PlaylistInfoCommand extends Command {
 		});
 	}
 
+	_sourceLabel(source: any) {
+		if (!source) return null;
+		const s = String(source).toLowerCase();
+		if (s.includes("youtube") || s === "ytsearch" || s === "ytmsearch") return "YouTube";
+		if (s.includes("spotify")) return "Spotify";
+		if (s.includes("soundcloud")) return "SoundCloud";
+		if (s.includes("apple")) return "Apple Music";
+		if (s.includes("deezer")) return "Deezer";
+		if (s.includes("bandcamp")) return "Bandcamp";
+		if (s.includes("twitch")) return "Twitch";
+		if (s.includes("vimeo")) return "Vimeo";
+		if (s.startsWith("http")) return "Direct";
+		return source;
+	}
+
 	_createMainInfoContainer(playlist: any) {
+		const LIMIT = 50;
 		const shortId = playlist.id.replace("pl_", "").substring(0, 8);
 		const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
-		const avg = playlist.track_count > 0
-			? this._formatDuration(Math.round(playlist.total_duration / playlist.track_count))
-			: "0:00";
+		const count = playlist.track_count || tracks.length || 0;
+		const avg = count > 0 ? this._formatDuration(Math.round(playlist.total_duration / count)) : "0:00";
+
 		const artistCounts = new Map<string, number>();
+		const sourceCounts = new Map<string, number>();
+		let missingArt = 0;
 		for (const t of tracks) {
 			if (t?.author) artistCounts.set(t.author, (artistCounts.get(t.author) || 0) + 1);
+			const label = this._sourceLabel(t?.sourceName || t?.uri);
+			if (label) sourceCounts.set(label, (sourceCounts.get(label) || 0) + 1);
+			if (!t?.artworkUrl) missingArt++;
 		}
 		const topArtists = [...artistCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+		const sources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => `${n} (${c})`).join(", ");
+
+		const tree = (lines: string[]) => lines.map((l, i) => `${i === lines.length - 1 ? "└─" : "├─"} ${l}`).join("\n");
+		const filled = count > 0 ? Math.min(10, Math.round((count / LIMIT) * 10)) : 0;
+		const bar = "█".repeat(filled) + "░".repeat(Math.max(0, 10 - filled));
+
+		const overview = [
+			`${emoji.get("folder")} **Name:** ${playlist.name}`,
+			...(playlist.description ? [`${emoji.get("info")} **Description:** ${playlist.description}`] : []),
+			`${emoji.get("info")} **ID:** \`${shortId}\``,
+			`${emoji.get("music")} **Tracks:** ${count} / ${LIMIT}`,
+			`${emoji.get("reset")} **Duration:** ${this._formatDuration(playlist.total_duration)} (~${avg}/track)`,
+		];
+
+		const library = [
+			`🎧 **Sources:** ${sources || "—"}`,
+			...(topArtists.length ? [`🎤 **Top artists:** ${topArtists.map(([n, c]) => `${n} (${c})`).join(", ")}`] : []),
+			missingArt > 0 ? `⚠️ **Missing artwork:** ${missingArt}` : `🖼️ **Artwork:** complete`,
+			`📊 **Capacity:** ${bar} ${Math.round((count / LIMIT) * 100)}%`,
+		];
+
+		const timeline = [
+			`${emoji.get("check")} **Created:** ${new Date(playlist.created_at).toLocaleString()}`,
+			`${emoji.get("add")} **Updated:** ${new Date(playlist.updated_at).toLocaleString()}`,
+		];
+
 		const content =
-			`**Overview**\n` +
-			`\u2514\u2500 ${emoji.get("folder")} **Name:** ${playlist.name}\n` +
-			(playlist.description ? `\u2514\u2500 ${emoji.get("info")} **Description:** ${playlist.description}\n` : "") +
-			`\u2514\u2500 ${emoji.get("info")} **ID:** \`${shortId}\`\n` +
-			`\u2514\u2500 ${emoji.get("music")} **Tracks:** ${playlist.track_count} songs\n` +
-			`\u2514\u2500 ${emoji.get("reset")} **Duration:** ${this._formatDuration(playlist.total_duration)} (~${avg}/track)\n` +
-			(topArtists.length && playlist.track_count > 0
-				? `\u2514\u2500 🎤 **Top artists:** ${topArtists.map(([n, c]) => `${n} (${c})`).join(", ")}\n`
-				: "") +
-			`\n**Timeline**\n` +
-			`\u251c\u2500 ${emoji.get("check")} **Created:** ${new Date(playlist.created_at).toLocaleString()}\n` +
-			`\u2514\u2500 ${emoji.get("add")} **Updated:** ${new Date(playlist.updated_at).toLocaleString()}`;
+			`**Overview**\n` + tree(overview) +
+			`\n\n**Library**\n` + tree(library) +
+			`\n\n**Timeline**\n` + tree(timeline);
 
 		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
 			new ButtonBuilder()
 				.setCustomId("plinfo_play")
 				.setLabel(i18n.cmd("Play Now"))
 				.setStyle(ButtonStyle.Success)
-				.setEmoji(emoji.get("play") || "\u25b6\ufe0f")
-				.setDisabled(playlist.track_count === 0),
+				.setEmoji(emoji.get("play") || "▶️")
+				.setDisabled(count === 0),
+			new ButtonBuilder()
+				.setCustomId("plinfo_queue")
+				.setLabel(i18n.cmd("Queue"))
+				.setStyle(ButtonStyle.Primary)
+				.setEmoji("➕")
+				.setDisabled(count === 0),
+			new ButtonBuilder()
+				.setCustomId("plinfo_shuffle")
+				.setLabel(i18n.cmd("Shuffle"))
+				.setStyle(ButtonStyle.Primary)
+				.setEmoji("🔀")
+				.setDisabled(count === 0),
 			new ButtonBuilder()
 				.setCustomId("plinfo_view_tracks")
-				.setLabel(i18n.cmd('View Tracks ({count})', { count: playlist.track_count }))
-				.setStyle(ButtonStyle.Primary)
+				.setLabel(i18n.cmd("Tracks ({count})", { count }))
+				.setStyle(ButtonStyle.Secondary)
 				.setEmoji(emoji.get("music") || "🎵")
-				.setDisabled(playlist.track_count === 0),
+				.setDisabled(count === 0),
 			new ButtonBuilder()
-				.setCustomId("plinfo_delete")
+				.setCustomId("plinfo_delreq")
 				.setLabel(i18n.cmd("Delete"))
 				.setStyle(ButtonStyle.Danger)
-				.setEmoji(emoji.get("trash") || "🗑\ufe0f"),
+				.setEmoji(emoji.get("trash") || "🗑️"),
 		);
 
 		return buildContainer({
@@ -268,7 +318,7 @@ class PlaylistInfoCommand extends Command {
 	 * voice channel. Mirrors the load-playlist pipeline so behaviour (permission
 	 * checks, connect, queue then play) stays identical.
 	 */
-	async _playPlaylist(interaction: any, playlist: any, userId: string) {
+	async _playPlaylist(interaction: any, playlist: any, userId: string, mode: string = "play") {
 		if (!playlist) return;
 		const client = interaction.client as any;
 		const voiceChannel = interaction.member?.voice?.channel;
@@ -279,9 +329,15 @@ class PlaylistInfoCommand extends Command {
 		if (!perms?.has(["Connect", "Speak"])) {
 			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("I need permission to join and speak in that voice channel.") }, i18n.translateTitle("Missing Permissions")));
 		}
-		const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
+		const tracks = Array.isArray(playlist.tracks) ? [...playlist.tracks] : [];
 		if (tracks.length === 0) {
 			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("This playlist has no tracks to play.") }));
+		}
+		if (mode === "shuffle") {
+			for (let i = tracks.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+			}
 		}
 
 		const guildId = interaction.guild.id;
@@ -315,14 +371,15 @@ class PlaylistInfoCommand extends Command {
 				}
 			}
 
-			if (wasEmpty && added > 0) await pm.play();
+			if (mode !== "queue" && wasEmpty && added > 0) await pm.play();
 
+			const verb = mode === "shuffle" ? i18n.cmd("shuffled") : i18n.cmd("queued");
 			const container = buildSuccess(
 				{
-					message: i18n.cmd("**{added}** of **{total}** tracks from **{name}** queued.", { added, total: tracks.length, name: playlist.name }),
+					message: i18n.cmd("**{added}** of **{total}** tracks from **{name}** {verb}.", { added, total: tracks.length, name: playlist.name, verb }),
 					detail: failed > 0
 						? i18n.cmd("{failed} track(s) could not be resolved.", { failed })
-						: (wasEmpty ? i18n.cmd("Playback started.") : i18n.cmd("Added to the queue.")),
+						: (mode !== "queue" && wasEmpty ? i18n.cmd("Playback started.") : i18n.cmd("Added to the queue.")),
 				},
 				i18n.translateTitle("Playlist Queued"),
 			);
@@ -331,6 +388,30 @@ class PlaylistInfoCommand extends Command {
 			logger.error("PlaylistInfo", i18n.cmd("Failed to play playlist"), error);
 			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("Something went wrong while starting playback.") }, i18n.translateTitle("Playback Error")));
 		}
+	}
+
+	/** Two-step delete: the red button first asks the user to confirm. */
+	async _confirmDelete(interaction: any, playlist: any) {
+		const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder()
+				.setCustomId("plinfo_delete")
+				.setLabel(i18n.cmd("Confirm delete"))
+				.setStyle(ButtonStyle.Danger)
+				.setEmoji(emoji.get("trash") || "🗑️"),
+			new ButtonBuilder()
+				.setCustomId("plinfo_abort")
+				.setLabel(i18n.cmd("Keep"))
+				.setStyle(ButtonStyle.Secondary),
+		);
+		await interaction.editReply({
+			components: [buildContainer({
+				title: i18n.translateTitle("Delete Playlist?"),
+				content: i18n.cmd("This permanently removes **{name}** and its {count} track(s). This cannot be undone.", { name: playlist.name, count: playlist.track_count }),
+				components: [row],
+				accent: 0xED4245,
+				icon: emoji.get("warning") || "⚠️"
+			})],
+		});
 	}
 
 	/**
@@ -443,11 +524,27 @@ class PlaylistInfoCommand extends Command {
 					break;
 				}
 				case "play": {
-					await this._playPlaylist(interaction, currentPlaylist, userId);
+					await this._playPlaylist(interaction, currentPlaylist, userId, "play");
+					break;
+				}
+				case "queue": {
+					await this._playPlaylist(interaction, currentPlaylist, userId, "queue");
+					break;
+				}
+				case "shuffle": {
+					await this._playPlaylist(interaction, currentPlaylist, userId, "shuffle");
+					break;
+				}
+				case "delreq": {
+					await this._confirmDelete(interaction, currentPlaylist);
 					break;
 				}
 				case "delete": {
 					await this._deletePlaylist(interaction, currentPlaylist, userId);
+					break;
+				}
+				case "abort": {
+					await interaction.editReply({ components: [this._createMainInfoContainer(currentPlaylist)] });
 					break;
 				}
 			}
