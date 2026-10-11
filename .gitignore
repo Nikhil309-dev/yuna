@@ -14,3 +14,6 @@ database/*.yuna-wal
 database/data/
 database/scheduler.json
 database/*.yuna
+
+# Local UI preview artifacts
+/preview/
