@@ -26,6 +26,13 @@
 ## Conventions
 - Commands default-export `new SomeCommand()` extending `#core/Command`; declare `slash` data inline.
 - Components V2 cards: single `ContainerBuilder` per message, `flags: MessageFlags.IsComponentsV2`.
+  A `SectionBuilder` MUST carry an accessory (`setThumbnailAccessory`/`setButtonAccessory`) or
+  discord.js throws `Received one or more errors` — use a plain `TextDisplayBuilder` for accessory-less
+  bodies. Ephemeral component replies need `IsComponentsV2 | MessageFlags.Ephemeral` (bare
+  `ephemeral: true` with components does not render).
 - Card shells live in `src/ui/Theme.ts` (`buildContainer`, `buildError`, `buildSuccess`, `buildResult`,
   `buildBlocked`, …). Brand footer: `Built with ♥ under CodeX Development`.
+- Logging: `DiscordLogger` (`src/utils/DiscordLogger.ts`) posts per-domain cards to `config.logChannels.*`
+  (`LOG_*` env). `logger` (`src/utils/logger.ts`) also mirrors INFO/SUCCESS/WARN/ERROR to `WEBHOOK_URL`
+  via a debounced `WebhookLogger` (reads env directly to dodge the `config`→`logger` import cycle).
 - Files end with `// Made by Nikhil Under CodeX Devs`.
