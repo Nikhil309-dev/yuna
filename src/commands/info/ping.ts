@@ -110,7 +110,7 @@ class PingCommand extends Command {
   }
 
   _createErrorContainer(msg: any) {
-    return buildError(msg, "Error");
+    return buildError(msg);
   }
 
   _setupCollector(source: any, userId: any, client: Client) {

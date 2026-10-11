@@ -271,7 +271,7 @@ class Add2PlaylistCommand extends Command {
 	}
 
 	_createErrorContainer(message: string) {
-		return buildError(message, "Error");
+		return buildError(message);
 	}
 
 	_setupSelectionCollector(message: any, context: any, userId: any, player: any, playlists: any) {

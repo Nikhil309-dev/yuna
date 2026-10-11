@@ -83,7 +83,7 @@ class PrefixCommand extends Command {
 
   async _setPrefix(ctx: any, newPrefix: any, isPremium: any) {
     if (newPrefix.length > 5) {
-      return this._sendError(ctx, "Error", "Prefix is too long. Maximum 5 characters allowed.");
+      return this._sendError(ctx, i18n.translateTitle("Invalid Prefix"), i18n.cmd("Prefix is too long. Maximum 5 characters allowed."));
     }
 
     let prefixes = db.getPrefixes(ctx.guild.id);

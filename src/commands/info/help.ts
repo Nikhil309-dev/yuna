@@ -1018,7 +1018,7 @@ class HelpCommand extends Command {
       const fallbackContainer = new ContainerBuilder();
       fallbackContainer.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          i18n.cmd("{emoji} **{title}**\n*{tip}*", { emoji: emoji.get("cross"), title: i18n.translateTitle("Error"), tip: i18n.cmd("Help system unavailable") }),
+          i18n.cmd("{emoji} **{title}**\n*{tip}*", { emoji: emoji.get("cross"), title: i18n.tr("ui.error.title"), tip: i18n.cmd("Help system unavailable") }),
         ),
       );
       return fallbackContainer;

@@ -362,7 +362,7 @@ class LoadPlaylistCommand extends Command {
 	_createLoadingContainer(query: any) { return buildContainer({ title: i18n.translateTitle("Loading"), content: i18n.cmd("**Loading playlist `{query}`...**", { query }), icon: emoji.get("loading") || "ℹ️" }); }
 	_createNotFoundContainer(query: any) { return buildError(i18n.cmd("Could not find a playlist matching `{query}`.", { query }), i18n.translateTitle("Playlist Not Found")); }
 	_createEmptyPlaylistContainer(playlist: any) { return buildContainer({ title: i18n.translateTitle("Empty Playlist"), content: i18n.cmd("The playlist `{name}` has no tracks to load.", { name: playlist.name }), icon: emoji.get("info") || "ℹ️" }); }
-	_createErrorContainer(message: string) { return buildError(message, "Error"); }
+	_createErrorContainer(message: string) { return buildError(message); }
 	_getPremiumStatus(guildId: any, userId: any) {
 		const premiumStatus = db.hasAnyPremium(userId, guildId);
 		return {

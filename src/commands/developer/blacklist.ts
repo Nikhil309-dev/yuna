@@ -83,7 +83,7 @@ class BlacklistCommand extends Command {
 			logger.error("BlacklistCommand", "Blacklist command error:", error);
 			return this._sendError(
 				message,
-				"Error",
+				i18n.tr("ui.error.title"),
 				i18n.cmd("An unexpected error occurred: {error}", { error: error.message }),
 			);
 		}
@@ -492,7 +492,7 @@ class BlacklistCommand extends Command {
 			);
 		} catch (error: any) {
 			logger.error("BlacklistCommand", "Error adding to blacklist:", error);
-			return this._sendError(message, "Error", `${emoji.get("cross")} ${i18n.cmd("**Database Error:**")}\n${error.message}`);
+			return this._sendError(message, i18n.tr("ui.error.title"), `${emoji.get("cross")} ${i18n.cmd("**Database Error:**")}\n${error.message}`);
 		}
 	}
 
@@ -520,7 +520,7 @@ class BlacklistCommand extends Command {
 			return this._sendError(message, "Remove Failed", `${emoji.get("cross")} ${i18n.cmd("Failed to remove `{id}` from blacklist.", { id })}`);
 		} catch (error: any) {
 			logger.error("BlacklistCommand", "Error removing from blacklist:", error);
-			return this._sendError(message, "Error", `${emoji.get("cross")} ${i18n.cmd("**Database Error:**")}\n${error.message}`);
+			return this._sendError(message, i18n.tr("ui.error.title"), `${emoji.get("cross")} ${i18n.cmd("**Database Error:**")}\n${error.message}`);
 		}
 	}
 
@@ -548,7 +548,7 @@ class BlacklistCommand extends Command {
 			);
 		} catch (error: any) {
 			logger.error("BlacklistCommand", "Error checking blacklist:", error);
-			return this._sendError(message, "Error", `${emoji.get("cross")} ${i18n.cmd("**Database Error:**")}\n${error.message}`);
+			return this._sendError(message, i18n.tr("ui.error.title"), `${emoji.get("cross")} ${i18n.cmd("**Database Error:**")}\n${error.message}`);
 		}
 	}
 

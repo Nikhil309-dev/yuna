@@ -572,7 +572,7 @@ class PlayCommand extends Command {
   }
 
   _createErrorContainer(message: any, isPremiumLimit = false) {
-    return buildError(message, isPremiumLimit ? "Queue Limit" : "Error");
+    return buildError(message, isPremiumLimit ? "Queue Limit" : undefined);
   }
 
   _createSuccessContainer(result: any) {

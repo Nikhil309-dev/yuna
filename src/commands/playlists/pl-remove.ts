@@ -191,7 +191,7 @@ class RemoveTrackCommand extends Command {
 	}
 
 	_createErrorContainer(message: string) {
-		return buildError(message, "Error");
+		return buildError(message);
 	}
 
 	_createUsageContainer() {
