@@ -4,6 +4,7 @@ import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
+import { PlayerManager } from "#audio/PlayerManager";
 import { db } from "#database/Database";
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
@@ -135,25 +136,47 @@ class PlaylistInfoCommand extends Command {
 
 	_createMainInfoContainer(playlist: any) {
 		const shortId = playlist.id.replace("pl_", "").substring(0, 8);
-		const descriptionText = playlist.description
-			? `**${emoji.get("info")} Description:** ${playlist.description}\n`
-			: "";
+		const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
+		const avg = playlist.track_count > 0
+			? this._formatDuration(Math.round(playlist.total_duration / playlist.track_count))
+			: "0:00";
+		const artistCounts = new Map<string, number>();
+		for (const t of tracks) {
+			if (t?.author) artistCounts.set(t.author, (artistCounts.get(t.author) || 0) + 1);
+		}
+		const topArtists = [...artistCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
 		const content =
-			`**Overview of your playlist**\n\n` +
-			`**${emoji.get("folder")} Name:** ${playlist.name}\n` +
-			`${descriptionText}` +
-			`**${emoji.get("info")} ID:** ${shortId}\n` +
-			`**${emoji.get("music")} Tracks:** ${playlist.track_count} songs\n` +
-			`**${emoji.get("reset")} Duration:** ${this._formatDuration(playlist.total_duration)}\n` +
-			`**${emoji.get("check")} Created:** ${new Date(playlist.created_at).toLocaleString()}\n` +
-			`**${emoji.get("add")} Updated:** ${new Date(playlist.updated_at).toLocaleString()}`;
+			`**Overview**\n` +
+			`\u2514\u2500 ${emoji.get("folder")} **Name:** ${playlist.name}\n` +
+			(playlist.description ? `\u2514\u2500 ${emoji.get("info")} **Description:** ${playlist.description}\n` : "") +
+			`\u2514\u2500 ${emoji.get("info")} **ID:** \`${shortId}\`\n` +
+			`\u2514\u2500 ${emoji.get("music")} **Tracks:** ${playlist.track_count} songs\n` +
+			`\u2514\u2500 ${emoji.get("reset")} **Duration:** ${this._formatDuration(playlist.total_duration)} (~${avg}/track)\n` +
+			(topArtists.length && playlist.track_count > 0
+				? `\u2514\u2500 🎤 **Top artists:** ${topArtists.map(([n, c]) => `${n} (${c})`).join(", ")}\n`
+				: "") +
+			`\n**Timeline**\n` +
+			`\u251c\u2500 ${emoji.get("check")} **Created:** ${new Date(playlist.created_at).toLocaleString()}\n` +
+			`\u2514\u2500 ${emoji.get("add")} **Updated:** ${new Date(playlist.updated_at).toLocaleString()}`;
 
-		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
+		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder()
+				.setCustomId("plinfo_play")
+				.setLabel(i18n.cmd("Play Now"))
+				.setStyle(ButtonStyle.Success)
+				.setEmoji(emoji.get("play") || "\u25b6\ufe0f")
+				.setDisabled(playlist.track_count === 0),
+			new ButtonBuilder()
 				.setCustomId("plinfo_view_tracks")
 				.setLabel(i18n.cmd('View Tracks ({count})', { count: playlist.track_count }))
 				.setStyle(ButtonStyle.Primary)
 				.setEmoji(emoji.get("music") || "🎵")
 				.setDisabled(playlist.track_count === 0),
+			new ButtonBuilder()
+				.setCustomId("plinfo_delete")
+				.setLabel(i18n.cmd("Delete"))
+				.setStyle(ButtonStyle.Danger)
+				.setEmoji(emoji.get("trash") || "🗑\ufe0f"),
 		);
 
 		return buildContainer({
@@ -229,6 +252,104 @@ class PlaylistInfoCommand extends Command {
 			accent: 0x5865F2,
 			footer: "phrases.playlistLoaded",
 			icon: emoji.get("music") || "ℹ️"
+		});
+	}
+
+	_ephemeral(interaction: any, container: any) {
+		return interaction.followUp({
+			components: [container],
+			flags: MessageFlags.IsComponentsV2,
+			ephemeral: true,
+		});
+	}
+
+	/**
+	 * "Play Now" from the details card: queues the playlist into the caller's
+	 * voice channel. Mirrors the load-playlist pipeline so behaviour (permission
+	 * checks, connect, queue then play) stays identical.
+	 */
+	async _playPlaylist(interaction: any, playlist: any, userId: string) {
+		if (!playlist) return;
+		const client = interaction.client as any;
+		const voiceChannel = interaction.member?.voice?.channel;
+		if (!voiceChannel) {
+			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("Join a voice channel first, then press **Play Now**.") }, i18n.translateTitle("No Voice Channel")));
+		}
+		const perms = voiceChannel.permissionsFor(client.user);
+		if (!perms?.has(["Connect", "Speak"])) {
+			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("I need permission to join and speak in that voice channel.") }, i18n.translateTitle("Missing Permissions")));
+		}
+		const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
+		if (tracks.length === 0) {
+			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("This playlist has no tracks to play.") }));
+		}
+
+		const guildId = interaction.guild.id;
+		try {
+			let player = client.music?.getPlayer(guildId);
+			if (!player) {
+				player = await client.music.createPlayer({
+					guildId,
+					textChannelId: interaction.channel.id,
+					voiceChannelId: voiceChannel.id,
+				});
+			}
+			const pm = new PlayerManager(player);
+			if (!pm.isConnected) await pm.connect();
+			const wasEmpty = !player.playing && player.queue.tracks.length === 0;
+
+			let added = 0;
+			let failed = 0;
+			for (const t of tracks) {
+				const query = t.uri || t.identifier || (t.author ? `${t.title} ${t.author}` : t.title);
+				try {
+					const res = await client.music.search(query, { requester: { id: userId } });
+					if (res?.tracks?.length) {
+						await pm.addTracks(res.tracks[0]);
+						added++;
+					} else {
+						failed++;
+					}
+				} catch (e) {
+					failed++;
+				}
+			}
+
+			if (wasEmpty && added > 0) await pm.play();
+
+			const container = buildSuccess(
+				{
+					message: i18n.cmd("**{added}** of **{total}** tracks from **{name}** queued.", { added, total: tracks.length, name: playlist.name }),
+					detail: failed > 0
+						? i18n.cmd("{failed} track(s) could not be resolved.", { failed })
+						: (wasEmpty ? i18n.cmd("Playback started.") : i18n.cmd("Added to the queue.")),
+				},
+				i18n.translateTitle("Playlist Queued"),
+			);
+			return this._ephemeral(interaction, container);
+		} catch (error: any) {
+			logger.error("PlaylistInfo", i18n.cmd("Failed to play playlist"), error);
+			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("Something went wrong while starting playback.") }, i18n.translateTitle("Playback Error")));
+		}
+	}
+
+	/**
+	 * "Delete" from the details card: removes the playlist and swaps the card for
+	 * a confirmation, so the message no longer offers actions on a dead playlist.
+	 */
+	async _deletePlaylist(interaction: any, playlist: any, userId: string) {
+		if (!playlist) return;
+		let ok = false;
+		try {
+			ok = db.playlists.deletePlaylist(playlist.id, userId);
+		} catch (_) {
+			ok = false;
+		}
+		if (!ok) {
+			return this._ephemeral(interaction, buildError({ issue: i18n.cmd("Could not delete that playlist. Try again.") }, i18n.translateTitle("Delete Failed")));
+		}
+		await interaction.editReply({
+			components: [buildSuccess({ message: i18n.cmd("Deleted **{name}**.", { name: playlist.name }) }, i18n.translateTitle("Playlist Deleted"))],
 		});
 	}
 
@@ -319,6 +440,14 @@ class PlaylistInfoCommand extends Command {
 						content: i18n.cmd("Successfully removed {count} track(s).", { count: removedCount }),
 						ephemeral: true,
 					});
+					break;
+				}
+				case "play": {
+					await this._playPlaylist(interaction, currentPlaylist, userId);
+					break;
+				}
+				case "delete": {
+					await this._deletePlaylist(interaction, currentPlaylist, userId);
 					break;
 				}
 			}
