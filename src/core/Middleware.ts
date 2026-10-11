@@ -88,10 +88,10 @@ export class Middleware {
           title: escalated ? tr('mw.rateLimited.title') : tr('mw.cooldown.title'),
           issue: escalated
             ? tr('mw.rateLimited.issue', { command: command.name })
-            : pool('cooldown', { time: cooldownTime }),
+            : tr('mw.cooldown.issue', { time: cooldownTime }),
           tip: escalated
             ? tr('ui.warning.action')
-            : tr('mw.cooldown.title')
+            : undefined
         })
       };
     }
