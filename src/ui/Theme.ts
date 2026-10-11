@@ -13,6 +13,7 @@ import {
 } from 'discord.js';
 import emoji from '#config/emoji';
 import branding from '#config/branding';
+import phrases from '#utils/phrases.js';
 import { i18n } from '#utils/i18n.js';
 
 // Discord Components V2 hard limits. Exceeding them throws at build time, so
@@ -123,6 +124,29 @@ function label(key: string, fallback: string) {
 }
 
 /**
+ * Returns a randomized, locale-aware phrase from the `phrases` pool. This is
+ * what keeps repeated cards from showing the exact same sentence every time;
+ * falls back to `fallback` when the category is missing.
+ */
+function phraseOr(category: string | undefined, fallback: string): string {
+  if (!category) return fallback;
+  const p = phrases.get(category);
+  return p && p !== category ? p : fallback;
+}
+
+/**
+ * Resolves a card footer. `phrases.<category>` rotates the sentence from the
+ * phrase pool; anything else is used verbatim. Falls back to the brand credit.
+ */
+function resolveFooter(footer: any): string {
+  if (!footer) return BRAND_FOOTER;
+  if (typeof footer === 'string' && footer.startsWith('phrases.')) {
+    return phraseOr(footer.slice('phrases.'.length), BRAND_FOOTER);
+  }
+  return String(footer);
+}
+
+/**
  * Renders the card body. Uses a "quote bar" style: each block's label is bold
  * and its text sits in a blockquote, which Discord draws as a soft vertical bar
  * — cleaner than ASCII tree connectors.
@@ -131,7 +155,10 @@ function renderBody(blocks: any[]): string {
   const items = (blocks || []).filter((b: any) => b && b.text);
   return items
     .map((b: any) => {
-      const quoted = String(b.text)
+      // A block may supply a randomized phrase pool instead of a fixed string;
+      // that keeps repeated cards from reading identically every time.
+      const text = b.phrase ? phraseOr(b.phrase, String(b.text)) : String(b.text);
+      const quoted = text
         .split('\n')
         .map((l: string) => `> ${l}`)
         .join('\n');
@@ -153,7 +180,7 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
   const container = new ContainerBuilder();
   if (typeof accent === 'number') container.setAccentColor(accent);
 
-  const cleanTitleText = cleanTitle(title);
+  const cleanTitleText = cleanTitle(i18n.translateTitle(title));
   let header = `${icon || ''} **${cleanTitleText}**`.trim();
   if (subtitle) {
     const cleanSub = cleanTitle(subtitle);
@@ -185,7 +212,7 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
       new ActionRowBuilder<any>().addComponents(...buttons)
     );
   }
-  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${footer || BRAND_FOOTER}`)));
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${resolveFooter(footer)}`)));
 
   return container;
 }
@@ -210,15 +237,16 @@ export function buildError(errorInput: any, title: any = undefined, avatarUrl: a
   const fix = obj.tip;
 
   const blocks = [
-    { label: label('ui.block.problem', 'What went wrong'), text: what },
-    fix && fix !== cardTitle && fix !== what ? { label: label('ui.block.solution', 'How to fix it'), text: fix } : null
+    { label: label('ui.block.problem', 'What went wrong'), text: what, phrase: obj.issuePhrase },
+    fix && fix !== cardTitle && fix !== what ? { label: label('ui.block.solution', 'How to fix it'), text: fix, phrase: obj.tipPhrase } : null
   ];
 
   // A "blocked" error (blacklist / restriction) gets a link button to support,
-  // where the user can appeal — matching how the card tells them to.
-  const buttons = obj.blocked ? [supportButton(obj.supportLabel)] : [];
+  // where the user can appeal — matching how the card tells them to. `support`
+  // does the same for bot-side failures the user may want to report.
+  const buttons = (obj.blocked || obj.support) ? [supportButton(obj.supportLabel)] : [];
 
-  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.error, icon: crossIcon, blocks, buttons, thumbnail: avatarUrl });
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.error, icon: crossIcon, blocks, buttons, footer: obj.footer, thumbnail: avatarUrl });
 }
 
 /**
@@ -228,6 +256,25 @@ export function buildError(errorInput: any, title: any = undefined, avatarUrl: a
 export function buildBlocked(blockedInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const obj = (typeof blockedInput === 'object' && blockedInput) ? blockedInput : { issue: blockedInput };
   return buildError({ ...obj, blocked: true }, title ?? i18n.tr('mw.blacklisted.title'), avatarUrl);
+}
+
+/**
+ * Generic multi-block result card (e.g. filter applied/reset). Callers pass the
+ * blocks and a context icon; layout matches the status cards (style A).
+ */
+export function buildResult(
+  { title, subtitle, blocks = [], icon, accent, avatarUrl, footer, buttons }: any = {}
+) {
+  return statusCard({
+    title,
+    subtitle,
+    accent: typeof accent === 'number' ? accent : STATUS_ACCENT.success,
+    icon,
+    blocks,
+    footer,
+    buttons,
+    thumbnail: avatarUrl
+  });
 }
 
 /**
@@ -243,10 +290,10 @@ export function buildSuccess(successInput: any, title: any = undefined, avatarUr
 
   const blocks = [
     { label: label('ui.block.done', "What's done"), text: message },
-    detail && detail !== message ? { label: label('ui.block.next', "What's next"), text: detail } : null
+    detail && detail !== message ? { label: label('ui.block.next', "What's next"), text: detail, phrase: obj.detailPhrase } : null
   ];
 
-  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.success, icon: checkIcon, blocks, thumbnail: avatarUrl });
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.success, icon: checkIcon, blocks, footer: obj.footer, thumbnail: avatarUrl });
 }
 
 /**
@@ -278,7 +325,7 @@ export function buildWarning(warningInput: any, title: any = undefined, avatarUr
     tip && tip !== cardTitle && tip !== message ? { label: label('ui.block.solution', 'What you can do'), text: tip } : null
   ];
 
-  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.warning, icon: warningIcon, blocks, thumbnail: avatarUrl });
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.warning, icon: warningIcon, blocks, footer: obj.footer, thumbnail: avatarUrl });
 }
 
 /**
@@ -302,6 +349,7 @@ const Theme = {
   buildWarning,
   buildLoading,
   buildBlocked,
+  buildResult,
   buildYunaContainer: buildContainer,
   buildYunaError: buildError,
   buildYunaSuccess: buildSuccess

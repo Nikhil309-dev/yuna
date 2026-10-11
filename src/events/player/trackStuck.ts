@@ -4,6 +4,7 @@ import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
 import musicSource from "#config/sources";
 import { i18n } from "#utils/i18n";
+import { buildResult } from "#ui/Theme";
 import {
 	ContainerBuilder,
 	TextDisplayBuilder,
@@ -34,14 +35,15 @@ export default {
 					const message = await channel?.messages.fetch(messageId).catch(() => null);
 
 					if (message) {
-						const stuckContainer = new ContainerBuilder()
-							.addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ⚠️ **Track Stuck**`))
-							.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-							.addTextDisplayComponents(
-								new TextDisplayBuilder().setContent(
-									i18n.cmd("Attempting to recover: **{title}**", { title: track?.info?.title || i18n.cmd("Track") }),
-								),
-							);
+						const stuckContainer = buildResult({
+							title: 'Track Stuck',
+							icon: '⚠️',
+							accent: 0xFEE75C,
+							avatarUrl: client?.user?.displayAvatarURL?.({ size: 128 }),
+							blocks: [
+								{ text: i18n.cmd("Attempting to recover **{title}**…", { title: track?.info?.title || i18n.cmd("Track") }) }
+							]
+						});
 
 						await message.edit({
 							components: [stuckContainer],
@@ -54,14 +56,15 @@ export default {
 				}
 			}
 
-			const warnContainer = new ContainerBuilder()
-				.addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ⚠️ **Playback Recovery**`))
-				.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-				.addTextDisplayComponents(
-					new TextDisplayBuilder().setContent(
-						i18n.cmd("Audio playback is experiencing issues. Attempting to recover automatically..."),
-					),
-				);
+			const warnContainer = buildResult({
+				title: 'Playback Recovery',
+				icon: '⚠️',
+				accent: 0xFEE75C,
+				avatarUrl: client?.user?.displayAvatarURL?.({ size: 128 }),
+				blocks: [
+					{ text: i18n.cmd("Audio playback is experiencing issues. Attempting to recover automatically…") }
+				]
+			});
 
 			const warningMessage = await EventUtils.sendPlayerMessage(client, player, {
 				components: [warnContainer],

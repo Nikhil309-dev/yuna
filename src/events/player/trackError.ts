@@ -6,6 +6,7 @@ import { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacin
 import emoji from "#config/emoji";
 import musicSource from "#config/sources";
 import { i18n } from "#utils/i18n";
+import { buildError, buildResult } from "#ui/Theme";
 
 export default {
   name: "trackError",
@@ -71,16 +72,17 @@ export default {
 
               await player.play({ clientTrack: fallbackTrack });
 
-              const fallbackNotice = new ContainerBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### 🔄 **Stream Recovery Active**`))
-                .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-                .addTextDisplayComponents(
-                  new TextDisplayBuilder().setContent(
-                    i18n.cmd("The original stream was blocked by the provider (bot protection).\n\n") +
-                    i18n.cmd("├─ 🎵 **Original Track:** {title}\n", { title }) +
-                    i18n.cmd("└─ ⚡ **Auto-Fallback:** Switched to {source} stream automatically!", { source: sourceUsed })
-                  )
-                );
+              const fallbackNotice = buildResult({
+                title: 'Stream Recovery',
+                icon: '🔄',
+                accent: 0xFEE75C,
+                avatarUrl: client?.user?.displayAvatarURL?.({ size: 128 }),
+                blocks: [
+                  { text: i18n.cmd("The original stream was blocked by the provider (bot protection).") },
+                  { label: i18n.cmd("Original Track"), text: `🎵 **${title}**` },
+                  { label: i18n.cmd("Auto-Fallback"), text: `⚡ Switched to **${sourceUsed}** stream automatically.` }
+                ]
+              });
 
               return await EventUtils.sendPlayerMessage(client, player, {
                 components: [fallbackNotice],
@@ -93,21 +95,12 @@ export default {
         }
       }
 
-      const button = new ButtonBuilder()
-        .setLabel(i18n.cmd("Support"))
-        .setURL("https://discord.gg/XYwwyDKhec")
-        .setStyle(ButtonStyle.Link);
-
-      const container = new ContainerBuilder()
-        .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ⚠️ Playback Error`))
-        .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-        .addSectionComponents(
-          new SectionBuilder()
-            .addTextDisplayComponents(
-              new TextDisplayBuilder().setContent(i18n.cmd("Lavalink failed to play: **{title}**\n\n**Reason:** {reason}", { title: track?.info?.title || i18n.cmd('Unknown'), reason: errorMsg }))
-            )
-            .setButtonAccessory(button)
-        );
+      const container = buildError({
+        title: 'Playback Error',
+        issue: i18n.cmd("I could not play **{title}**.", { title: track?.info?.title || i18n.cmd('this track') }),
+        tip: i18n.cmd("Reason: {reason}", { reason: errorMsg }),
+        support: true
+      }, undefined, client?.user?.displayAvatarURL?.({ size: 128 }));
 
       await EventUtils.sendPlayerMessage(client, player, {
         components: [container],
