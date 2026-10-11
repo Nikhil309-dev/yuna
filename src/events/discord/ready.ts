@@ -1,11 +1,9 @@
-import { ActivityType, AttachmentBuilder } from "discord.js";
+import { ActivityType } from "discord.js";
 import { logger } from "#utils/logger";
 import { config } from "#config/config";
 import { db } from "#database/Database";
 import { showBanner } from "#utils/banner";
 import { PlayerManager } from "#audio/PlayerManager";
-import fs from "fs";
-import path from "path";
 
 export default {
   name: "clientReady",
@@ -23,8 +21,6 @@ export default {
     logger.success("Bot", `Logged in as ${user.tag}`);
     logger.info("Bot", `Serving ${guilds.cache.size} guilds`);
 
-    // Restore saved sessions for every guild, independent of 24/7 mode. Give
-    // Lavalink a moment to finish connecting before recreating players.
     logger.info(
       "Bot",
       "Waiting 10 seconds for Lavalink to be ready before restoring sessions...",

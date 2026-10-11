@@ -1,6 +1,5 @@
 import { logger } from "#utils/logger";
 import { db } from "#database/Database";
-import { config } from "#config/config";
 import sources from "#config/sources";
 
 import { Client } from "discord.js";
@@ -16,7 +15,6 @@ export class AutoplayEngine {
     this.sessionHistory = AutoplayEngine._sessionHistory;
   }
 
-  /** Clears per-guild autoplay session history (call when a guild's session ends). */
   clearSessionHistory(guildId: string) {
     AutoplayEngine._sessionHistory.delete(guildId);
   }

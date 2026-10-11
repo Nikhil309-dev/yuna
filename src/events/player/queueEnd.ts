@@ -1,13 +1,12 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
+import type { Player, Track } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
-import type { Client } from 'discord.js';
 import { logger } from "#utils/logger";
 import { db } from '#database/Database';
 import { config } from "#config/config";
 import { PlayerManager } from "#audio/PlayerManager";
 import { EventUtils } from "#utils/EventUtils";
 import { buildYunaContainer } from '#ui/Theme';
-import { ContainerBuilder, TextDisplayBuilder, SectionBuilder, SeparatorBuilder, SeparatorSpacingSize, ButtonBuilder, ButtonStyle, ThumbnailBuilder, MessageFlags } from "discord.js";
+import { ContainerBuilder, TextDisplayBuilder, SectionBuilder, SeparatorBuilder, SeparatorSpacingSize, ButtonBuilder, ButtonStyle, MessageFlags } from "discord.js";
 import emoji from "#config/emoji";
 import AutoplayEngine from "#audio/AutoplayEngine";
 import { i18n } from "#utils/i18n";
@@ -17,7 +16,7 @@ let autoplayEngine: AutoplayEngine | null = null;
 export default {
   name: "queueEnd",
   once: false,
-  async execute(player: Player, track: Track, payload: any, musicManager: LavalinkManager, client: YunaClient) {
+  async execute(player: Player, track: Track, client: YunaClient) {
     try {
       logger.info('QueueEnd', `Queue ended in guild ${player.guildId}`);
 
@@ -243,59 +242,9 @@ async function handleAutoplay(player: Player, lastTrack: Track, client: YunaClie
   logger.info('QueueEnd', `Autoplay added "${trackInfoToAdd.info.title}" to guild ${player.guildId}`);
 }
 
-function isSpotifySource(track: Track) {
-  const uri = track.info.uri?.toLowerCase() || '';
-  const sourceName = track.info.sourceName?.toLowerCase() || '';
 
-  return uri.includes('spotify.com') ||
-         uri.includes('open.spotify.com') ||
-         sourceName.includes('spotify') ||
-         sourceName.includes('sp');
-}
 
-function isYouTubeSource(track: Track) {
-  const uri = track.info.uri?.toLowerCase() || '';
-  const sourceName = track.info.sourceName?.toLowerCase() || '';
 
-  return uri.includes('youtube.com') ||
-         uri.includes('youtu.be') ||
-         sourceName.includes('youtube') ||
-         sourceName.includes('yt');
-}
-
-function getTrackSource(track: Track) {
-  const uri = track.info.uri?.toLowerCase() || '';
-  const sourceName = track.info.sourceName?.toLowerCase() || '';
-
-  if (uri.includes('spotify.com') || sourceName.includes('spotify')) {
-    return 'Spotify';
-  } else if (uri.includes('youtube.com') || uri.includes('youtu.be') || sourceName.includes('youtube')) {
-    return 'YouTube';
-  } else if (uri.includes('soundcloud.com') || sourceName.includes('soundcloud')) {
-    return 'SoundCloud';
-  } else if (uri.includes('music.apple.com') || sourceName.includes('apple')) {
-    return 'Apple Music';
-  } else if (uri.includes('deezer.com') || sourceName.includes('deezer')) {
-    return 'Deezer';
-  } else if (uri.includes('jiosaavn.com') || sourceName.includes('jiosaavn') || sourceName.includes('saavn')) {
-    return 'JioSaavn';
-  } else if (sourceName) {
-    return sourceName.charAt(0).toUpperCase() + sourceName.slice(1);
-  } else {
-    return 'Unknown';
-  }
-}
-
-function getPremiumStatus(guildId: string, userId: string) {
-  if (!userId) return { hasPremium: false, maxSongs: config.queue.maxSongs.free };
-
-  const premiumStatus = db.hasAnyPremium(userId, guildId);
-  return {
-    hasPremium: !!premiumStatus,
-    type: premiumStatus ? premiumStatus.type : 'free',
-    maxSongs: premiumStatus ? config.queue.maxSongs.premium : config.queue.maxSongs.free
-  };
-}
 
 function clearStoredMessageIds(player: Player) {
   player.set('nowPlayingMessageId', null);

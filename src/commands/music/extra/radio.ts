@@ -1,16 +1,13 @@
 import { Command, CommandContext } from '#core/Command';
 import {
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   MessageFlags,
   StringSelectMenuBuilder
 } from "discord.js";
 import { PlayerManager } from '#audio/PlayerManager';
 import { config } from "#config/config";
-import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
 import { splitFooter } from "#ui/Formatters";
@@ -98,7 +95,7 @@ class RadioCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, args = [] } = ctx;
     const context = interaction || message;
     const stationId = interaction ? interaction.options.getString("station") : args[0]?.toLowerCase();
     if (stationId) {
@@ -116,10 +113,6 @@ class RadioCommand extends Command {
   }
 
   async _sendRadioMenu(context: any, client: any) {
-    const button = new ButtonBuilder()
-      .setLabel(i18n.cmd("Support"))
-      .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
-      .setStyle(ButtonStyle.Link);
 
     let desc = i18n.cmd("Select a 24/7 live radio station from the dropdown menu below to start streaming high-quality music instantly into your voice channel!") + "\n\n";
     RADIO_STATIONS.forEach((s) => {
@@ -173,10 +166,6 @@ class RadioCommand extends Command {
 
   async _playRadioStation(context: any, client: any, station: any, existingMsg: any = null) {
     try {
-      const button = new ButtonBuilder()
-        .setLabel(i18n.cmd("Support"))
-        .setURL(config.links?.supportServer || "https://discord.gg/XYwwyDKhec")
-        .setStyle(ButtonStyle.Link);
 
       const voiceChannel = context.member?.voice?.channel;
       if (!voiceChannel) {

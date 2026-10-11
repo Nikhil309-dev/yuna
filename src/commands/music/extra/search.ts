@@ -66,7 +66,7 @@ class SearchCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, args = [] } = ctx;
     const context = interaction || message;
     let query, source;
 
@@ -190,7 +190,7 @@ class SearchCommand extends Command {
   }
 
   _createSearchContainer(searchData: any) {
-    const { query, selectedSource, currentResults, guildId, userId } = searchData;
+    const { query, currentResults } = searchData;
 
     if (!currentResults || currentResults.length === 0) {
       return buildContainer({

@@ -1,15 +1,12 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import { Command } from '#core/Command';
 import {
   MessageFlags,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  ComponentType,
   ButtonBuilder,
   ButtonStyle
 } from 'discord.js';
-import { buildContainer, buildSuccess, buildError } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
@@ -42,7 +39,6 @@ class ReloadCommand extends Command {
     }
 
     const infoIcon = emoji.get('info') || 'ℹ️';
-    const folderIcon = emoji.get('folder') || '📁';
     const checkIcon = emoji.get('check') || '✅';
 
     let content = i18n.cmd("┌─ **{emoji} Status:** Live Hot-Reload Engine Ready\n", { emoji: infoIcon });

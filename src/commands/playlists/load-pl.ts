@@ -1,5 +1,3 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { MessageFlags } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
@@ -57,7 +55,7 @@ class LoadPlaylistCommand extends Command {
 	}
 
 	async execute(ctx: any) {
-		const { client, message, interaction, player, pm, args = [] } = ctx;
+		const { client, message, interaction, args = [] } = ctx;
 		const context = interaction || message;
 		let positionsStr = null;
 		let query = null;

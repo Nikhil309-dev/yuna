@@ -1,15 +1,11 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
 import { PlayerManager } from "#audio/PlayerManager";
 import { db } from "#database/Database";
-import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 const TRACKS_PER_PAGE = 10;
@@ -48,7 +44,7 @@ class PlaylistInfoCommand extends Command {
 	}
 
 	async execute(ctx: any) {
-		const { client, message, interaction, player, pm, args = [] } = ctx;
+		const { client, message, interaction, args = [] } = ctx;
 		const context = interaction || message;
 		const query = interaction ? (interaction.options.getString("playlist") || null) : (args.join(" ") || null);
 		return this._handleInfo(client, context, context.user || context.author, query);
@@ -279,11 +275,6 @@ class PlaylistInfoCommand extends Command {
 		});
 	}
 
-	/**
-	 * "Play Now" from the details card: queues the playlist into the caller's
-	 * voice channel. Mirrors the load-playlist pipeline so behaviour (permission
-	 * checks, connect, queue then play) stays identical.
-	 */
 	async _playPlaylist(interaction: any, playlist: any, userId: string, mode: string = "play") {
 		if (!playlist) return;
 		const client = interaction.client as any;
@@ -356,7 +347,6 @@ class PlaylistInfoCommand extends Command {
 		}
 	}
 
-	/** Two-step delete: the red button first asks the user to confirm. */
 	async _confirmDelete(interaction: any, playlist: any) {
 		const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
 			new ButtonBuilder()
@@ -380,10 +370,6 @@ class PlaylistInfoCommand extends Command {
 		});
 	}
 
-	/**
-	 * "Delete" from the details card: removes the playlist and swaps the card for
-	 * a confirmation, so the message no longer offers actions on a dead playlist.
-	 */
 	async _deletePlaylist(interaction: any, playlist: any, userId: string) {
 		if (!playlist) return;
 		let ok = false;

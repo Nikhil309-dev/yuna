@@ -1,18 +1,8 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   MessageFlags,
   SectionBuilder,
-  SeparatorBuilder,
-  SeparatorSpacingSize,
   TextDisplayBuilder,
-  ThumbnailBuilder,
-  StringSelectMenuBuilder
-} from "discord.js";
-import { config } from "#config/config";
+  ThumbnailBuilder} from "discord.js";
 import { Command } from "#core/Command";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";

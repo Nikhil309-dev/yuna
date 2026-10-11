@@ -9,9 +9,8 @@ import {
 
 import { config } from "#config/config";
 import { Command, CommandContext } from '#core/Command';
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer } from '#ui/Theme';
 import emoji from "#config/emoji";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 import { PlayerManager } from '#audio/PlayerManager';
 
@@ -43,7 +42,7 @@ class StopCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, player, pm } = ctx;
     const context = interaction || message;
     const activePm = pm || (player ? new PlayerManager(player) : (client?.music?.getPlayer(context.guildId || context.guild?.id) ? new PlayerManager(client.music.getPlayer(context.guildId || context.guild?.id)) : null));
     if (!activePm) return;

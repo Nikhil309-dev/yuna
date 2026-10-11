@@ -107,8 +107,7 @@ export class YunaClient extends Client {
 	async init() {
 		this.logger.info('YunaClient', `Initializing Yuna V2 Sakura engine...`);
 		try {
-			// Locale data must be ready before commands are handled. Without this,
-			// /language sees an empty menu and Discord rejects the interaction.
+
 			await i18n.init();
 			await this.withTimeout('eventLoader.load()', () => this.eventLoader.load(), 20_000);
 			await this.withTimeout('commandLoader.load()', () => this.commandLoader.load(), 20_000);
@@ -131,11 +130,6 @@ export class YunaClient extends Client {
 		}
 	}
 
-	/**
-	 * Races an async step against a hard timeout. If the step does not settle
-	 * within `ms` milliseconds, an Error is thrown so the boot fails loudly
-	 * instead of hanging silently on a misbehaving loader.
-	 */
 	private async withTimeout<T>(label: string, fn: () => Promise<T>, ms: number): Promise<T> {
 		let timer: NodeJS.Timeout | undefined;
 		const timeout = new Promise<never>((_, reject) => {

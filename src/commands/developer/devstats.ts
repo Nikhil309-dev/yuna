@@ -1,4 +1,4 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
+import type { Message } from 'discord.js';
 import type { YunaClient } from '#core/YunaClient';
 import {
 	ActionRowBuilder,
@@ -17,9 +17,8 @@ import { config } from "#config/config";
 import { Command } from "#core/Command";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildError } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 class DevStatsCommand extends Command {

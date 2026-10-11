@@ -11,12 +11,12 @@ import {
   ChannelSelectMenuBuilder,
   MentionableSelectMenuBuilder,
 } from "discord.js";
-import type { Client, Message } from "discord.js";
+import type { Message } from "discord.js";
 import { PlayerManager } from '#audio/PlayerManager';
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";

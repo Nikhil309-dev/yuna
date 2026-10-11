@@ -35,7 +35,7 @@ class ResumeCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, player, pm } = ctx;
     const context = interaction || message;
     const activePm = pm || (player ? new PlayerManager(player) : (client?.music?.getPlayer(context.guildId || context.guild?.id) ? new PlayerManager(client.music.getPlayer(context.guildId || context.guild?.id)) : null));
     if (!activePm) return;

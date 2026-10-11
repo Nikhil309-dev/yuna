@@ -1,4 +1,4 @@
-import { Command, CommandContext } from '#core/Command';
+import { Command } from '#core/Command';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -17,7 +17,7 @@ import { db } from "#database/Database";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildError, buildSuccess } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";

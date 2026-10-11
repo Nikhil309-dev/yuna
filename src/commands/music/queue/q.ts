@@ -61,7 +61,7 @@ class QueueCommand extends Command {
   }
 
   async execute(ctx: any) {
-    const { client, interaction, message, args, guild, user } = ctx;
+    const { client, interaction, message, args, guild } = ctx;
     const pageArg = args?.[0] ? parseInt(args[0], 10) : (interaction?.options?.getInteger('page') || 1);
     const page = isNaN(pageArg) || pageArg < 1 ? 1 : pageArg;
     const context = interaction || message;

@@ -15,7 +15,6 @@ import {
 } from 'discord.js';
 
 import { Command, CommandContext } from '#core/Command';
-import type { YunaClient } from '#core/YunaClient';
 import { FilterEngine } from '#audio/FilterEngine';
 import { config } from '#config/config';
 import emoji from '#config/emoji';
@@ -25,7 +24,6 @@ import { formatDuration } from '#ui/Formatters';
 
 const BRAND_FOOTER = 'Built with ♥ under CodeX Development';
 
-/** Human-friendly display names for the raw preset keys. */
 const NICE: Record<string, string> = {
 	bassboost: 'Bass Boost', deepbass: 'Deep Bass', superbass: 'Super Bass', boost: 'Audio Boost',
 	warm: 'Warm', soft: 'Soft', treble: 'Treble', bright: 'Bright', flat: 'Flat',
@@ -45,7 +43,6 @@ const DESC: Record<string, string> = {
 	nightcore: 'Faster + higher pitch', vaporwave: 'Slower + dreamy', vocals: 'Push the vocal mids',
 };
 
-/** Category → emoji + member presets, used for the names block and menu grouping. */
 const CATEGORIES: Array<{ emoji: string; name: string; items: string[] }> = [
 	{ emoji: '🔊', name: 'Bass', items: ['bassboost', 'deepbass', 'superbass', 'boost', 'warm', 'soft'] },
 	{ emoji: '✨', name: 'Treble', items: ['treble', 'bright', 'flat'] },
@@ -102,7 +99,6 @@ class FilterStudioCommand extends Command {
 			return this._reply(context, this._panel({ player: null, active: [] }, ctx.locale));
 		}
 
-		// Direct apply from message arg or slash option, then open the studio.
 		const direct = interaction
 			? interaction.options?.getString?.('preset')
 			: (args[0] ? args[0].toLowerCase() : undefined);
@@ -120,16 +116,12 @@ class FilterStudioCommand extends Command {
 		return this.execute(ctx);
 	}
 
-	// ────────────────────────────────────────────────────────────────────────────
-	// Backend: filter state
-	// ────────────────────────────────────────────────────────────────────────────
-
 	_getActive(player: any): string[] {
 		return (player?.get?.('activeFilters') as string[]) || [];
 	}
 
 	_setActive(player: any, list: string[]) {
-		try { player?.set?.('activeFilters', list); } catch { /* non-fatal */ }
+		try { player?.set?.('activeFilters', list); } catch {  }
 	}
 
 	async _apply(player: any, preset: string) {
@@ -139,7 +131,6 @@ class FilterStudioCommand extends Command {
 		this._setActive(player, active);
 	}
 
-	/** Removes one preset while keeping the rest of the stack intact. */
 	async _remove(player: any, preset: string) {
 		const remaining = this._getActive(player).filter((p) => p !== preset);
 		await FilterEngine.reset(player);
@@ -157,17 +148,12 @@ class FilterStudioCommand extends Command {
 		return m === 1 ? 'Track' : m === 2 ? 'Queue' : 'Off';
 	}
 
-	// ────────────────────────────────────────────────────────────────────────────
-	// Card builders
-	// ────────────────────────────────────────────────────────────────────────────
-
 	_footer(container: ContainerBuilder) {
 		container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 		container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${BRAND_FOOTER}`));
 		return container;
 	}
 
-	/** Guards against malformed artwork URLs that would throw in the builder. */
 	_artUrl(url?: string): string {
 		const fallback = config.assets.defaultThumbnail;
 		if (!url) return fallback;
@@ -180,7 +166,6 @@ class FilterStudioCommand extends Command {
 		return `**Available Filters** *(${total} presets)*\n${rows}\n\n-# All ${total} presets are in the menu below.`;
 	}
 
-	/** The full studio panel: stats → names → apply select → Clear/Random. */
 	_panel(player: any, locale: string) {
 		const active = this._getActive(player);
 		const track = player?.queue?.current;
@@ -189,7 +174,6 @@ class FilterStudioCommand extends Command {
 		c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`${emoji.get('music') || '🎛️'} ### Filter Studio`));
 		c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 
-		// Playing stats + filter status + thumbnail, in one section.
 		let info: string;
 		if (track) {
 			const state = player?.paused ? '⏸ Paused' : '▶ Playing';
@@ -214,7 +198,6 @@ class FilterStudioCommand extends Command {
 		c.addTextDisplayComponents(new TextDisplayBuilder().setContent(this._namesBlock()));
 		c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 
-		// Apply / remove select — the menu holds every preset.
 		c.addActionRowComponents(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
 			new StringSelectMenuBuilder()
 				.setCustomId('fl_apply')
@@ -236,10 +219,6 @@ class FilterStudioCommand extends Command {
 
 		return this._footer(c);
 	}
-
-	// ────────────────────────────────────────────────────────────────────────────
-	// Collector wiring
-	// ────────────────────────────────────────────────────────────────────────────
 
 	_setupCollector(msg: Message, context: any, player: any, locale: string) {
 		const authorId = context.author?.id || context.user?.id;

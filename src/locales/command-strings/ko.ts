@@ -1,12 +1,3 @@
-/**
- * Korean (ko-KR) command-level UI strings.
- *
- * Keys are the exact English literals used at call sites. Placeholders use
- * `{name}` and must be preserved exactly — `i18n.cmd()` interpolates them
- * after lookup, and every locale catalog is checked for placeholder parity.
- * Markdown, emojis, box-drawing characters, URLs and command names must also
- * be preserved verbatim.
- */
 const KO: Record<string, string> = {
 	"On": "켜짐",
 	"Off": "꺼짐",
@@ -95,7 +86,7 @@ const KO: Record<string, string> = {
 	"**Successfully granted {type} premium!**": "**{type}에 프리미엄을 부여했습니다!**",
 	"**{emoji} Details:**": "**{emoji} 상세 정보:**",
 	"├─ **Target:** `{id}`": "├─ **대상:** `{id}`",
-	
+
 	"├─ **Expires:** {expires}": "├─ **만료:** {expires}",
 	"└─ **Reason:** {reason}": "└─ **사유:** {reason}",
 	"├─ `premium revoke user 123456789`": "├─ `premium revoke user 123456789`",

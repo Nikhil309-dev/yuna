@@ -1,5 +1,5 @@
-import { Command, CommandContext } from '#core/Command';
-import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder, MentionableSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
+import { Command } from '#core/Command';
+import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js";
 import type { Message } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";

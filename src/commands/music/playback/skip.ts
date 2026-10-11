@@ -20,7 +20,6 @@ import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 class SkipCommand extends Command {

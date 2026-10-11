@@ -26,7 +26,6 @@ import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import { i18n } from "#utils/i18n";
 
-/** Shared brand footer so every blacklist card matches the rest of the bot. */
 const BRAND_FOOTER = 'Built with ♥ under CodeX Development';
 const DEFAULT_REASON = 'Blacklisted by owner';
 
@@ -54,7 +53,6 @@ class BlacklistCommand extends Command {
 				return this._sendError(message, "Access Denied", i18n.cmd("This command is restricted to bot owners only."));
 			}
 
-			// No args → open the interactive dashboard with buttons + collector.
 			if (!args.length) {
 				const helpMsg: Message = await message.reply({
 					components: [this._helpContainer(client)],
@@ -89,11 +87,6 @@ class BlacklistCommand extends Command {
 		}
 	}
 
-	// ────────────────────────────────────────────────────────────────────────────
-	// Card / container builders
-	// ────────────────────────────────────────────────────────────────────────────
-
-	/** title → separator → body (optionally with thumbnail). No footer. */
 	_card(icon: string, title: string, body: string, thumbnail = false) {
 		const container = new ContainerBuilder();
 		container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`### ${icon} ${title}`));
@@ -110,14 +103,12 @@ class BlacklistCommand extends Command {
 		return container;
 	}
 
-	/** Appends separator + brand footer to any container. */
 	_footer(container: ContainerBuilder) {
 		container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 		container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${BRAND_FOOTER}`));
 		return container;
 	}
 
-	/** Interactive card: title → sep → body → sep → row(s) → sep → footer. */
 	_actionCard(icon: string, title: string, body: string, ...rows: ActionRowBuilder<any>[]) {
 		const container = this._card(icon, title, body, false);
 		for (const row of rows) {
@@ -126,10 +117,6 @@ class BlacklistCommand extends Command {
 		}
 		return this._footer(container);
 	}
-
-	// ────────────────────────────────────────────────────────────────────────────
-	// Dashboard steps
-	// ────────────────────────────────────────────────────────────────────────────
 
 	_helpContainer(client?: YunaClient) {
 		const body = i18n.cmd(
@@ -151,7 +138,6 @@ class BlacklistCommand extends Command {
 		return this._actionCard('🛡️', i18n.translateTitle('Blacklist Dashboard'), body, row);
 	}
 
-	/** Step 1 of Add: choose user vs guild. */
 	_addTypeContainer() {
 		const body = i18n.cmd(
 			"{info} **What do you want to blacklist?**\n\n" +
@@ -178,7 +164,6 @@ class BlacklistCommand extends Command {
 		return this._actionCard(emoji.get('add'), i18n.translateTitle('Blacklist · Add'), body, typeRow, buttonRow);
 	}
 
-	/** Step 2 (user): pick a user or enter an ID manually. */
 	_userPickContainer() {
 		const body = i18n.cmd(
 			"{info} **Select the user to blacklist** from the menu — or press **Enter ID manually** to type an ID / mention and an optional reason.",
@@ -197,7 +182,6 @@ class BlacklistCommand extends Command {
 		return this._actionCard('👤', i18n.translateTitle('Blacklist · Add User'), body, userRow, buttonRow);
 	}
 
-	/** Step 2 (guild): searchable list of the bot's guilds, or manual ID. */
 	_guildPickContainer(client: YunaClient) {
 		const guilds = client?.guilds?.cache ? [...client.guilds.cache.values()] : [];
 		const options = guilds.slice(0, 25).map((g: any) =>
@@ -236,7 +220,6 @@ class BlacklistCommand extends Command {
 		return this._actionCard('🏠', i18n.translateTitle('Blacklist · Add Guild'), body, ...rows);
 	}
 
-	/** Remove step: prompt for an ID via modal. */
 	_removeContainer() {
 		const body = i18n.cmd(
 			"{info} **Lift a blacklist.** Press the button to enter a **user or guild ID** (a mention works too).",
@@ -250,7 +233,6 @@ class BlacklistCommand extends Command {
 		return this._actionCard(emoji.get('cross'), i18n.translateTitle('Blacklist · Remove'), body, row);
 	}
 
-	/** Check step: prompt for an ID via modal. */
 	_checkContainer() {
 		const body = i18n.cmd(
 			"{info} **Look up a blacklist entry.** Press the button to enter a **user or guild ID** (a mention works too).",
@@ -263,10 +245,6 @@ class BlacklistCommand extends Command {
 		);
 		return this._actionCard(emoji.get('info'), i18n.translateTitle('Blacklist · Check'), body, row);
 	}
-
-	// ────────────────────────────────────────────────────────────────────────────
-	// Modals
-	// ────────────────────────────────────────────────────────────────────────────
 
 	_buildModal(customId: string, title: string, withReason: boolean) {
 		const modal = new ModalBuilder().setCustomId(customId).setTitle(title.slice(0, 45));
@@ -291,10 +269,6 @@ class BlacklistCommand extends Command {
 		return modal;
 	}
 
-	// ────────────────────────────────────────────────────────────────────────────
-	// Collector wiring
-	// ────────────────────────────────────────────────────────────────────────────
-
 	_setupCollector(msg: Message, authorId: string, client: YunaClient) {
 		const collector = (msg as any).createMessageComponentCollector({
 			time: 300_000,
@@ -308,7 +282,7 @@ class BlacklistCommand extends Command {
 
 			const id: string = interaction.customId;
 			try {
-				// — Navigation —
+
 				if (id === 'bl_help_close') {
 					collector.stop('closed');
 					return this._edit(interaction, this._footer(this._card('🔒', i18n.translateTitle('Blacklist Dashboard'), i18n.cmd('Dashboard closed. Run `.blacklist` to open it again.'))));
@@ -318,13 +292,11 @@ class BlacklistCommand extends Command {
 				if (id === 'bl_help_remove') return this._edit(interaction, this._removeContainer());
 				if (id === 'bl_help_check') return this._edit(interaction, this._checkContainer());
 
-				// — Add: type selection —
 				if (id === 'bl_add_type') {
 					const choice = interaction.values?.[0];
 					return this._edit(interaction, choice === 'guild' ? this._guildPickContainer(client) : this._userPickContainer());
 				}
 
-				// — Add: pickers —
 				if (id === 'bl_add_user') {
 					return this._edit(interaction, this._blacklistUser(interaction.values?.[0], DEFAULT_REASON));
 				}
@@ -332,7 +304,6 @@ class BlacklistCommand extends Command {
 					return this._edit(interaction, this._blacklistGuild(interaction.values?.[0], DEFAULT_REASON));
 				}
 
-				// — Manual modals —
 				if (id === 'bl_add_manual_user') return await this._manual(interaction, authorId, 'bl_modal_user', 'Blacklist User', true, 'user');
 				if (id === 'bl_add_manual_guild') return await this._manual(interaction, authorId, 'bl_modal_guild', 'Blacklist Guild', true, 'guild');
 				if (id === 'bl_remove_btn') return await this._manual(interaction, authorId, 'bl_modal_remove', 'Remove Blacklist', false, 'remove');
@@ -346,7 +317,6 @@ class BlacklistCommand extends Command {
 		});
 	}
 
-	/** Opens a modal, awaits submission, and routes the values to a handler. */
 	async _manual(interaction: any, authorId: string, modalId: string, title: string, withReason: boolean, kind: 'user' | 'guild' | 'remove' | 'check') {
 		await interaction.showModal(this._buildModal(modalId, title, withReason));
 		const submitted = await interaction.awaitModalSubmit({
@@ -368,10 +338,6 @@ class BlacklistCommand extends Command {
 
 		return this._edit(submitted, container);
 	}
-
-	// ────────────────────────────────────────────────────────────────────────────
-	// Operations → containers
-	// ────────────────────────────────────────────────────────────────────────────
 
 	_normalizeId(raw: string) {
 		let id = raw;
@@ -453,10 +419,6 @@ class BlacklistCommand extends Command {
 			flags: MessageFlags.IsComponentsV2
 		}).catch((e: any) => logger.error('BlacklistCommand', 'update failed:', e));
 	}
-
-	// ────────────────────────────────────────────────────────────────────────────
-	// Text-input (prefix args) path
-	// ────────────────────────────────────────────────────────────────────────────
 
 	async _handleAdd(client: any, message: any, args: any) {
 		if (args.length < 2) {

@@ -69,11 +69,6 @@ export class StatsRepo {
     `);
   }
 
-  /**
-   * Logs a track play for a user
-   * @param {string} userId
-   * @param {Object} trackInfo
-   */
   logTrackPlay(userId: string, trackInfo: any) {
     try {
       this.db.transaction(() => {
@@ -96,11 +91,6 @@ export class StatsRepo {
     }
   }
 
-  /**
-   * Adds listening time for a user
-   * @param {string} userId
-   * @param {number} timeMs
-   */
   addListenTime(userId: any, timeMs: any) {
     try {
       this._ensureStats.run(userId);
@@ -137,65 +127,27 @@ export class StatsRepo {
     this._updateStreak.run(newStreak, newStreak, today, today, userId);
   }
 
-  /**
-   * Retrieves user aggregate stats
-   * @param {string} userId
-   * @returns {Object}
-   */
   getUserStats(userId: string) {
     this._ensureStats.run(userId);
     return this._getStats.get(userId);
   }
 
-  /**
-   * Retrieves top artists for a user
-   * @param {string} userId
-   * @param {string} since
-   * @param {number} limit
-   * @returns {Array<Object>}
-   */
   getTopArtists(userId: any, since = '1970-01-01', limit = 5) {
     return this._topArtists.all(userId, since, limit);
   }
 
-  /**
-   * Retrieves top tracks for a user
-   * @param {string} userId
-   * @param {string} since
-   * @param {number} limit
-   * @returns {Array<Object>}
-   */
   getTopTracks(userId: any, since = '1970-01-01', limit = 5) {
     return this._topTracks.all(userId, since, limit);
   }
 
-  /**
-   * Retrieves top sources for a user
-   * @param {string} userId
-   * @param {string} since
-   * @param {number} limit
-   * @returns {Array<Object>}
-   */
   getTopSources(userId: any, since = '1970-01-01', limit = 5) {
     return this._topSources.all(userId, since, limit);
   }
 
-  /**
-   * Retrieves recent plays for a user
-   * @param {string} userId
-   * @param {number} limit
-   * @returns {Array<Object>}
-   */
   getRecentPlays(userId: any, limit = 10) {
     return this._recentPlays.all(userId, limit);
   }
 
-  /**
-   * Retrieves period stats for a user
-   * @param {string} userId
-   * @param {string} since
-   * @returns {Object}
-   */
   getPeriodStats(userId: any, since: any) {
     return this._periodStats.get(userId, since);
   }
@@ -214,12 +166,6 @@ export class StatsRepo {
     }
   }
 
-  /**
-   * Retrieves a full stats report for a user
-   * @param {string} userId
-   * @param {string} period
-   * @returns {Object}
-   */
   getFullReport(userId: any, period = 'all') {
     const since = StatsRepo.getSinceDate(period);
     return {
@@ -233,11 +179,6 @@ export class StatsRepo {
     };
   }
 
-  /**
-   * Retrieves global top listeners
-   * @param {number} limit
-   * @returns {Array<Object>}
-   */
   getGlobalTopListeners(limit = 10) {
     return this._globalTopListeners.all(limit);
   }

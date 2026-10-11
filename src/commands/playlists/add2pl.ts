@@ -1,5 +1,3 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ActionRowBuilder, ButtonBuilder, StringSelectMenuBuilder } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
@@ -47,7 +45,7 @@ class Add2PlaylistCommand extends Command {
 	}
 
 	async execute(ctx: any) {
-		const { client, message, interaction, player, pm, args = [] } = ctx;
+		const { client, message, interaction, args = [] } = ctx;
 		const context = interaction || message;
 		const playlistIdentifier = interaction ? (interaction.options.getString("playlist") || null) : (args.join(" ") || null);
 		return this._handleAdd2Playlist(client, context, playlistIdentifier);
@@ -216,7 +214,7 @@ class Add2PlaylistCommand extends Command {
 		});
 	}
 
-	_createAddContainer(playlists: any, player: any, selectedPlaylist: any) {
+	_createAddContainer(player: any, selectedPlaylist: any) {
 		const current = player.queue.current;
 		const queueCount = player.queue.tracks.length;
 		const availableSlots = 50 - selectedPlaylist.track_count;

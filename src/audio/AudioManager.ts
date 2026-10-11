@@ -1,11 +1,3 @@
-/**
- * @file AudioManager.ts
- * @description Central audio manager for Yuna V2, powered entirely by a standard
- * Lavalink v4 server (through the lavalink-client library). The bot never decodes,
- * encodes, resamples, or streams audio itself — it only sends REST/WS commands and
- * forwards raw voice payloads so the node does all heavy audio work.
- */
-
 import { LavalinkManager, Player } from 'lavalink-client';
 import { config } from '#config/config';
 import { logger } from '#utils/logger';
@@ -122,25 +114,14 @@ export class AudioManager {
     });
   }
 
-  /**
-   * Retrieves active player for guild
-   * @param {string} guildId
-   * @returns {import('lavalink-client').Player|undefined}
-   */
   getPlayer(guildId: string): Player | undefined {
     return this.lavalink.getPlayer(guildId);
   }
 
-  /** All active players keyed by guild id (proxied from the Lavalink manager). */
   get players() {
     return this.lavalink.players;
   }
 
-  /**
-   * Returns a connected Lavalink node or fails loudly. There is deliberately no
-   * local playback fallback: without a node, Yuna must not create a player or
-   * attempt to resolve/play media.
-   */
   private getConnectedNode() {
     const node = Array.from(this.lavalink.nodeManager.nodes.values())
       .find((candidate: any) => candidate.connected === true);
@@ -152,11 +133,6 @@ export class AudioManager {
     return node;
   }
 
-  /**
-   * Creates or returns an active player for a guild
-   * @param {Object} options { guildId, voiceChannelId, textChannelId, volume, selfDeaf }
-   * @returns {Promise<import('lavalink-client').Player>}
-   */
   async createPlayer(options: CreatePlayerOptions): Promise<Player> {
     const { guildId, voiceChannelId, textChannelId, volume = 100, selfDeaf = true, selfMute = false } = options;
     this.getConnectedNode();
@@ -201,10 +177,6 @@ export class AudioManager {
     return await node.search({ ...searchOptions } as any, requester);
   }
 
-  /**
-   * Destroys a guild player
-   * @param {string} guildId
-   */
   async destroyPlayer(guildId: string) {
     return await this.lavalink.destroyPlayer(guildId);
   }

@@ -1,19 +1,13 @@
 import { MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, SectionBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, StringSelectMenuBuilder, MessageActionRowComponentBuilder } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildError, buildSuccess } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
 import { config } from "#config/config";
 import { Command, CommandContext } from '#core/Command';
-import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 import { PlayerManager } from "#audio/PlayerManager";
-import { splitFooter } from "#ui/Formatters";
 
-/**
- * Resolves a preset's English name/description through the locale catalog so
- * the menu, select options and success card all speak the user's language.
- */
 const presetName = (key: string): string => i18n.cmd(EQ_PRESETS[key as keyof typeof EQ_PRESETS].name);
 const presetDescription = (key: string): string =>
   i18n.cmd(EQ_PRESETS[key as keyof typeof EQ_PRESETS].description);

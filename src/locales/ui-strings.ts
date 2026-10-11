@@ -1,15 +1,3 @@
-/**
- * Deterministic UI string catalog.
- *
- * Unlike `phrases` (randomized pools), these keys map to a single string per
- * locale, which is what UI chrome needs: card labels, button text, select
- * placeholders and player responses. Keys fall back to the active locale →
- * en-US → the raw key, so a missing translation never shows `undefined`.
- *
- * Keep the key list identical across every locale block — `i18n` merges these
- * into the per-locale catalog at load time.
- */
-
 type Catalog = Record<string, string>;
 
 export const UI_STRINGS: Record<string, Catalog> = {
@@ -740,10 +728,6 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 };
 
-/**
- * Middleware gate strings (cooldowns, permissions, premium, voice checks).
- * Kept in a second catalog so the lists stay readable.
- */
 export const MW_STRINGS: Record<string, Catalog> = {
 	"en-US": {
 		"mw.blacklisted.title": "Access Restricted",
@@ -986,13 +970,6 @@ export const MW_STRINGS: Record<string, Catalog> = {
 	},
 };
 
-/**
- * Card-title translations, keyed by their English text.
- *
- * Command cards pass their titles as plain English literals. Rather than edit
- * every command, `buildContainer` looks the title up here for the active locale
- * and swaps it in — unknown titles pass through unchanged.
- */
 export const TITLE_STRINGS: Record<string, Catalog> = {
 	"en-US": {
 		"Filter Applied": "Filter Applied",
@@ -1316,7 +1293,6 @@ export const TITLE_STRINGS: Record<string, Catalog> = {
 	},
 };
 
-/** Strings shown on the bot-mention information card. */
 export const MENTION_STRINGS: Record<string, Catalog> = {
 	"en-US": {
 		"mention.title": "{bot} Information",
@@ -1830,7 +1806,6 @@ export const MENTION_STRINGS: Record<string, Catalog> = {
 	},
 };
 
-/** Generic dispatch replies shared by the slash/prefix entrypoints. */
 export const COMMON_STRINGS: Record<string, Catalog> = {
 	"en-US": {
 		"common.guildOnly": "Commands can only be used in a server.",
@@ -1894,11 +1869,6 @@ export const COMMON_STRINGS: Record<string, Catalog> = {
 	},
 };
 
-/**
- * Command body copy (action results, button-collector feedback). Kept separate
- * from UI chrome so command authors can localize prose without touching the
- * shared chrome catalog.
- */
 export const BODY_STRINGS: Record<string, Catalog> = {
 	"en-US": {
 		"body.voiceRequired": "You must be in a voice channel to use this action.",
@@ -2103,3 +2073,5 @@ export const BODY_STRINGS: Record<string, Catalog> = {
 };
 
 export default UI_STRINGS;
+
+// Made by Nikhil Under CodeX Devs

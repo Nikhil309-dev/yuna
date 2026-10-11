@@ -1,6 +1,5 @@
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import { join } from 'path';
-import { logger } from '#utils/logger';
 
 const CARD_WIDTH = 860;
 const CARD_HEIGHT = 560;

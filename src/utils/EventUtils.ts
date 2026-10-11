@@ -1,15 +1,11 @@
 import { logger } from '#utils/logger';
-import { Client, MessageCreateOptions, MessagePayload, AttachmentBuilder, MessageFlags } from 'discord.js';
+import { Client, AttachmentBuilder, MessageFlags } from 'discord.js';
 import { createPlayerContainer } from '#ui/Components';
 import MusicCard from '#ui/cards/MusicCard';
 import { db } from '#database/Database';
 
 export class EventUtils {
-  /**
-   * Safely clears a timeout stored on the player object
-   * @param {any} player
-   * @param {string} timeoutName
-   */
+
   static clearPlayerTimeout(player: any, timeoutName: string) {
     if (player && player.get && player.get(timeoutName)) {
       clearTimeout(player.get(timeoutName));
@@ -17,11 +13,6 @@ export class EventUtils {
     }
   }
 
-  /**
-   * Safely clears an interval stored on the player object
-   * @param {any} player
-   * @param {string} intervalName
-   */
   static clearPlayerInterval(player: any, intervalName: string) {
     if (player && player.get && player.get(intervalName)) {
       clearInterval(player.get(intervalName));
@@ -29,12 +20,6 @@ export class EventUtils {
     }
   }
 
-  /**
-   * Deletes a discord message safely
-   * @param {Client} client
-   * @param {string} channelId
-   * @param {string} messageId
-   */
   static async deleteMessage(client: Client | any, channelId: string, messageId: string) {
     if (!client || !channelId || !messageId) return;
     try {
@@ -50,12 +35,6 @@ export class EventUtils {
     }
   }
 
-  /**
-   * Sends a message to the player's text channel
-   * @param {Client} client
-   * @param {any} player
-   * @param {MessageCreateOptions | MessagePayload | string | any} messageOptions
-   */
   static async sendPlayerMessage(client: Client | any, player: any, messageOptions: any) {
     if (!client?.channels?.fetch || !player || !player.textChannelId) return null;
     try {
@@ -69,12 +48,6 @@ export class EventUtils {
     return null;
   }
 
-  /**
-   * Starts a periodic refresh of the now-playing message so its progress bar
-   * (canvas image or text bar) advances while the track plays. No-op unless a
-   * now-playing message has been recorded. Safe to call repeatedly; the previous
-   * interval for the player is cleared first.
-   */
   static startNowPlayingUpdater(client: Client | any, player: any, intervalMs = 10_000) {
     if (!client || !player) return;
     this.clearPlayerInterval(player, 'updateInterval');
@@ -86,10 +59,6 @@ export class EventUtils {
     player.set('updateInterval', id);
   }
 
-  /**
-   * Rebuilds and edits the now-playing message once. Returns false (and does
-   * nothing) when there is no live player/message to update.
-   */
   static async refreshNowPlaying(client: Client | any, player: any): Promise<boolean> {
     if (!client?.channels?.fetch || !player) return false;
 
@@ -97,7 +66,7 @@ export class EventUtils {
     const channelId = player.get?.('nowPlayingChannelId') || player.textChannelId;
     const track = player.queue?.current;
     if (!messageId || !channelId || !track?.info) return false;
-    // Position is frozen while paused; skip the redundant edit.
+
     if (player.paused) return false;
 
     const channel: any = await client.channels.fetch(channelId).catch(() => null);

@@ -121,12 +121,10 @@ class PlayCommand extends Command {
               limit: 10,
             });
           } catch (searchError: any) {
-            // Missing plugin sources throw rather than return empty; fall through.
+
             searchResult = null;
           }
 
-          // Mirror playback's fallback so autocomplete still works when the
-          // configured primary source has no plugin backing it.
           if ((!searchResult || !searchResult.tracks?.length) && searchSource !== "ytsearch") {
             searchResult = await client.music.search(query, { source: "ytsearch", limit: 10 });
           }
@@ -172,7 +170,7 @@ class PlayCommand extends Command {
   }
 
   async execute(ctx: any) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, pm, args = [] } = ctx;
     const context = interaction || message;
     try {
       let query, source, position;
@@ -333,8 +331,7 @@ class PlayCommand extends Command {
       try {
         searchResult = await client.music.search(finalquery, options);
       } catch (searchError: any) {
-        // A source whose node plugin is missing (e.g. jiosaavn) *throws* instead
-        // of returning empty, so swallow it and let the fallback below run.
+
         logger.warn(
           "PlayCommand",
           `Search with source '${options.source}' failed: ${searchError?.message}`,
@@ -592,8 +589,6 @@ class PlayCommand extends Command {
             : i18n.cmd("Position {position}", { position: result.queuePosition || 0 }),
         });
 
-      // The trailing line is the card's footer, not body text — passing it via
-      // `footer` gives it its own separator instead of running into the block.
       let footer = isPlaying
         ? i18n.cmd("*Currently streaming in voice channel*")
         : i18n.cmd("*Track has been queued successfully*");
@@ -773,8 +768,7 @@ class PlayCommand extends Command {
   }
 
   _setupButtonCollector(messageOrInteraction: any, guildId: any, client: any, userId: any) {
-    // Slash interactions expose collectors only through `.response`; plain
-    // messages expose them directly. Without this the /play buttons never fired.
+
     const message = componentCollectorSource(messageOrInteraction);
     const filter = (i: any) =>
       i.user.id === userId && i.customId.endsWith(`_${guildId}`);

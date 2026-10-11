@@ -8,7 +8,6 @@ import { localeFor, runWithLocale } from "#utils/locale.js";
 import { PlayerManager } from "#audio/PlayerManager";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
-import os from "os";
 import { BannerCard } from "#ui/cards/BannerCard";
 import { buildYunaContainer } from "#ui/Theme";
 
@@ -191,9 +190,7 @@ export default {
     try {
       const middlewareResult = await runWithLocale(ctx.locale, () => Middleware.run(ctx, command));
       if (!middlewareResult.pass) {
-        // `response` is a Components V2 container; it must be wrapped as a
-        // single top-level component with the V2 flag, otherwise Discord
-        // rejects the container's children as invalid top-level components.
+
         const res = middlewareResult.response;
         const payload = res?.components
           ? { components: [res], flags: MessageFlags.IsComponentsV2 }
@@ -221,7 +218,7 @@ export default {
       } else {
         logger.error("MessageCreate", `Error executing command '${command.name}'`, error);
       }
-      // The base onError() only logs — make sure the user still gets feedback.
+
       await message.reply(i18n.ui(ctx.locale, "common.unexpected")).catch(() => {});
     }
   },

@@ -1,8 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import chalk from 'chalk';
-import { logger, pink, mint, red, gray, white, purple } from '#utils/logger';
+import { logger, pink, mint, red, gray, white } from '#utils/logger';
 import { Collection } from 'discord.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -110,7 +109,6 @@ export class CommandLoader {
       const command = commandModule.default;
       command.category = category;
 
-      // ---- Contract validation: fail loudly at boot, not at runtime. ----
       if (!command || typeof command !== 'object' || typeof command.name !== 'string' || !command.name.trim()) {
         this.failedCommands.push({ file: relName, error: 'Invalid command: missing or empty "name"' });
         return;
@@ -188,24 +186,6 @@ export class CommandLoader {
     }
   }
 
-  /**
-   * Attaches Discord `*_localizations` maps to a slash command payload so the
-   * client renders translated descriptions, option descriptions and choice
-   * names. Everything is looked up in the shared `cmd.` catalog by the exact
-   * English literal; anything without a translation is simply left out, which
-   * makes Discord fall back to the English text.
-   *
-   * Command *names* are only localized when the translation is still a legal
-   * Discord command name (lowercase, digits, `_`/`-`). Discord rejects the
-   * whole registration payload when a localized name breaks those rules, so a
-   * non-Latin translation is deliberately skipped rather than submitted.
-   *
-   * Discord validates localized descriptions with the same 1..100 range as the
-   * base description and fails the *entire* payload — not just the offending
-   * entry — when one is out of range. Every emitted value is therefore length
-   * checked here, so a too-long catalog entry degrades to the English fallback
-   * instead of breaking registration for all commands.
-   */
   _applySlashLocalizations(dataJson: any) {
     if (!dataJson) return;
     const localeCodes = Array.from(i18n.getLocales().keys());
@@ -220,8 +200,6 @@ export class CommandLoader {
       return translated === key ? null : translated;
     };
 
-    // Discord: 1-100 chars for descriptions, 1-32 for command names, and a
-    // localized name must keep the base name's lowercase [a-z0-9_-] shape.
     const isValidCommandName = (value: string): boolean => /^[a-z0-9_-]{1,32}$/.test(value);
     const isValidDescription = (value: string): boolean => value.length >= 1 && value.length <= 100;
     const pick = (locale: string, english: string | undefined | null): string | null => {
@@ -232,8 +210,6 @@ export class CommandLoader {
     for (const locale of localeCodes) {
       if (locale === i18n.defaultLocale) continue;
 
-      // Discord rejects region-qualified codes it doesn't define (e.g. "de-DE"),
-      // so emit the mapped locale code while still translating from the bundled one.
       const discordLocale = toDiscordLocale(locale);
 
       const description = pick(locale, dataJson.description);

@@ -1,16 +1,8 @@
-/**
- * Additional card titles (Phase 4 localization completion).
- *
- * These merge into the i18n uiCatalog under the `t.` namespace so
- * `i18n.translateTitle()` can localize English title literals passed by
- * commands without editing every call site. Keys are the exact English
- * literals used in the codebase.
- */
 export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"en-US": {
 		"t.Access Denied": "Access Denied",
 		"t.Invalid Action": "Invalid Action",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "Usage Error",
 		"t.Blacklist Commands Help": "Blacklist Commands Help",
 		"t.System Dashboard Error": "System Dashboard Error",
@@ -117,7 +109,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"de-DE": {
 		"t.Access Denied": "Zugriff verweigert",
 		"t.Invalid Action": "Ungültige Aktion",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "Verwendungsfehler",
 		"t.Blacklist Commands Help": "Hilfe zu Blacklist-Befehlen",
 		"t.System Dashboard Error": "System-Dashboard-Fehler",
@@ -224,7 +216,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"es-ES": {
 		"t.Access Denied": "Acceso denegado",
 		"t.Invalid Action": "Acción no válida",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "Error de uso",
 		"t.Blacklist Commands Help": "Ayuda de comandos de lista negra",
 		"t.System Dashboard Error": "Error del panel del sistema",
@@ -331,7 +323,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"fr-FR": {
 		"t.Access Denied": "Accès refusé",
 		"t.Invalid Action": "Action invalide",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "Erreur d'utilisation",
 		"t.Blacklist Commands Help": "Aide des commandes de liste noire",
 		"t.System Dashboard Error": "Erreur du tableau de bord système",
@@ -438,7 +430,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"hi-IN": {
 		"t.Access Denied": "पहुँच अस्वीकृत",
 		"t.Invalid Action": "अमान्य कार्रवाई",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "उपयोग त्रुटि",
 		"t.Blacklist Commands Help": "ब्लैकलिस्ट कमांड सहायता",
 		"t.System Dashboard Error": "सिस्टम डैशबोर्ड त्रुटि",
@@ -545,7 +537,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"ja-JP": {
 		"t.Access Denied": "アクセスが拒否されました",
 		"t.Invalid Action": "無効な操作です",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "使用方法のエラー",
 		"t.Blacklist Commands Help": "ブラックリストコマンドのヘルプ",
 		"t.System Dashboard Error": "システムダッシュボードのエラー",
@@ -652,7 +644,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"ko-KR": {
 		"t.Access Denied": "접근이 거부되었습니다",
 		"t.Invalid Action": "잘못된 동작입니다",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "사용법 오류",
 		"t.Blacklist Commands Help": "블랙리스트 명령 도움말",
 		"t.System Dashboard Error": "시스템 대시보드 오류",
@@ -759,7 +751,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"pt-BR": {
 		"t.Access Denied": "Acesso negado",
 		"t.Invalid Action": "Ação inválida",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "Erro de uso",
 		"t.Blacklist Commands Help": "Ajuda dos comandos de lista negra",
 		"t.System Dashboard Error": "Erro no painel do sistema",
@@ -866,7 +858,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"ru-RU": {
 		"t.Access Denied": "Доступ запрещён",
 		"t.Invalid Action": "Недопустимое действие",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "Ошибка использования",
 		"t.Blacklist Commands Help": "Справка по командам чёрного списка",
 		"t.System Dashboard Error": "Ошибка системной панели",
@@ -973,7 +965,7 @@ export const TITLE_EXTRA: Record<string, Record<string, string>> = {
 	"zh-CN": {
 		"t.Access Denied": "访问被拒绝",
 		"t.Invalid Action": "无效操作",
-		// ── Phase 5 additions ─────────────────────────────────────────────
+
 		"t.Usage Error": "用法错误",
 		"t.Blacklist Commands Help": "黑名单命令帮助",
 		"t.System Dashboard Error": "系统面板错误",

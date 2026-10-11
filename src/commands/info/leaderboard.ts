@@ -2,9 +2,8 @@ import { Command, CommandContext } from '#core/Command';
 import { db } from "#database/Database";
 import { MessageFlags } from "discord.js";
 import type { Client } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildContainer, buildError } from "#ui/Theme";
 import emoji from "#config/emoji";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 class LeaderboardCommand extends Command {

@@ -2,12 +2,7 @@ import crypto from 'node:crypto';
 import { config } from '#config/config';
 
 export class Enclave {
-  /**
-   * Encrypts plaintext using AES-256-GCM
-   * @param {string} plaintext
-   * @param {string} [secretKey]
-   * @returns {string} Encrypted string format: iv:tag:ciphertext (base64)
-   */
+
   static encrypt(plaintext: string, secretKey: string = config.token || 'yuna-default-secret-key-32chars!!'): string {
     const key = crypto.createHash('sha256').update(secretKey).digest();
     const iv = crypto.randomBytes(12);
@@ -20,12 +15,6 @@ export class Enclave {
     return `${iv.toString('base64')}:${authTag}:${encrypted}`;
   }
 
-  /**
-   * Decrypts ciphertext using AES-256-GCM
-   * @param {string} encryptedPayload iv:tag:ciphertext
-   * @param {string} [secretKey]
-   * @returns {string} Decrypted plaintext
-   */
   static decrypt(encryptedPayload: string, secretKey: string = config.token || 'yuna-default-secret-key-32chars!!'): string {
     const parts = encryptedPayload.split(':');
     if (parts.length !== 3) {

@@ -1,4 +1,4 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
+import type { Player, Track } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
@@ -7,7 +7,7 @@ import { db } from "#database/Database";
 export default {
 	name: "trackEnd",
 	once: false,
-	async execute(player: Player, track: Track, payload: any, musicManager: LavalinkManager, client: YunaClient) {
+	async execute(player: Player, track: Track, payload: any, client: YunaClient) {
 		try {
 			const endReason = payload?.reason || "FINISHED";
 
@@ -43,10 +43,6 @@ export default {
 			player.set("errorMessageId", null);
 			player.set("stuckTimeoutId", null);
 
-                        // Account for the track's playback time in the user's
-                        // listening stats. Nothing wrote to total_listen_time_ms
-                        // before, so profile cards always showed 0; trackEnd is
-                        // the one place where the played duration is known.
                         if (track?.info && track.requester?.id) {
                                 const listened = Number(track.info.duration) || 0;
                                 if (listened > 0) {

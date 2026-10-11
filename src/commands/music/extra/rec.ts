@@ -1,7 +1,5 @@
 import {
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   MessageFlags,
   StringSelectMenuBuilder,
 } from "discord.js";
@@ -10,7 +8,7 @@ import { PlayerManager } from '#audio/PlayerManager';
 import { db } from '#database/Database';
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import AutoplayEngine from '#audio/AutoplayEngine';
 import emoji from "#config/emoji";
@@ -50,7 +48,7 @@ class RecommendationsCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction } = ctx;
     const context = interaction || message;
     return this._handleRecommendations(client, context.guild.id, context);
   }
@@ -100,7 +98,6 @@ class RecommendationsCommand extends Command {
   }
 
   _buildRecommendationsContainer(currentTrack: any, recommendations: any, guildId: any, userId: any) {
-    const premiumStatus = this._getPremiumStatus(guildId, userId);
 
     let content = i18n.cmd("### 🎵 **Recommended Tracks**\n") +
       i18n.cmd('└─ Based on **"{title}"** by **{author}**\n\n', { title: currentTrack.info.title, author: currentTrack.info.author });

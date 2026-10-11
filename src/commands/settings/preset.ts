@@ -12,7 +12,7 @@ import {
 } from 'discord.js';
 import emoji from '#config/emoji';
 import { config } from '#config/config';
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildError, buildSuccess } from '#ui/Theme';
 import phrases from '#utils/phrases';
 import { i18n } from "#utils/i18n";
 import { splitFooter } from "#ui/Formatters";
@@ -61,7 +61,7 @@ class PresetCommand extends Command {
 
   async slashExecute({ interaction }: any) {
     const rawStyle = interaction.options.getString('style');
-    // No style supplied → show the current style (same as the prefix path).
+
     if (!rawStyle) return this.sendCurrentStyle(interaction, interaction.user.id);
     await this.setStyle(interaction, interaction.user.id, rawStyle.toLowerCase());
   }

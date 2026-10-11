@@ -1,5 +1,5 @@
 import { Command, CommandContext } from '#core/Command';
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { MessageFlags } from "discord.js";
 import { config } from "#config/config";
 import emoji from "#config/emoji";

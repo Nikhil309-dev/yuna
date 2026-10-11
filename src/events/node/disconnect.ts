@@ -1,11 +1,10 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
-import type { YunaClient } from '#core/YunaClient';
+import type { LavalinkNode } from 'lavalink-client';
 import { logger } from '#utils/logger';
 
 export default {
   name: "disconnect",
   once: false,
-  async execute(node: LavalinkNode, reason: { code?: number | string; reason?: string }, payload: unknown, musicManager: LavalinkManager, client: YunaClient) {
+  async execute(node: LavalinkNode, reason: { code?: number | string; reason?: string }) {
     try {
       const code = reason?.code ?? 'unknown';
       const reasonStr = reason?.reason ?? JSON.stringify(reason) ?? 'unknown';

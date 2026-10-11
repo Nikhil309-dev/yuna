@@ -1,8 +1,6 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { ButtonStyle, MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, SectionBuilder, ThumbnailBuilder, ActionRowBuilder, ButtonBuilder } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildContainer, buildError } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
 import { db } from "#database/Database";
 import { config } from "#config/config";
@@ -43,7 +41,7 @@ class MyPlaylistsCommand extends Command {
 	}
 
 	async execute(ctx: any) {
-		const { client, message, interaction, player, pm, args = [] } = ctx;
+		const { message, interaction, args = [] } = ctx;
 		const context = interaction || message;
 		const page = interaction ? (interaction.options.getInteger("page") || 1) : (args[0] ? parseInt(args[0], 10) : 1);
 		return this._handleList(context.user || context.author, context, isNaN(page) ? 1 : page);

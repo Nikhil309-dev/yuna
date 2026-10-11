@@ -1,7 +1,7 @@
-import { MessageFlags, type Client } from "discord.js";
+import { MessageFlags } from "discord.js";
 import { config } from "#config/config";
 import { Command, CommandContext } from '#core/Command';
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildSuccess } from '#ui/Theme';
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
 import { splitFooter } from "#ui/Formatters";
@@ -44,7 +44,7 @@ class AutoplayCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, args = [] } = ctx;
     const context = interaction || message;
     const state = interaction ? interaction.options.getString("state") : args[0]?.toLowerCase();
     return this._handleAutoplay(client, context.guild.id, context, state);

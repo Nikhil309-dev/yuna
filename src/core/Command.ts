@@ -99,10 +99,6 @@ export class Command {
     public playerRequired: boolean;
     public playingRequired: boolean;
 
-    /**
-     * Creates a new Command instance.
-     * @param {CommandOptions} options Command configuration options.
-     */
     constructor(options: CommandOptions = {} as CommandOptions) {
         this.name = options.name;
         this.description = options.description || 'No description provided';
@@ -138,35 +134,17 @@ export class Command {
         this.playingRequired = this.access.playing;
     }
 
-    /**
-     * Lifecycle hook called before execution.
-     * @param {CommandContext} ctx The execution context object.
-     * @returns {Promise<boolean>} Whether execution should proceed.
-     */
-    async beforeExecute(ctx: CommandContext): Promise<boolean> {
+    async beforeExecute(): Promise<boolean> {
         return true;
     }
 
-    /**
-     * The main execution logic of the command.
-     * @param {CommandContext} ctx The execution context object `{ client, interaction, message, args, player, pm, guild, user, member, channel }`.
-     */
     async execute(ctx: CommandContext): Promise<any> {
         throw new Error(`Command ${this.name} doesn't provide an execute method!`);
     }
 
-    /**
-     * Lifecycle hook called after successful execution.
-     * @param {CommandContext} ctx The execution context object.
-     */
-    async afterExecute(ctx: CommandContext): Promise<void> {}
+    async afterExecute(): Promise<void> {}
 
-    /**
-     * Lifecycle hook called when an error occurs during execution.
-     * @param {CommandContext} ctx The execution context object.
-     * @param {Error} error The error thrown.
-     */
-    async onError(ctx: CommandContext, error: Error): Promise<void> {
+    async onError(error: Error): Promise<void> {
         console.error(`[Command Error - ${this.name}]`, error);
     }
 }

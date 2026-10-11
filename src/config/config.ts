@@ -2,12 +2,6 @@ import dotenv from 'dotenv';
 import { branding } from './branding';
 import { logger } from '#utils/logger';
 
-// `dotenv` never overwrites a key that already exists in `process.env` — even
-// when that key is an empty string (common when a launcher exports VAR= for an
-// unset value). That silently ignores the real value in `.env`. Backfill only
-// the empty/missing keys so `.env` stays authoritative without clobbering
-// values a deploy genuinely set. `YUNA_ENV_FILE` lets callers (e.g. the test
-// harness) point at a different file.
 const envFilePath = process.env.YUNA_ENV_FILE || undefined;
 const parsedEnv = dotenv.config(envFilePath ? { path: envFilePath } : {}).parsed || {};
 for (const [key, value] of Object.entries(parsedEnv)) {
@@ -24,7 +18,6 @@ export const config = {
   ownerIds: (process.env.OWNER_IDS || '').split(',').map(id => id.trim()).filter(Boolean),
   botName: branding.botName,
 
-  // === Branding & Assets ===
   branding: branding,
   links: branding.links,
   status: branding.status,
@@ -33,16 +26,13 @@ export const config = {
   watermark: branding.developer.watermark,
   version: branding.botVersion,
 
-  // === Environment & Debug ===
   environment: process.env.NODE_ENV || 'development',
   debug: process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development',
 
-  // === Database Configuration ===
   database: {
     path: process.env.DATABASE_PATH || './database/yuna.yuna'
   },
 
-  // === Lavalink Nodes ===
   nodes: (() => {
     if (process.env.LAVALINK_NODES_JSON) {
       try {

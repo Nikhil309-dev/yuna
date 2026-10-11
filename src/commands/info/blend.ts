@@ -36,7 +36,7 @@ class BlendCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, interaction, message, args, guild, user } = ctx;
+    const { client, interaction, message, args, user } = ctx;
     const author = user || message?.author;
 
     let targetUser = null;
@@ -73,7 +73,7 @@ class BlendCommand extends Command {
         const overlapRatio = matches / Math.min(likedA.length, likedB.length);
         score = Math.min(99, Math.max(50, Math.round(50 + overlapRatio * 49)));
       } else {
-        // Seeded pseudorandom based on user IDs for consistent friendly match
+
         const seed = (BigInt(author.id) ^ BigInt(targetUser.id)) % 37n;
         score = 63 + Number(seed);
       }

@@ -41,8 +41,6 @@ export class ComponentLoader {
 
         if (!matchedHandler) return;
 
-        // Bind the requester's language to the whole handler so every reply the
-        // handler produces (cards, edits, error text) is translated for them.
         const locale = localeFor(
             interaction.user?.id,
             interaction.guildId ?? interaction.guild?.id,

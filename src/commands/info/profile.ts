@@ -98,10 +98,6 @@ class ProfileCommand extends Command {
     return this.execute(ctx);
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Data
-  // ────────────────────────────────────────────────────────────────────────────
-
   _collect(user: any, guildId?: string): Target {
     const id = user.id;
     const coins = db.economy ? db.economy.getCoins(id) : 0;
@@ -117,14 +113,11 @@ class ProfileCommand extends Command {
         aggregate = full.aggregate || aggregate;
         report = full;
       }
-      // total_listen_time_ms is the live counter; the all-time period sums the
-      // logged track durations. Take whichever is larger so the canvas and the
-      // Activity tab never disagree (they used to read different sources).
+
       const logged = Number(report?.period?.total_duration_ms) || 0;
       aggregate.total_listen_time_ms = Math.max(Number(aggregate.total_listen_time_ms) || 0, logged);
     }
 
-    // Rank follows the Wealth board, matching the coin figure shown beside it.
     let rank: number | null = null;
     if (db.economy?.getTopUsers) {
       const board = db.economy.getTopUsers(1000) as any[];
@@ -141,16 +134,10 @@ class ProfileCommand extends Command {
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Rendering
-  // ────────────────────────────────────────────────────────────────────────────
-
   async _handle(context: any, user: any, viewer: any) {
     const guildId = context.guildId || context.guild?.id;
     const target = this._collect(user, guildId);
 
-    // The canvas card is the "Overview" face; render it once and reuse the buffer
-    // for every subsequent view/refresh so the collector stays cheap.
     let cardBuffer: Buffer | null = null;
     try {
       const generator = new ProfileCard();
@@ -175,8 +162,7 @@ class ProfileCommand extends Command {
       components: [this._container(view, target, cardBuffer)],
       flags: MessageFlags.IsComponentsV2,
     };
-    // Only the overview carries the canvas image; without the matching file the
-    // `attachment://` URL in the gallery would fail to resolve.
+
     if (view === 'overview' && cardBuffer) {
       payload.files = [new AttachmentBuilder(cardBuffer, { name: CARD_NAME })];
     }
@@ -185,8 +171,6 @@ class ProfileCommand extends Command {
 
   _container(view: View, target: Target, cardBuffer: Buffer | null) {
     const c = new ContainerBuilder();
-    // No accent stripe here — the sakura canvas carries the colour; the card
-    // frame stays neutral so nothing competes with the artwork.
 
     const name = target.user.displayName || target.user.username || 'Unknown';
     const badge = target.premium ? '  ·  **Premium**' : '';
@@ -305,10 +289,6 @@ class ProfileCommand extends Command {
     );
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Collector
-  // ────────────────────────────────────────────────────────────────────────────
-
   _setupCollector(message: any, target: Target, viewer: any, cardBuffer: Buffer | null) {
     let current: View = 'overview';
 
@@ -360,7 +340,7 @@ class ProfileCommand extends Command {
   }
 
   _error(message: string, title = 'Something Went Wrong') {
-    // Ephemeral so a foreign user's rejection never touches the requester's panel.
+
     return { components: [buildError(message, title)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
   }
 }

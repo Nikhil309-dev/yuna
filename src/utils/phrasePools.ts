@@ -1,11 +1,3 @@
-/**
- * Embedded English (en-US) phrase pools.
- *
- * These are the canonical English strings and the final fallback for the
- * phrase system: `i18n.t` checks locale files first, then this map, then the
- * generic error string. Keeping them in their own module lets both `phrases`
- * and `i18n` share one source of truth without a circular import.
- */
 export const EN_POOLS: Record<string, string[]> = {
   cooldown: [
     "Hold on a moment! Please wait **${time}** more second(s) before using this command again.",
@@ -379,3 +371,5 @@ export const EN_POOLS: Record<string, string[]> = {
 };
 
 export default EN_POOLS;
+
+// Made by Nikhil Under CodeX Devs

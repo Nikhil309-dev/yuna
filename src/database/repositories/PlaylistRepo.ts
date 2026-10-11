@@ -41,21 +41,10 @@ export class PlaylistRepo {
     `);
   }
 
-  /**
-   * Generates a unique playlist ID
-   * @returns {string}
-   */
   generatePlaylistId() {
     return 'pl_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
   }
 
-  /**
-   * Creates a new playlist
-   * @param {string} userId
-   * @param {string} name
-   * @param {string|null} description
-   * @returns {Object}
-   */
   createPlaylist(userId: string, name: string, description: string | null = null) {
     if (!name || name.length > PLAYLIST_NAME_MAX_LENGTH) throw new Error('Invalid playlist name');
     if (description && description.length > PLAYLIST_DESCRIPTION_MAX_LENGTH) throw new Error('Description too long');
@@ -71,12 +60,6 @@ export class PlaylistRepo {
     return this.getPlaylist(playlistId);
   }
 
-  /**
-   * Deletes a playlist
-   * @param {string} playlistId
-   * @param {string} userId
-   * @returns {boolean}
-   */
   deletePlaylist(playlistId: any, userId: any) {
     const playlist = this.getPlaylist(playlistId);
     if (!playlist) throw new Error('Playlist not found');
@@ -86,11 +69,6 @@ export class PlaylistRepo {
     return result.changes > 0;
   }
 
-  /**
-   * Retrieves a playlist by ID
-   * @param {string} playlistId
-   * @returns {Object|null}
-   */
   getPlaylist(playlistId: string) {
     const playlist = this._getPlaylist.get(playlistId);
     if (!playlist) return null;
@@ -102,11 +80,6 @@ export class PlaylistRepo {
     return playlist;
   }
 
-  /**
-   * Retrieves all playlists for a user
-   * @param {string} userId
-   * @returns {Array<Object>}
-   */
   getUserPlaylists(userId: string) {
     const playlists = this._getUserPlaylists.all(userId);
     return playlists.map(playlist => {
@@ -119,13 +92,6 @@ export class PlaylistRepo {
     });
   }
 
-  /**
-   * Updates playlist metadata
-   * @param {string} playlistId
-   * @param {string} userId
-   * @param {Object} updates
-   * @returns {Object}
-   */
   updatePlaylist(playlistId: any, userId: any, updates: any) {
     const playlist = this.getPlaylist(playlistId);
     if (!playlist || playlist.user_id !== userId) throw new Error('Playlist not found or access denied');
@@ -148,13 +114,6 @@ export class PlaylistRepo {
     return this.getPlaylist(playlistId);
   }
 
-  /**
-   * Adds a track to a playlist
-   * @param {string} playlistId
-   * @param {string} userId
-   * @param {Object} trackInfo
-   * @returns {Object}
-   */
   addTrackToPlaylist(playlistId: any, userId: any, trackInfo: any) {
     const playlist = this.getPlaylist(playlistId);
     if (!playlist || playlist.user_id !== userId) throw new Error('Playlist not found or access denied');
@@ -186,13 +145,6 @@ export class PlaylistRepo {
     return this.getPlaylist(playlistId);
   }
 
-  /**
-   * Removes a track from a playlist
-   * @param {string} playlistId
-   * @param {string} userId
-   * @param {string} trackIdentifier
-   * @returns {Object}
-   */
   removeTrackFromPlaylist(playlistId: any, userId: any, trackIdentifier: any) {
     const playlist = this.getPlaylist(playlistId);
     if (!playlist || playlist.user_id !== userId) throw new Error('Playlist not found or access denied');
@@ -208,12 +160,6 @@ export class PlaylistRepo {
     return this.getPlaylist(playlistId);
   }
 
-  /**
-   * Clears all tracks from a playlist
-   * @param {string} playlistId
-   * @param {string} userId
-   * @returns {Object}
-   */
   clearPlaylist(playlistId: any, userId: any) {
     const playlist = this.getPlaylist(playlistId);
     if (!playlist || playlist.user_id !== userId) throw new Error('Playlist not found or access denied');
@@ -222,12 +168,6 @@ export class PlaylistRepo {
     return this.getPlaylist(playlistId);
   }
 
-  /**
-   * Searches for playlists
-   * @param {string} userId
-   * @param {string} query
-   * @returns {Array<Object>}
-   */
   searchUserPlaylists(userId: any, query: any) {
     const searchTerm = `%${query}%`;
     const playlists = this._searchPlaylists.all(userId, searchTerm, searchTerm);
@@ -241,20 +181,11 @@ export class PlaylistRepo {
     });
   }
 
-  /**
-   * Retrieves playlist statistics for a user
-   * @param {string} userId
-   * @returns {Object}
-   */
   getPlaylistStats(userId: string) {
     const result = this._getStats.get(userId);
     return result || { total_playlists: 0, total_tracks: 0, total_duration: 0 };
   }
 
-  /**
-   * Cleans up invalid tracks from all playlists of a user
-   * @param {string} userId
-   */
   cleanupPlaylists(userId: string) {
     const playlists = this.getUserPlaylists(userId);
     this.db.transaction(() => {

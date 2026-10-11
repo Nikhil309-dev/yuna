@@ -2,7 +2,6 @@ import { QueueManager } from './QueueManager';
 import { config } from '#config/config';
 import { db } from '#database/Database';
 import { logger } from '#utils/logger';
-import { Player, Track } from 'lavalink-client';
 
 export class PlayerManager {
   public player: any;
@@ -17,10 +16,6 @@ export class PlayerManager {
 
   async connect() { await this.player.connect(); return this; }
 
-  /**
-   * Moves the player to another voice channel (Lavalink-safe).
-   * Always pass `voiceChannelId` — lavalink-client rejects a same-channel move.
-   */
   async changeVoiceState(data: { voiceChannelId: string; selfDeaf?: boolean; selfMute?: boolean }) {
     await this.player.changeVoiceState(data);
     return this;
@@ -59,9 +54,7 @@ export class PlayerManager {
   async playPrevious() {
     const prev = this.player.queue.previous;
     if (!prev || prev.length === 0) return false;
-    // lavalink-client unshifts finished tracks, so the most recent track is at
-    // index 0 (not the end). Playing it must therefore shift, not pop — pop()
-    // would jump to the oldest entry in history.
+
     const previousTrack = prev.shift();
     if (!previousTrack) return false;
 
@@ -136,7 +129,6 @@ export class PlayerManager {
     return this;
   }
 
-  /** Clears the upcoming tracks (keeps the current track playing). */
   async clearQueue() {
     return this.queue.clear();
   }

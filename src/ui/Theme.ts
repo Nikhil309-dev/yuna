@@ -16,9 +16,6 @@ import branding from '#config/branding';
 import phrases from '#utils/phrases.js';
 import { i18n } from '#utils/i18n.js';
 
-// Discord Components V2 hard limits. Exceeding them throws at build time, so
-// every text field is clamped here — this protects EVERY command from a crash
-// on unusually long user input (long playlist names, queries, track titles…).
 const TEXT_DISPLAY_LIMIT = 4000;
 
 function clampText(value: any, limit = TEXT_DISPLAY_LIMIT): any {
@@ -26,10 +23,6 @@ function clampText(value: any, limit = TEXT_DISPLAY_LIMIT): any {
   return `${value.slice(0, limit - 1)}…`;
 }
 
-// Titles are rendered as `**${title}**`, so callers that pass markdown-wrapped
-// titles (`` `### **Heading**` ``) produce broken output like
-// `**`### **Heading**`**` — literal asterisks/backticks instead of a heading.
-// Strip the wrapping so the title renders cleanly regardless of the caller.
 function cleanTitle(value: any): any {
   if (typeof value !== 'string') return value;
   return value
@@ -39,8 +32,6 @@ function cleanTitle(value: any): any {
     .trim();
 }
 
-// Status accents give each card a colored left stripe in Discord's Components
-// V2 renderer — the single biggest "looks designed" win, and it's free.
 const STATUS_ACCENT = {
   error: 0xED4245,
   success: 0x57F287,
@@ -55,14 +46,11 @@ export function buildContainer(options: any = {}) {
 
   if (typeof accent === 'number') container.setAccentColor(accent);
 
-  // Titles are authored as English literals in the commands; translate known
-  // ones for the active locale (dynamic titles fall through unchanged).
   const localizedTitle = cleanTitle(i18n.translateTitle(title));
 
   let headerText = `${icon || ''} **${localizedTitle}**`;
   if (subtitle) {
-    // Only add the subtitle when it actually differs — several builders used to
-    // pass the same string as title and subtitle, rendering it twice.
+
     const cleanSub = cleanTitle(subtitle);
     if (cleanSub && cleanSub !== localizedTitle) headerText += `\n**${cleanSub}**`;
   }
@@ -115,39 +103,21 @@ export function buildContainer(options: any = {}) {
   return container;
 }
 
-/**
- * Shared status-card shell: accent stripe, icon + title header, body, and an
- * optional subtext footer (`-# …`). Keeps every status card visually consistent.
- */
 const BRAND_FOOTER = 'Built with ♥ under CodeX Development';
 
-// Body labels for the two-part "progression" layout. Falls back to English when
-// a locale has not translated a key yet, so nothing ever renders as a raw key.
 function label(key: string, fallback: string) {
   const v = i18n.tr(key);
   return v && v !== key ? v : fallback;
 }
 
-/**
- * Returns a randomized, locale-aware phrase from the `phrases` pool. This is
- * what keeps repeated cards from showing the exact same sentence every time;
- * falls back to `fallback` when the category is missing.
- */
 function phraseOr(category: string | undefined, fallback: string): string {
   if (!category) return fallback;
-  // Guard against unknown categories: `phrases.get` falls back to the generic
-  // *error* pool when a category is missing, which would put "something went
-  // wrong" on a healthy card. Skip the lookup entirely when the category is
-  // not defined anywhere.
+
   if (!phrases.has(category)) return fallback;
   const p = phrases.get(category);
   return p && p !== category ? p : fallback;
 }
 
-/**
- * Resolves a card footer. `phrases.<category>` rotates the sentence from the
- * phrase pool; anything else is used verbatim. Falls back to the brand credit.
- */
 function resolveFooter(footer: any): string {
   if (!footer) return BRAND_FOOTER;
   if (typeof footer === 'string' && footer.startsWith('phrases.')) {
@@ -156,17 +126,11 @@ function resolveFooter(footer: any): string {
   return String(footer);
 }
 
-/**
- * Renders the card body. Uses a "quote bar" style: each block's label is bold
- * and its text sits in a blockquote, which Discord draws as a soft vertical bar
- * — cleaner than ASCII tree connectors.
- */
 function renderBody(blocks: any[]): string {
   const items = (blocks || []).filter((b: any) => b && b.text);
   return items
     .map((b: any) => {
-      // A block may supply a randomized phrase pool instead of a fixed string;
-      // that keeps repeated cards from reading identically every time.
+
       const text = b.phrase ? phraseOr(b.phrase, String(b.text)) : String(b.text);
       const quoted = text
         .split('\n')
@@ -177,15 +141,6 @@ function renderBody(blocks: any[]): string {
     .join('\n\n');
 }
 
-/**
- * Shared status-card shell (app-style "progression" layout):
- *   icon + title            -> what the card is about
- *   ─────────────
- *   ╭─ label  what happened -> the message, with the avatar alongside
- *   ╰─ label  next step     -> only when it adds info
- *   ─────────────
- *   -# branded footer
- */
 function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbnail, buttons = [] }: any) {
   const container = new ContainerBuilder();
   if (typeof accent === 'number') container.setAccentColor(accent);
@@ -215,7 +170,6 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)));
   }
 
-  // Footer section: separator, optional action button, then the credit line.
   container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
   if (buttons && buttons.length) {
     container.addActionRowComponents(
@@ -227,7 +181,6 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
   return container;
 }
 
-/** Link button to the support server, used on "blocked / restricted" cards. */
 function supportButton(labelText?: string) {
   return new ButtonBuilder()
     .setLabel(labelText || label('ui.button.support', 'Join Support Server'))
@@ -235,9 +188,6 @@ function supportButton(labelText?: string) {
     .setURL(branding.links.supportServer);
 }
 
-/**
- * Signature Error Card Builder — "what went wrong" + "how to fix it".
- */
 export function buildError(errorInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const crossIcon = emoji.get('cross') || '❌';
   const obj = (typeof errorInput === 'object' && errorInput) ? errorInput : {};
@@ -251,27 +201,16 @@ export function buildError(errorInput: any, title: any = undefined, avatarUrl: a
     fix && fix !== cardTitle && fix !== what ? { label: label('ui.block.solution', 'How to fix it'), text: fix, phrase: obj.tipPhrase } : null
   ];
 
-  // A "blocked" error (blacklist / restriction) gets a link button to support,
-  // where the user can appeal — matching how the card tells them to. `support`
-  // does the same for bot-side failures the user may want to report.
   const buttons = (obj.blocked || obj.support) ? [supportButton(obj.supportLabel)] : [];
 
   return statusCard({ title: cardTitle, accent: STATUS_ACCENT.error, icon: crossIcon, blocks, buttons, footer: obj.footer, thumbnail: avatarUrl });
 }
 
-/**
- * Blocked / restricted card — same as an error but with a support-server link
- * button so the user has a one-click path to appeal.
- */
 export function buildBlocked(blockedInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const obj = (typeof blockedInput === 'object' && blockedInput) ? blockedInput : { issue: blockedInput };
   return buildError({ ...obj, blocked: true }, title ?? i18n.tr('mw.blacklisted.title'), avatarUrl);
 }
 
-/**
- * Generic multi-block result card (e.g. filter applied/reset). Callers pass the
- * blocks and a context icon; layout matches the status cards (style A).
- */
 export function buildResult(
   { title, subtitle, blocks = [], icon, accent, avatarUrl, footer, buttons }: any = {}
 ) {
@@ -287,9 +226,6 @@ export function buildResult(
   });
 }
 
-/**
- * Signature Success Card Builder — "what's done" + optional "what's next".
- */
 export function buildSuccess(successInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const checkIcon = emoji.get('check') || '✅';
   const obj = (typeof successInput === 'object' && successInput) ? successInput : {};
@@ -306,9 +242,6 @@ export function buildSuccess(successInput: any, title: any = undefined, avatarUr
   return statusCard({ title: cardTitle, accent: STATUS_ACCENT.success, icon: checkIcon, blocks, footer: obj.footer, thumbnail: avatarUrl });
 }
 
-/**
- * Signature Info Card Builder — plain details, no label.
- */
 export function buildInfo(infoInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const infoIcon = emoji.get('info') || 'ℹ️';
   const obj = (typeof infoInput === 'object' && infoInput) ? infoInput : {};
@@ -319,9 +252,6 @@ export function buildInfo(infoInput: any, title: any = undefined, avatarUrl: any
   return statusCard({ title: cardTitle, accent: STATUS_ACCENT.info, icon: infoIcon, blocks: [{ text: message }], thumbnail: avatarUrl });
 }
 
-/**
- * Signature Warning Card Builder — "heads up" + optional "what you can do".
- */
 export function buildWarning(warningInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const warningIcon = '⚠️';
   const obj = (typeof warningInput === 'object' && warningInput) ? warningInput : {};
@@ -338,9 +268,6 @@ export function buildWarning(warningInput: any, title: any = undefined, avatarUr
   return statusCard({ title: cardTitle, accent: STATUS_ACCENT.warning, icon: warningIcon, blocks, footer: obj.footer, thumbnail: avatarUrl });
 }
 
-/**
- * Signature Loading Card Builder.
- */
 export function buildLoading(loadingInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const loadingIcon = emoji.get('loading') || '⏳';
   const obj = (typeof loadingInput === 'object' && loadingInput) ? loadingInput : {};

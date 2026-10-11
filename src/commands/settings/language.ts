@@ -34,7 +34,6 @@ class LanguageCommand extends Command {
 		const userId = user?.id || author?.id;
 		const guildId = guild?.id || context?.guildId;
 
-		// Speak in the requester's current language while they choose a new one.
 		const locale = localeFor(userId, guildId);
 		const tr = (key: string, replacements: Record<string, any> = {}) => i18n.ui(locale, key, replacements);
 
@@ -103,7 +102,6 @@ class LanguageCommand extends Command {
 					selectedLocaleCode = i18n.normalize(interaction.values[0]);
 					const meta = i18n.getLocaleMeta(selectedLocaleCode);
 
-					// Preview strings render in the newly selected language.
 					const sel = (key: string, replacements: Record<string, any> = {}) =>
 						i18n.ui(selectedLocaleCode, key, replacements);
 

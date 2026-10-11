@@ -1,12 +1,5 @@
 import type BetterSqlite3Database from 'better-sqlite3';
 
-/**
- * Cross-shard command cooldowns.
- *
- * Backed by the `command_cooldowns` table added in migration 002. AntiAbuse
- * delegates here so cooldowns survive shard restarts and are enforced uniformly
- * across the whole shard pool, not just within a single process.
- */
 export class CooldownRepo {
   public db: BetterSqlite3Database.Database;
   private _get: BetterSqlite3Database.Statement;
@@ -58,10 +51,6 @@ export class CooldownRepo {
     return `${userId}:${commandName}:${guildId}`;
   }
 
-  /**
-   * Returns the active cooldown for (user, command, guild) or null if none.
-   * Automatically purges expired rows so callers always see live state.
-   */
   get(userId: string, commandName: string, guildId: string) {
     this.purgeExpired();
     const row = this._get.get(CooldownRepo.key(userId, commandName, guildId));
@@ -70,10 +59,6 @@ export class CooldownRepo {
     return row;
   }
 
-  /**
-   * Records a successful command execution, resetting any prior violations.
-   * @param durationMs How long the cooldown should be active for.
-   */
   set(userId: string, commandName: string, guildId: string, durationMs: number) {
     const now = Date.now();
     this._upsert.run(
@@ -85,10 +70,6 @@ export class CooldownRepo {
     );
   }
 
-  /**
-   * Records a cooldown violation (user invoked the command before the
-   * cooldown elapsed). Returns the new violation count.
-   */
   recordViolation(userId: string, commandName: string, guildId: string, windowMs: number) {
     const key = CooldownRepo.key(userId, commandName, guildId);
     const now = Date.now();

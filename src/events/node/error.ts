@@ -1,11 +1,9 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
-import type { YunaClient } from '#core/YunaClient';
 import { logger } from '#utils/logger';
 
 export default {
 	name: "error",
 	once: false,
-	async execute(node: any, error: any, payload: any, musicManager: LavalinkManager, client: YunaClient) {
+	async execute(payload: any) {
 		try {
 			if (payload) {
 				logger.error('LavalinkNode', `📦 Error Payload:`, payload?.message || payload);

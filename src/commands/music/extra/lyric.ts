@@ -7,7 +7,6 @@ import {
   Client,
   Message,
   MessageFlags,
-  ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize
@@ -23,12 +22,6 @@ import { i18n } from "#utils/i18n";
 
 const lrclib = new LrcClient();
 
-const COLORS = {
-	LYRICS_LIVE:   parseInt((config.colors?.success || '#2ecc71').replace('#', ''), 16),
-	LYRICS_STATIC: parseInt((config.colors?.info || '#3498db').replace('#', ''), 16),
-	LOADING:       parseInt((config.colors?.theme || '#5865F2').replace('#', ''), 16),
-	ERROR:         parseInt((config.colors?.error || '#e74c3c').replace('#', ''), 16),
-};
 
 class LyricsCommand extends Command {
 	constructor() {
@@ -65,7 +58,7 @@ class LyricsCommand extends Command {
 	}
 
 	async execute(ctx: CommandContext) {
-		const { client, message, interaction, player, pm, args = [] } = ctx;
+		const { client, message, interaction, player, args = [] } = ctx;
 		const context = interaction || message;
 		try {
 			const activePlayer = player || client.music?.getPlayer(context.guildId || context.guild?.id);
@@ -107,9 +100,6 @@ class LyricsCommand extends Command {
 				return await loadingMsg.edit(notFoundPayload);
 			}
 
-			// Slash commands must hand the INTERACTION to the display helpers (they
-			// call editReply/fetchReply); prefix commands hand the reply Message.
-			// Passing the awaited reply Message here made /lyrics silently stall.
 			const displayTarget = interaction || loadingMsg;
 			await this._handleLyricsDisplay(
 				displayTarget, lyricsData, track, activePlayer, client,
@@ -322,7 +312,7 @@ class LyricsCommand extends Command {
 		const artworkUrl = track?.info?.artworkUrl || track?.info?.uri;
 
 		const buildLiveContainer = (positionMs: any) => {
-			const { currentIdx, currentLine, prevLines, nextLines } = this._getSyncContext(lyricsData.syncedLines, positionMs);
+			const { currentLine, prevLines, nextLines } = this._getSyncContext(lyricsData.syncedLines, positionMs);
 
 			const container = buildContainer({
       title: "`🎤 **Live Lyrics**`",
@@ -348,7 +338,6 @@ class LyricsCommand extends Command {
 		return container;
 	  };
 
-		// Send initial state
 		const initialPayload = { components: [buildLiveContainer(getPosition())], flags: MessageFlags.IsComponentsV2 };
 		const sent = isInteraction
 			? await msgOrInt.editReply(initialPayload).catch(() => null)
@@ -363,7 +352,6 @@ class LyricsCommand extends Command {
 			try {
 				const positionMs = getPosition();
 
-				// Stop if player is gone or the track changed
 				const currentTrack = player?.queue?.current;
 				const currentUri = currentTrack?.info?.uri || currentTrack?.info?.identifier;
 				if (!currentTrack || (trackUri && currentUri && currentUri !== trackUri)) {
@@ -372,7 +360,6 @@ class LyricsCommand extends Command {
 					return;
 				}
 
-				// Stop when the track has finished
 				if (positionMs >= maxDurationMs) {
 					isActive = false;
 					clearInterval(interval);
@@ -382,7 +369,6 @@ class LyricsCommand extends Command {
 				const { currentIdx } = this._getSyncContext(lyricsData.syncedLines, positionMs);
 				const now = Date.now();
 
-				// Edit only when the highlighted line changed, throttled to one edit per 2s
 				if (currentIdx !== currentLineIdx && now - lastEditTime >= 2000) {
 					currentLineIdx = currentIdx;
 					lastEditTime = now;
@@ -399,7 +385,6 @@ class LyricsCommand extends Command {
 			}
 		}, 1000);
 
-		// Safety stop after the track duration elapses
 		setTimeout(() => {
 			isActive = false;
 			clearInterval(interval);
@@ -487,7 +472,7 @@ class LyricsCommand extends Command {
 					components: [buildPage(page)],
 					flags: MessageFlags.IsComponentsV2,
 				}).catch(() => {});
-			} catch { /* message deleted or stale */ }
+			} catch {  }
 		});
 	}
 

@@ -4,7 +4,7 @@ import { Command, CommandContext } from '#core/Command';
 import MusicCard from '#ui/cards/MusicCard';
 import { db } from '#database/Database';
 import { logger } from '#utils/logger';
-import { buildError, buildSuccess } from '#ui/Theme';
+import { buildError } from '#ui/Theme';
 import phrases from '#utils/phrases';
 import { i18n } from "#utils/i18n";
 
@@ -41,7 +41,7 @@ class NowPlayingCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction } = ctx;
     const context = interaction || message;
     return this._handleNowPlaying(client, context.guild.id, context);
   }

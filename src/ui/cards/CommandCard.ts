@@ -24,12 +24,6 @@ try {
   console.error("Failed to load signature fonts in CommandCard:", e);
 }
 
-/**
- * 🌸 Signature Yuna Command Info Card Generator.
- * Features 100% overflow protection & truncation (...) across all box containers,
- * matte dark theme, square curved rectangle badges (r=6-8px), Great Vibes calligraphic header,
- * vector Sakura flowers, and PingCard design layout.
- */
 export class CommandCard {
   _roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
     ctx.beginPath();
@@ -68,11 +62,6 @@ export class CommandCard {
     ctx.restore();
   }
 
-  /**
-   * Generates a PNG Buffer matching PingCard.js theme.
-   * @param {Object} command
-   * @returns {Promise<Buffer>}
-   */
   static async generate(command: any) {
     const cardInstance = new CommandCard();
     return await cardInstance.render(command);
@@ -309,9 +298,6 @@ export class CommandCard {
     return canvas.toBuffer("image/png");
   }
 
-  /**
-   * Glass Metric Box renderer with strict overflow protection & character truncation (...)
-   */
   _renderMetricBox(ctx: any, x: number, y: number, w: number, h: number, config: any) {
     ctx.save();
     this._roundRect(ctx, x, y, w, h, 12);
@@ -344,7 +330,7 @@ export class CommandCard {
           line = words[n] + " ";
           lineY += 20;
           if (lineY > y + 68) {
-            // Add ellipsis to remaining line
+
             let truncatedLine = line.trim();
             while (truncatedLine.length > 0 && ctx.measureText(truncatedLine + "...").width > config.maxTextWidth) {
               truncatedLine = truncatedLine.slice(0, -1);
@@ -363,7 +349,6 @@ export class CommandCard {
     } else {
       let valStr = config.numVal;
 
-      // Truncate string if it exceeds container width
       if (ctx.measureText(valStr).width > maxW) {
         while (valStr.length > 0 && ctx.measureText(valStr + "...").width > maxW) {
           valStr = valStr.slice(0, -1);
@@ -381,7 +366,6 @@ export class CommandCard {
       }
     }
 
-    // 3. Subtext
     ctx.font = config.subFont;
     ctx.fillStyle = "rgba(255, 255, 255, 0.48)";
     ctx.fillText(config.sub, x + 16, y + 78);

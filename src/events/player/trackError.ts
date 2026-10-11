@@ -1,9 +1,8 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
+import type { Player, Track } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
-import { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags, ButtonBuilder, ButtonStyle, SectionBuilder } from "discord.js";
-import emoji from "#config/emoji";
+import { MessageFlags } from "discord.js";
 import musicSource from "#config/sources";
 import { i18n } from "#utils/i18n";
 import { buildError, buildResult } from "#ui/Theme";
@@ -11,7 +10,7 @@ import { buildError, buildResult } from "#ui/Theme";
 export default {
   name: "trackError",
   once: false,
-  async execute(player: Player, track: Track, payload: any, musicManager: LavalinkManager, client: YunaClient) {
+  async execute(player: Player, track: Track, payload: any, client: YunaClient) {
     try {
       logger.error('TrackException', `Lavalink encountered an error playing track in guild ${player.guildId}:`, {
         track: track?.info?.title || 'Unknown',
@@ -31,14 +30,9 @@ export default {
 
           logger.info('TrackException', `Attempting stream recovery for "${searchQuery}" in guild ${player.guildId}`);
 
-          // Try every configured source prefix instead of hardcoding plugins
-          // the Lavalink node may not have installed.
           let fallbackRes: any = null;
           let sourceUsed = '';
-          // YouTube is skipped when the failing track *is* YouTube: the failure
-          // is bot-protection (403 / "requires login"), so replaying it via
-          // ytsearch fails identically and spins until Lavalink destroys the
-          // player for too many errors.
+
           const failingSource = String(track?.info?.sourceName || '').toLowerCase();
           const isYoutubeTrack = /youtube|\byt\b/.test(failingSource);
           const prefixes = musicSource.getPrefixList();
@@ -52,14 +46,12 @@ export default {
                 sourceUsed = prefix.replace(':', '');
                 break;
               }
-            } catch { /* try the next source */ }
+            } catch {  }
           }
 
           if (fallbackRes?.tracks?.length > 0) {
             const fallbackTrack = fallbackRes.tracks[0];
 
-            // Guard against retry storms: if this exact fallback stream already
-            // failed once, give up instead of looping until the player dies.
             const lastAttempt = player.get<string | null>('recoveryAttemptId');
             if (lastAttempt && lastAttempt === fallbackTrack.info.identifier) {
               logger.warn(

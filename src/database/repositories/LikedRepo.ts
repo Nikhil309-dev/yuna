@@ -14,11 +14,6 @@ export class LikedRepo {
     `);
   }
 
-  /**
-   * Retrieves liked tracks for a user
-   * @param {string} userId
-   * @returns {Array<Object>}
-   */
   getUserLiked(userId: string) {
     const data = this._getLiked.get(userId);
     if (!data) return [];
@@ -29,12 +24,6 @@ export class LikedRepo {
     }
   }
 
-  /**
-   * Adds a track to a user's liked tracks
-   * @param {string} userId
-   * @param {Object} trackInfo
-   * @returns {boolean} True if added, false if already liked
-   */
   addLikedTrack(userId: string, trackInfo: any) {
     let result = false;
     this.db.transaction(() => {
@@ -59,12 +48,6 @@ export class LikedRepo {
     return result;
   }
 
-  /**
-   * Removes a track from a user's liked tracks
-   * @param {string} userId
-   * @param {string} trackIdentifier
-   * @returns {boolean} True if removed, false if not found
-   */
   removeLikedTrack(userId: any, trackIdentifier: any) {
     let result = false;
     this.db.transaction(() => {

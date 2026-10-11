@@ -5,11 +5,6 @@ import { GuildMember, Guild, GuildChannel } from 'discord.js';
 
 const premiumCache = new TTLCache(60000, 1000);
 
-/**
- * Drops every cached premium lookup for a user. Call after granting/revoking
- * premium so gated commands and cooldowns reflect the change immediately
- * instead of waiting out the cache TTL.
- */
 export function invalidatePremiumCache(userId: string): void {
     if (!userId) return;
     for (const [key] of premiumCache.entries()) {
@@ -17,18 +12,12 @@ export function invalidatePremiumCache(userId: string): void {
     }
 }
 
-/**
- * Checks if a member has required Discord permissions.
- */
 export function checkPermissions(member: GuildMember | null, requiredPerms: bigint[]): boolean {
     if (!requiredPerms || requiredPerms.length === 0) return true;
     if (!member) return false;
     return requiredPerms.every(perm => member.permissions.has(perm));
 }
 
-/**
- * Checks if the bot has required permissions in the guild/channel.
- */
 export function checkBotPermissions(guild: Guild | null, requiredPerms: bigint[], channel: GuildChannel | null = null): string[] {
     if (!guild || !requiredPerms || requiredPerms.length === 0) return [];
 
@@ -41,9 +30,6 @@ export function checkBotPermissions(guild: Guild | null, requiredPerms: bigint[]
         .map(perm => perm.toString());
 }
 
-/**
- * Checks if a user/guild has premium access.
- */
 export function isPremium(userId: string, guildId?: string | null, type: 'user' | 'guild' | 'any' = 'any'): boolean {
     const cacheKey = `${userId}-${guildId}-${type}`;
     if (premiumCache.has(cacheKey)) {
@@ -69,16 +55,10 @@ export function isPremium(userId: string, guildId?: string | null, type: 'user' 
     return result;
 }
 
-/**
- * Checks if a user is the bot owner.
- */
 export function isOwner(userId: string): boolean {
     return Array.isArray(config.ownerIds) && config.ownerIds.includes(userId);
 }
 
-/**
- * Checks if a user or guild is blacklisted.
- */
 export function isBlacklisted(userId: string, guildId?: string | null): boolean {
     const userBl = db.isUserBlacklisted?.(userId);
     const guildBl = guildId ? db.isGuildBlacklisted?.(guildId) : false;

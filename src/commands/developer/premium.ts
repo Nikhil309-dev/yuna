@@ -1,5 +1,4 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
+import type { Message } from 'discord.js';
 import { Command } from "#core/Command";
 import { db } from "#database/Database";
 import {
@@ -18,9 +17,7 @@ import {
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 const ITEMS_PER_PAGE = 5;

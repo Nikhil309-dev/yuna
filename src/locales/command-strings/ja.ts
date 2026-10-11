@@ -1,12 +1,3 @@
-/**
- * Japanese (ja-JP) command-level UI strings.
- *
- * Keys are the exact English literals used at call sites. Placeholders use
- * `{name}` and must be preserved exactly — `i18n.cmd()` interpolates them
- * after lookup, and every locale catalog is checked for placeholder parity.
- * Markdown, emojis, box-drawing characters, URLs and command names must also
- * be preserved verbatim.
- */
 const JA: Record<string, string> = {
 	"On": "オン",
 	"Off": "オフ",
@@ -548,7 +539,7 @@ const JA: Record<string, string> = {
 	"**{emoji} Created:** {date}\n": "**{emoji} 作成日:** {date}\n",
 	"**{emoji} Tracks:** 0 songs\n\n": "**{emoji} トラック:** 0 曲\n\n",
 	"**{emoji} Next Steps:**\n": "**{emoji} 次のステップ:**\n",
-	
+
 	"└─ Use `my-playlists` to see all playlists\n": "└─ すべてのプレイリストを確認するには `my-playlists` を使用\n",
 	"└─ Use `add2pl` to add songs\n": "└─ 曲を追加するには `add2pl` を使用\n",
 	"└─ Use `playlist-info` to view details\n": "└─ 詳細を確認するには `playlist-info` を使用\n",

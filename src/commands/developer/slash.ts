@@ -1,5 +1,3 @@
-import type { Message, Interaction, CommandInteraction } from 'discord.js';
-import type { YunaClient } from '#core/YunaClient';
 import { Routes } from 'discord-api-types/v10';
 import {
 	ContainerBuilder,
@@ -16,8 +14,6 @@ import { config } from '#config/config';
 import { Command } from '#core/Command';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
-import phrases from '#utils/phrases';
 import { i18n } from '#utils/i18n';
 
 class UpdateSlashCommand extends Command {

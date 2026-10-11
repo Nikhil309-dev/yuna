@@ -6,15 +6,11 @@ import {
   ComponentType,
   ContainerBuilder,
   SeparatorBuilder,
-  SeparatorSpacingSize,
-  SectionBuilder,
-  TextDisplayBuilder,
-  ThumbnailBuilder
-} from "discord.js";
+  SeparatorSpacingSize} from "discord.js";
 
 import { config } from '#config/config';
 import { Command } from '#core/Command';
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
@@ -54,7 +50,7 @@ class ShuffleCommand extends Command {
   }
 
   async execute(ctx: any) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, player, pm } = ctx;
     const context = interaction || message;
     const activePm = pm || (player ? new PlayerManager(player) : (client?.music?.getPlayer(context.guildId || context.guild?.id) ? new PlayerManager(client.music.getPlayer(context.guildId || context.guild?.id)) : null));
     if (!activePm) return;

@@ -76,8 +76,7 @@ class Status247Command extends Command {
   }
 
   async _reply(ctx: any, payload: any) {
-    // `execute` hands us the whole command context, not a reply target —
-    // resolve the interaction/message first or every reply throws.
+
     const context = ctx?.interaction || ctx?.message || ctx;
     if (context.editReply && (context.deferred || context.replied)) {
       return await context.editReply(payload);

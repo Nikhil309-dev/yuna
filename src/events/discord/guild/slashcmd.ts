@@ -34,8 +34,6 @@ export default {
 
     if (interaction.type !== InteractionType.ApplicationCommand) return;
 
-    // Resolve the requester's language (user → server → en-US) and bind it to
-    // the whole request so every reply below is translated for them.
     const locale = localeFor(interaction.user?.id, interaction.guild?.id);
     const tr = (key: string, replacements: Record<string, any> = {}) => i18n.ui(locale, key, replacements);
 
@@ -104,7 +102,7 @@ export default {
       }
 
       await runWithLocale(ctx.locale, async () => {
-        // Prefer the dedicated slash handler; fall back to the shared execute().
+
         if (typeof command.slashExecute === 'function') {
           await command.slashExecute(ctx);
         } else {
@@ -122,16 +120,13 @@ export default {
         logger.error("InteractionCreate", `Error executing slash command '${command.name}'`, error);
       }
 
-      // Never leave the user staring at a bare "interaction failed". The base
-      // onError() only logs, so surface a localized fallback unless the command
-      // already produced its own response (editReply sets replied = true).
       try {
         if (!interaction.replied) {
           const errReply = { content: tr("common.unexpected"), ephemeral: true };
           if (interaction.deferred) await interaction.editReply(errReply);
           else await interaction.reply(errReply);
         }
-      } catch { /* response already sent / expired interaction */ }
+      } catch {  }
     }
   },
 };

@@ -34,20 +34,10 @@ export class UserRepo {
     this._unlinkSpotify = this.db.prepare('UPDATE users SET spotify_profile_url = NULL, spotify_display_name = NULL, spotify_linked_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
   }
 
-  /**
-   * Retrieves user data
-   * @param {string} userId
-   * @returns {Object|null}
-   */
   getUser(userId: string) {
     return this._getUser.get(userId);
   }
 
-  /**
-   * Ensures a user exists in the database
-   * @param {string} userId
-   * @returns {Object}
-   */
   ensureUser(userId: string) {
     let user = this.getUser(userId);
     if (!user) {
@@ -57,22 +47,11 @@ export class UserRepo {
     return user;
   }
 
-  /**
-   * Sets no prefix mode for a user
-   * @param {string} userId
-   * @param {boolean} enabled
-   * @param {number|null} expiryTimestamp
-   */
   setNoPrefix(userId: string, enabled: boolean, expiryTimestamp: number | null = null) {
     this.ensureUser(userId);
     this._updateNoPrefix.run(enabled ? 1 : 0, expiryTimestamp, userId);
   }
 
-  /**
-   * Checks if a user has no prefix enabled
-   * @param {string} userId
-   * @returns {boolean}
-   */
   hasNoPrefix(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.no_prefix) return false;
@@ -82,52 +61,27 @@ export class UserRepo {
     return false;
   }
 
-  /**
-   * Retrieves np style
-   * @param {string} userId
-   * @returns {string}
-   */
   getNpStyle(userId: string) {
     const user = this.getUser(userId);
     return user?.np_style || 'card';
   }
 
-  /**
-   * Sets np style
-   * @param {string} userId
-   * @param {string} style
-   */
   setNpStyle(userId: string, style: string) {
     this.ensureUser(userId);
     this._updateNpStyle.run(style, userId);
   }
 
-  /**
-   * Sets autoplay cooldown
-   * @param {string} userId
-   * @param {number} cooldownTimestamp
-   */
   setAutoplayCooldown(userId: string, cooldownTimestamp: number) {
     this.ensureUser(userId);
     this._updateAutoplayCooldown.run(cooldownTimestamp, userId);
   }
 
-  /**
-   * Retrieves autoplay cooldown
-   * @param {string} userId
-   * @returns {number}
-   */
   getAutoplayCooldown(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.autoplay_cooldown) return 0;
     return user.autoplay_cooldown > Date.now() ? user.autoplay_cooldown : 0;
   }
 
-  /**
-   * Retrieves user custom prefixes
-   * @param {string} userId
-   * @returns {Array<string>}
-   */
   getUserPrefixes(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.custom_prefixes) return [];
@@ -142,52 +96,28 @@ export class UserRepo {
     return this.getUserPrefixes(userId);
   }
 
-  /**
-   * Sets user custom prefixes
-   * @param {string} userId
-   * @param {Array<string>} prefixes
-   */
   setUserPrefixes(userId: string, prefixes: string[]) {
     this.ensureUser(userId);
     const limitedPrefixes = prefixes.slice(0, USER_PREFIX_LIMIT);
     this._updatePrefixes.run(JSON.stringify(limitedPrefixes), userId);
   }
 
-  /**
-   * Blacklists a user
-   * @param {string} userId
-   * @param {string} reason
-   */
   blacklistUser(userId: string, reason: string = 'No reason provided') {
     this.ensureUser(userId);
     this._updateBlacklist.run(1, reason, userId);
   }
 
-  /**
-   * Unblacklists a user
-   * @param {string} userId
-   */
   unblacklistUser(userId: string) {
     this.ensureUser(userId);
     this._updateBlacklist.run(0, null, userId);
   }
 
-  /**
-   * Checks if a user is blacklisted
-   * @param {string} userId
-   * @returns {Object|boolean}
-   */
   isBlacklisted(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.blacklisted) return false;
     return { blacklisted: true, reason: user.blacklist_reason || 'No reason provided' };
   }
 
-  /**
-   * Adds a track to user history
-   * @param {string} userId
-   * @param {Object} trackInfo
-   */
   addTrackToHistory(userId: string, trackInfo: any) {
     if (!trackInfo || !trackInfo.identifier) return;
     this.ensureUser(userId);
@@ -220,11 +150,6 @@ export class UserRepo {
     this._updateHistory.run(JSON.stringify(history), userId);
   }
 
-  /**
-   * Retrieves user history
-   * @param {string} userId
-   * @returns {Array<Object>}
-   */
   getHistory(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.history) return [];
@@ -235,10 +160,6 @@ export class UserRepo {
     }
   }
 
-  /**
-   * Cleans up invalid entries in user history
-   * @param {string} userId
-   */
   cleanupHistory(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.history) return;
@@ -263,33 +184,17 @@ export class UserRepo {
     }
   }
 
-  /**
-   * Sets entire user history
-   * @param {string} userId
-   * @param {Array<Object>} history
-   */
   setUserHistory(userId: string, history: any[]) {
     this.ensureUser(userId);
     const limitedHistory = history.slice(0, HISTORY_LIMIT);
     this._updateHistory.run(JSON.stringify(limitedHistory), userId);
   }
 
-  /**
-   * Links a Spotify profile to the user
-   * @param {string} userId
-   * @param {string} profileUrl
-   * @param {string|null} displayName
-   */
   linkSpotifyProfile(userId: string, profileUrl: string, displayName: string | null = null) {
     this.ensureUser(userId);
     this._updateSpotify.run(profileUrl, displayName, userId);
   }
 
-  /**
-   * Retrieves the linked Spotify profile
-   * @param {string} userId
-   * @returns {Object|null}
-   */
   getSpotifyProfile(userId: string) {
     const user = this.getUser(userId);
     if (!user || !user.spotify_profile_url) return null;
@@ -300,10 +205,6 @@ export class UserRepo {
     };
   }
 
-  /**
-   * Unlinks the Spotify profile
-   * @param {string} userId
-   */
   unlinkSpotifyProfile(userId: string) {
     this.ensureUser(userId);
     this._unlinkSpotify.run(userId);

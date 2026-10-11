@@ -6,7 +6,6 @@ import {
   ButtonStyle,
   MessageFlags,
   StringSelectMenuBuilder,
-  type Client,
   type Message,
   ContainerBuilder,
   SectionBuilder,
@@ -19,7 +18,7 @@ import { PlayerManager } from '#audio/PlayerManager';
 import { db } from '#database/Database';
 import { config } from "#config/config";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildContainer, buildError } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import emoji from '#config/emoji';
 import phrases from "#utils/phrases";
@@ -62,7 +61,7 @@ class HistoryCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction, args = [] } = ctx;
     const context = interaction || message;
     const page = interaction ? (interaction.options.getInteger("page") || 1) : (args[0] ? parseInt(args[0], 10) : 1);
     const userId = (context.user || context.author).id;
@@ -169,7 +168,7 @@ class HistoryCommand extends Command {
     const validTracks = tracksOnPage.filter((track: any) => track && track.title && track.identifier);
     if (validTracks.length ===0) return new ActionRowBuilder<StringSelectMenuBuilder>();
 
-    const options = validTracks.map((track: any, index: any) => {
+    const options = validTracks.map((track: any) => {
       const originalIndex = tracksOnPage.findIndex((t: any) => t && t.identifier ===track.identifier);
       return {
         label: (track.title || i18n.cmd('Unknown Track')).substring(0, 100),
@@ -212,8 +211,6 @@ class HistoryCommand extends Command {
     const userId = context.user?.id || context.author?.id;
     const guildId = context!.guild!.id;
 
-    // Only claim history components (`hist_*`); otherwise this collector would
-    // swallow every button the user presses on any message ending in their id.
     const filter = (i: any) => i.user.id === userId && i.customId.startsWith("hist_");
     const collector = componentCollectorSource(message).createMessageComponentCollector({ filter, time: 300000 });
 

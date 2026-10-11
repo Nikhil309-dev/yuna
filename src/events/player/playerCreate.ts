@@ -1,7 +1,5 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
-import type { YunaClient } from '#core/YunaClient';
+import type { Player } from 'lavalink-client';
 import { logger } from "#utils/logger";
-import { EventUtils } from "#utils/EventUtils";
 
 export default {
 	name: "playerCreate",

@@ -1,4 +1,4 @@
-import { Command, CommandContext } from '#core/Command';
+import { Command } from '#core/Command';
 import { db } from "#database/Database";
 import { MessageFlags } from "discord.js";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
@@ -66,8 +66,6 @@ class BuyPremiumCommand extends Command {
       return this._sendPricing(interaction, user);
     }
 
-    // Guard unknown durations — `PRICES[x]` is undefined for junk input and
-    // would otherwise reach removeCoins() and throw "Invalid amount".
     if (!PRICES[duration]) {
       return this._sendError(interaction, user, i18n.translateTitle("Invalid Duration"), i18n.cmd("Please provide a valid duration: `1h`, `1d`, `1w`, `1m`, or `1y`"));
     }
@@ -80,8 +78,7 @@ class BuyPremiumCommand extends Command {
     }
 
     const removed = db.economy.removeCoins(userId, price);
-    // removeCoins() returns the new balance (a number) or `false` when funds are
-    // insufficient — a balance of exactly 0 is a valid success, so compare to false.
+
     if (removed === false) {
       return this._sendError(interaction, user, i18n.translateTitle("Transaction Failed"), i18n.cmd("Failed to deduct coins. Please try again."));
     }
@@ -97,7 +94,7 @@ class BuyPremiumCommand extends Command {
     return this._sendSuccess(interaction, user, i18n.cmd("Successfully bought {duration} of Premium for {price} coins! Enjoy your perks!", { duration, price }));
   }
 
-  async execute({ client, message, args }: any) {
+  async execute({ message, args }: any) {
     if (args.length < 1) {
       return this._sendPricing(message);
     }

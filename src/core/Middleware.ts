@@ -2,7 +2,7 @@ import { db } from '#database/Database';
 import { buildError, buildBlocked } from '#ui/Theme';
 import { checkPermissions, checkBotPermissions, isPremium, isOwner, isBlacklisted } from '../core/AccessControl';
 import { AntiAbuse } from '../utils/AntiAbuse';
-import { GuildMember, Guild, GuildChannel, User, Client } from 'discord.js';
+import { GuildMember, Guild, GuildChannel, User } from 'discord.js';
 import { i18n } from '#utils/i18n.js';
 
 export interface MiddlewareContext {
@@ -14,30 +14,16 @@ export interface MiddlewareContext {
 }
 
 export class Middleware {
-  /**
-   * Cross-shard cooldown + abuse tracking, persisted in SQLite via CooldownRepo.
-   * Cooldowns survive restarts and are enforced uniformly across every shard,
-   * instead of living only in this process's memory.
-   */
+
   static anti = new AntiAbuse(db.cooldowns);
 
-  /**
-   * Runs the centralized execution pipeline.
-   *
-   * Called from inside a `runWithLocale(...)` scope, so `tr()` / phrase lookups
-   * below resolve to the requester's language.
-   * @param ctx The execution context.
-   * @param command The command being executed.
-   * @returns The result of the middleware checks.
-   */
   static async run(ctx: MiddlewareContext, command: any): Promise<{pass: boolean, response?: any}> {
     const { client, user, member, guild, channel } = ctx;
     const userId = user.id;
     const guildId = guild?.id;
 
     const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
-    // Every middleware rejection renders through here so the user's avatar can
-    // be attached as the card thumbnail in one place.
+
     const avatar = user?.displayAvatarURL?.({ size: 128 });
     const errorCard = (opts: any) => buildError(opts, undefined, avatar);
     const pool = (category: string, replacements?: Record<string, any>) =>
@@ -65,8 +51,6 @@ export class Middleware {
       };
     }
 
-    // Auto-escalation: users who repeatedly hammered through cooldowns are
-    // ignored for a short cool-off period (AntiAbuse handles expiry).
     if (this.anti.isBlacklisted(userId, command.name, guildId ?? 'dm')) {
       return {
         pass: false,
@@ -202,11 +186,6 @@ export class Middleware {
     return { pass: true };
   }
 
-  /**
-   * Checks if a user has an active cooldown for a command.
-   * Backed by the shared SQLite cooldown table, so it holds across shards and restarts.
-   * Returns remaining seconds (0 = free to run).
-   */
   static checkCooldown(userId: string, command: any, guildId?: string | null): number {
     if (!command.cooldown) return 0;
 
@@ -226,7 +205,6 @@ export class Middleware {
     const hasPremium = isPremium(userId, null, 'user');
     const durationMs = command.cooldown * (hasPremium ? 0.5 : 1) * 1000;
 
-    // Also resets any prior violation count for this key on success.
     this.anti.setCooldown(userId, command.name, keyGuild, durationMs);
   }
 }

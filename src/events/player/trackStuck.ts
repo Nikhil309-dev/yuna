@@ -1,4 +1,4 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
+import type { Player, Track } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
@@ -6,11 +6,6 @@ import musicSource from "#config/sources";
 import { i18n } from "#utils/i18n";
 import { buildResult } from "#ui/Theme";
 import {
-	ContainerBuilder,
-	TextDisplayBuilder,
-	SeparatorBuilder,
-	SeparatorSpacingSize,
-	SectionBuilder,
 	MessageFlags,
 	type TextBasedChannel,
 } from "discord.js";
@@ -18,7 +13,7 @@ import {
 export default {
 	name: "trackStuck",
 	once: false,
-	async execute(player: Player, track: Track, payload: any, musicManager: LavalinkManager, client: YunaClient) {
+	async execute(player: Player, track: Track, payload: any, client: YunaClient) {
 		try {
 			logger.warn("TrackStuck", `Track stuck for ${payload.thresholdMs}ms in guild ${player.guildId}:`, {
 				track: track?.info?.title || "Unknown",
@@ -104,8 +99,6 @@ export default {
 
 								logger.info("TrackStuck", `Attempting stream recovery for stuck track: "${searchQuery}"`);
 
-								// Try every configured source prefix instead of hardcoding
-								// plugins the Lavalink node may not have installed.
 								let fallbackRes: any = null;
 								let sourceUsed = '';
 								for (const prefix of musicSource.getPrefixList()) {
@@ -116,7 +109,7 @@ export default {
 											sourceUsed = prefix.replace(':', '');
 											break;
 										}
-									} catch { /* try the next source */ }
+									} catch {  }
 								}
 
 								if (fallbackRes?.tracks?.length > 0) {

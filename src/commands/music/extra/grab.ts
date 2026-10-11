@@ -41,7 +41,7 @@ class GrabCommand extends Command {
   }
 
   async execute(ctx: CommandContext) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction } = ctx;
     const context = interaction || message;
     return this._handleGrab(client, context.guild?.id, context);
   }

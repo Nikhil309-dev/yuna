@@ -6,10 +6,6 @@ const CARD_HEIGHT = 440;
 
 let fontsRegisteredGlobally = false;
 
-/**
- * Matte, glass-forward palette. Deliberately no glossy highlights — depth comes
- * from layered translucency and soft matte radial washes, not specular shine.
- */
 const T = {
   bgTop: '#0A0B16',
   bgBottom: '#12132A',
@@ -37,7 +33,6 @@ export default class ProfileCard {
       GlobalFonts.registerFromPath(join(dir, 'AlexBrush-Regular.ttf'), 'Alex Brush');
       GlobalFonts.registerFromPath(join(dir, 'Righteous-Regular.ttf'), 'Righteous');
     } catch {
-      /* fall back to system fonts */
     }
     fontsRegisteredGlobally = true;
   }
@@ -47,9 +42,6 @@ export default class ProfileCard {
     ctx.roundRect(x, y, w, h, r);
   }
 
-  // ── Decorative flora ────────────────────────────────────────────────────────
-
-  /** A soft 5-petal blossom with a matte centre and two leaves. */
   drawBlossom(ctx: any, x: number, y: number, size: number, alpha = 1) {
     const petals = ['#FFD1E3', '#FFB6C1', '#FF8FC5'];
     ctx.save();
@@ -89,7 +81,6 @@ export default class ProfileCard {
     ctx.restore();
   }
 
-  /** A single drifting petal. */
   drawPetal(ctx: any, x: number, y: number, size: number, angle: number, alpha: number) {
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -102,10 +93,6 @@ export default class ProfileCard {
     ctx.restore();
   }
 
-  /**
-   * Scatters flora around the frame. It sits *behind* the glass so it reads
-   * through the translucent panel as a frosted backdrop.
-   */
   drawFlora(ctx: any) {
     this.drawBlossom(ctx, CARD_WIDTH - 66, 54, 30, 0.9);
     this.drawBlossom(ctx, CARD_WIDTH - 124, 108, 17, 0.7);
@@ -125,8 +112,6 @@ export default class ProfileCard {
     for (const [x, y, s, a, al] of petals) this.drawPetal(ctx, x, y, s, a, al);
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-
   truncate(ctx: any, text: string, maxWidth: number, font: string) {
     ctx.font = font;
     if (ctx.measureText(text).width <= maxWidth) return text;
@@ -141,14 +126,11 @@ export default class ProfileCard {
     return `${Math.floor(mins / 60)}H ${mins % 60}M`;
   }
 
-  // ── Card ───────────────────────────────────────────────────────────────────
-
   async createProfileCard(user: any, profileData: any) {
     const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT);
     const ctx = canvas.getContext('2d');
     const premium = !!profileData.premium;
 
-    // Matte base + two soft matte washes for depth (no shine).
     const base = ctx.createLinearGradient(0, 0, 0, CARD_HEIGHT);
     base.addColorStop(0, T.bgTop);
     base.addColorStop(1, T.bgBottom);
@@ -169,7 +151,6 @@ export default class ProfileCard {
 
     this.drawFlora(ctx);
 
-    // ── Glass panel ──
     const px = 44;
     const py = 44;
     const pw = CARD_WIDTH - px * 2;
@@ -184,11 +165,9 @@ export default class ProfileCard {
     ctx.stroke();
     ctx.restore();
 
-    // Faint etched blossoms inside the glass, top-right.
     this.drawBlossom(ctx, px + pw - 56, py + 40, 15, 0.28);
     this.drawPetal(ctx, px + pw - 92, py + 74, 6, 0.6, 0.22);
 
-    // ── Brand wordmark ──
     ctx.save();
     ctx.font = '40px "Great Vibes", "Alex Brush", cursive';
     ctx.textAlign = 'right';
@@ -201,13 +180,11 @@ export default class ProfileCard {
     ctx.fillText('Yuna', px + pw - 36, py + 46);
     ctx.restore();
 
-    // ── Avatar ──
     let avatarImg;
     try {
       const url = user.displayAvatarURL({ extension: 'png', size: 256, forceStatic: true });
       avatarImg = await loadImage(url);
     } catch {
-      /* avatar is optional */
     }
 
     const av = 118;
@@ -238,7 +215,6 @@ export default class ProfileCard {
       ctx.stroke();
     }
 
-    // ── Identity ──
     const tx = ax + av + 30;
     const nameY = ay + 44;
 
@@ -272,7 +248,6 @@ export default class ProfileCard {
     ctx.textBaseline = 'alphabetic';
     ctx.fillText(`@${user.username || 'unknown'}`, tx, nameY + 30);
 
-    // Hairline under the identity block.
     ctx.beginPath();
     ctx.moveTo(px + 40, ay + av + 26);
     ctx.lineTo(px + pw - 40, ay + av + 26);
@@ -280,7 +255,6 @@ export default class ProfileCard {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // ── Stat tiles ──
     const statsY = ay + av + 46;
     const tileH = 92;
     const gap = 18;
@@ -302,7 +276,6 @@ export default class ProfileCard {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Small etched petal accent, top-right of each tile.
       this.drawPetal(ctx, sx + tileW - 20, statsY + 20, 6, -0.6, 0.18);
 
       ctx.font = '11px "Righteous"';
@@ -321,7 +294,6 @@ export default class ProfileCard {
       ctx.restore();
     });
 
-    // ── Footer mark ──
     ctx.save();
     ctx.font = '12px "Righteous"';
     ctx.fillStyle = T.textMuted;

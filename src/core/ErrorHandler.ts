@@ -13,7 +13,7 @@ class ErrorHandler {
             this.shutdown('uncaughtException').catch(() => process.exit(1));
         });
 
-        process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+        process.on('unhandledRejection', (reason: any) => {
             logger.error('UnhandledRejection', 'Unhandled promise rejection', reason);
             this.shutdown('unhandledRejection').catch(() => process.exit(1));
         });
@@ -22,20 +22,12 @@ class ErrorHandler {
         process.on('SIGTERM', () => this.shutdown('SIGTERM'));
     }
 
-    /**
-     * Register a function to run during shutdown.
-     * @param {Function} hook Cleanup function returning a Promise or void.
-     */
     register(hook: Function) {
         if (typeof hook === 'function') {
             this.hooks.push(hook);
         }
     }
 
-    /**
-     * Initiates the graceful shutdown process.
-     * @param {string} signal The signal triggering the shutdown.
-     */
     async shutdown(signal: string) {
         if (this.isShuttingDown) return;
         this.isShuttingDown = true;

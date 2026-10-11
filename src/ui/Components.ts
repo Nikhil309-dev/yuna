@@ -14,19 +14,8 @@ import { formatDuration } from './Formatters';
 import { i18n } from '#utils/i18n.js';
 import { localeFor, runWithLocale } from '#utils/locale.js';
 
-// Button/select text is localized through `i18n.tr`, which reads the locale of
-// the current request context (user → guild → en-US).
 const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
 
-/**
- * Runs a collector listener inside the locale scope of the user/guild that
- * created it.
- *
- * Discord.js collector callbacks fire from the gateway event loop, which is
- * detached from the command's async context. Without this re-binding, every
- * `i18n.tr()` / `translateTitle()` inside a collector would silently fall back
- * to en-US regardless of the user's chosen language.
- */
 export function withLocaleCollector<T>(collector: T, userId?: string | null, guildId?: string | null): T {
   if (!collector || typeof (collector as any).on !== 'function') return collector;
   const locale = localeFor(userId, guildId);
@@ -40,17 +29,6 @@ export function withLocaleCollector<T>(collector: T, userId?: string | null, gui
   return collector;
 }
 
-/**
- * Resolves the object a message-component collector can be created from.
- *
- * Slash-command interactions do NOT expose `createMessageComponentCollector`
- * directly (only `interaction.response` does), while plain messages do. Callers
- * frequently pass either one, so route collectors through this helper to keep
- * buttons working from both slash commands and prefix commands.
- *
- * The collector it produces is additionally bound to the caller's locale so
- * localized strings keep working inside the collector callbacks.
- */
 export function componentCollectorSource(messageOrInteraction: any): any {
   const target = messageOrInteraction;
   if (!target) return target;
@@ -147,8 +125,7 @@ export function createConfirmRow(confirmId = 'yuna:confirm:yes', cancelId = 'yun
 
 export function createFilterSelect(presets: any = []) {
   if (presets.length === 0) {
-    // Values must map to real FilterEngine presets (`filter_<preset>`) or the
-    // special `filter_reset`, otherwise applying them fails at runtime.
+
     presets = [
       { label: 'Reset Filters', description: 'Clear all active audio filters', value: 'filter_reset' },
       { label: 'Bassboost', description: 'Enhanced bass profile', value: 'filter_bassboost' },
@@ -193,7 +170,6 @@ export function createPlayerContainer(mode: any = 'default', options: any = {}) 
   const { isTextMode = false, track = null, hasImage = false } = options;
   const container = new ContainerBuilder();
 
-  // Show the music card image if attachment is included
   if (!isTextMode && hasImage) {
     container.addMediaGalleryComponents(
       new MediaGalleryBuilder().addItems(
@@ -221,18 +197,16 @@ export function createPlayerContainer(mode: any = 'default', options: any = {}) 
     container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
   }
 
-  // Add the appropriate control row based on mode
   if (mode === 'filters') {
-    // Show filter presets dropdown
+
     const filterRow = createFilterSelect();
     container.addActionRowComponents(filterRow as any);
   } else {
-    // Show the button controls (default or playback mode)
+
     const controlsRow = createPlayerControls({ mode });
     container.addActionRowComponents(controlsRow as any);
   }
 
-  // Add the feature mode select dropdown (switch between default/playback/filters)
   const featureRow = createFeatureSelect();
   container.addActionRowComponents(featureRow as any);
 

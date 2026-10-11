@@ -17,11 +17,6 @@ export class EconomyRepo {
     this._getTopUsers = this.db.prepare('SELECT user_id, coins FROM user_economy ORDER BY coins DESC LIMIT ?');
   }
 
-  /**
-   * Retrieves coins for a user
-   * @param {string} userId
-   * @returns {number}
-   */
   getCoins(userId: string) {
     const data = this._getCoins.get(userId);
     return data ? data.coins : 0;
@@ -31,23 +26,11 @@ export class EconomyRepo {
     return this.getCoins(userId);
   }
 
-  /**
-   * Adds coins to a user's balance
-   * @param {string} userId
-   * @param {number} amount
-   * @returns {number} The new balance
-   */
   addCoins(userId: string, amount: number) {
     this._addCoins.run(userId, amount);
     return this.getCoins(userId);
   }
 
-  /**
-   * Removes coins from a user's balance
-   * @param {string} userId
-   * @param {number} amount
-   * @returns {number|boolean} The new balance, or false if insufficient funds
-   */
   removeCoins(userId: string, amount: number) {
     if (!Number.isInteger(amount) || amount <= 0) throw new Error('Invalid amount');
     let newAmount;
@@ -63,24 +46,10 @@ export class EconomyRepo {
     return newAmount;
   }
 
-  /**
-   * Retrieves top users by coin balance
-   * @param {number} limit
-   * @returns {Array<Object>}
-   */
   getTopUsers(limit = 10) {
     return this._getTopUsers.all(limit);
   }
 
-  /**
-   * Atomically transfers coins from one user to another.
-   * Wraps the read-check-debit-credit sequence in a single better-sqlite3
-   * transaction so partial state cannot leak if the process is killed mid-call.
-   * @param {string} fromUserId - Sender
-   * @param {string} toUserId - Receiver
-   * @param {number} amount - Must be a positive integer
-   * @returns {{ ok: true, fromBalance: number, toBalance: number } | { ok: false, reason: string }}
-   */
   transfer(fromUserId: string, toUserId: string, amount: number) {
     if (!Number.isInteger(amount) || amount <= 0) {
       return { ok: false, reason: 'invalid_amount' };

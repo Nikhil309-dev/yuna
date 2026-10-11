@@ -22,7 +22,7 @@ import {
   MediaGalleryItemBuilder
 } from "discord.js";
 import type { Client, Message } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildError } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
 import { CommandCard } from "#ui/cards/CommandCard";
 import { config } from "#config/config";

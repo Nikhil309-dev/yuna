@@ -75,7 +75,6 @@ class ShowLikedCommand extends Command {
     return message;
   }
 
-  /** Stored entries can repeat an identifier across re-adds; keep display clean. */
   _dedupe(tracks: any[]) {
     const seen = new Set<string>();
     return tracks.filter((t: any) => {
@@ -89,8 +88,7 @@ class ShowLikedCommand extends Command {
   _setupCollector(message: any, user: any, initialPage: number) {
     const client = message.client;
     const collector = componentCollectorSource(message).createMessageComponentCollector({ time: 300000 });
-    // The track panel is opened from the selector, so the chosen entry lives in
-    // this closure rather than being re-parsed out of the rendered card.
+
     let selected: any = null;
 
     collector.on('collect', async (interaction: any) => {

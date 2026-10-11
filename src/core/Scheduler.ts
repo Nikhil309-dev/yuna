@@ -64,12 +64,6 @@ export class Scheduler {
     logger.debug('Scheduler', `Registered task: ${name}`);
   }
 
-  /**
-   * Schedule a task to run every interval
-   * @param {string} name
-   * @param {Object} interval { seconds, minutes, hours }
-   * @param {Function} [taskFunc]
-   */
   every(name: string, interval: SchedulerInterval = {}, taskFunc: Function | null = null) {
     if (taskFunc) this.register(name, taskFunc);
 
@@ -103,12 +97,6 @@ export class Scheduler {
     return job;
   }
 
-  /**
-   * Schedule a task with a simple cron-like syntax (e.g. '@hourly', '@daily', 'every 15 mins')
-   * @param {string} name
-   * @param {string} pattern
-   * @param {Function} [taskFunc]
-   */
   cron(name: string, pattern: string, taskFunc: Function | null = null) {
     if (taskFunc) this.register(name, taskFunc);
 
@@ -179,8 +167,7 @@ export class Scheduler {
     try {
       if (fs.existsSync(this.persistencePath)) {
         const raw = fs.readFileSync(this.persistencePath, 'utf8').trim();
-        // Tolerate empty/corrupt files (e.g. a save that was interrupted by a crash)
-        // instead of throwing — fall back to default state and overwrite on next save.
+
         const data = raw ? JSON.parse(raw) : [];
         if (Array.isArray(data)) {
           for (const item of data) {
@@ -212,8 +199,7 @@ export class Scheduler {
 
       await fs.promises.writeFile(this.persistencePath, JSON.stringify(stateArray, null, 2), 'utf8');
     } catch (err: any) {
-      // Persistence failures must be visible: silent loss of scheduler state
-      // is how bugs hide for months.
+
       logger.warn('Scheduler', `Failed to save scheduler state: ${err?.message || err}`);
     }
   }

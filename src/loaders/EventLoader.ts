@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import chalk from 'chalk';
 import { logger, pink, mint, red, gray, white } from '#utils/logger';
 
 const __filename = fileURLToPath(import.meta.url);

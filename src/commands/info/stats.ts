@@ -11,17 +11,13 @@ import {
   SeparatorBuilder,
   SeparatorSpacingSize,
   TextDisplayBuilder,
-  ButtonBuilder,
-  ThumbnailBuilder,
-  SectionBuilder,
 } from "discord.js";
 import type { Client, Message } from "discord.js";
 import { db } from "#database/Database";
 import emoji from "#config/emoji";
 import StatsCard from "#ui/cards/StatsCard";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildContainer, buildError } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 class StatsCommand extends Command {

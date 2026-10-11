@@ -1,8 +1,5 @@
-import { Command, CommandContext } from '#core/Command';
+import { Command } from '#core/Command';
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   ContainerBuilder,
   MessageFlags,
   PermissionFlagsBits,
@@ -17,7 +14,7 @@ import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { db } from "#database/Database";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildError, buildSuccess } from "#ui/Theme";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 import { splitFooter } from "#ui/Formatters";
@@ -132,7 +129,7 @@ class Stay247Command extends Command {
           flags: MessageFlags.IsComponentsV2,
         });
       } else {
-        // Unknown action → reply instead of leaving the interaction hanging.
+
         await interaction.editReply({
           components: [this._createErrorContainer("Invalid option. Use: `247 on` or `247 off`")],
           flags: MessageFlags.IsComponentsV2,
@@ -211,8 +208,6 @@ class Stay247Command extends Command {
       return this._createErrorContainer(i18n.cmd("You must be in a voice channel to enable 24/7 mode."));
     }
 
-    // `members.cache.get` is unreliable (uncached / partial guilds); use the
-    // canonical bot member which is always present in a guild we're in.
     const botMember = guild.members.me ?? guild.members.cache.get(client.user.id);
     const voicePerms = targetVoiceChannel.permissionsFor(botMember);
 

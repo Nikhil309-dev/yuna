@@ -79,51 +79,24 @@ export class PremiumRepo {
     this._countExpiredGuild = this.db.prepare('SELECT COUNT(*) as count FROM guild_premium WHERE active = 0 OR (expires_at IS NOT NULL AND expires_at <= ?)');
   }
 
-  /**
-   * Grants user premium
-   * @param {string} userId
-   * @param {string} grantedBy
-   * @param {number|null} expiresAt
-   * @param {string} reason
-   */
   grantUserPremium(userId: string, grantedBy: string, expiresAt: number | null = null, reason: string = 'Premium granted') {
     const now = Date.now();
     this._grantUserPremium.run(userId, grantedBy, now, expiresAt, reason, now);
   }
 
-  /**
-   * Grants guild premium
-   * @param {string} guildId
-   * @param {string} grantedBy
-   * @param {number|null} expiresAt
-   * @param {string} reason
-   */
   grantGuildPremium(guildId: string, grantedBy: string, expiresAt: number | null = null, reason: string = 'Premium granted') {
     const now = Date.now();
     this._grantGuildPremium.run(guildId, grantedBy, now, expiresAt, reason, now);
   }
 
-  /**
-   * Revokes user premium
-   * @param {string} userId
-   */
   revokeUserPremium(userId: string) {
     this._revokeUserPremium.run(Date.now(), userId);
   }
 
-  /**
-   * Revokes guild premium
-   * @param {string} guildId
-   */
   revokeGuildPremium(guildId: string) {
     this._revokeGuildPremium.run(Date.now(), guildId);
   }
 
-  /**
-   * Checks if user has premium
-   * @param {string} userId
-   * @returns {Object|boolean}
-   */
   isUserPremium(userId: string) {
     const premium = this._getUserPremium.get(userId, Date.now());
     if (!premium) return false;
@@ -137,11 +110,6 @@ export class PremiumRepo {
     };
   }
 
-  /**
-   * Checks if guild has premium
-   * @param {string} guildId
-   * @returns {Object|boolean}
-   */
   isGuildPremium(guildId: string) {
     const premium = this._getGuildPremium.get(guildId, Date.now());
     if (!premium) return false;
@@ -155,12 +123,6 @@ export class PremiumRepo {
     };
   }
 
-  /**
-   * Checks if either user or guild has premium
-   * @param {string} userId
-   * @param {string} guildId
-   * @returns {Object|boolean}
-   */
   hasAnyPremium(userId: string, guildId: string) {
     const userPrem = this.isUserPremium(userId);
     if (userPrem) return userPrem;
@@ -169,26 +131,14 @@ export class PremiumRepo {
     return false;
   }
 
-  /**
-   * Gets all active user premiums
-   * @returns {Array<Object>}
-   */
   getAllUserPremiums() {
     return this._getAllUserPremiums.all(Date.now());
   }
 
-  /**
-   * Gets all active guild premiums
-   * @returns {Array<Object>}
-   */
   getAllGuildPremiums() {
     return this._getAllGuildPremiums.all(Date.now());
   }
 
-  /**
-   * Gets all expired premiums
-   * @returns {Object}
-   */
   getExpiredPremiums() {
     const now = Date.now();
     return {
@@ -197,10 +147,6 @@ export class PremiumRepo {
     };
   }
 
-  /**
-   * Cleans up expired premiums
-   * @returns {Object}
-   */
   cleanupExpired() {
     let result = { usersRevoked: 0, guildsRevoked: 0, total: 0 };
     this.db.transaction(() => {
@@ -214,10 +160,6 @@ export class PremiumRepo {
     return result;
   }
 
-  /**
-   * Gets premium statistics
-   * @returns {Object}
-   */
   getStats() {
     const now = Date.now();
     const activeUsers = this._countActiveUser.get(now).count;
@@ -234,13 +176,6 @@ export class PremiumRepo {
     };
   }
 
-  /**
-   * Extends premium for user or guild
-   * @param {string} type
-   * @param {string} id
-   * @param {number} additionalTime
-   * @returns {Object|boolean}
-   */
   extendPremium(type: string, id: string, additionalTime: number) {
     let current, newExpiresAt;
     if (type === 'user') {
@@ -260,18 +195,10 @@ export class PremiumRepo {
     }
   }
 
-  /**
-   * Deletes user premium record completely
-   * @param {string} userId
-   */
   deleteUserPremium(userId: string) {
     this._deleteUserPremium.run(userId);
   }
 
-  /**
-   * Deletes guild premium record completely
-   * @param {string} guildId
-   */
   deleteGuildPremium(guildId: string) {
     this._deleteGuildPremium.run(guildId);
   }

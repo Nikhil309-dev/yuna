@@ -50,21 +50,11 @@ export class GuildRepo {
     this._updateLocale = this.db.prepare('UPDATE guilds SET locale = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
   }
 
-  /**
-   * Retrieves guild data
-   * @param {string} guildId
-   * @returns {Object|null}
-   */
   getGuild(guildId: string) {
     if (!guildId) return null;
     return this._getGuild.get(guildId);
   }
 
-  /**
-   * Ensures a guild exists in the database
-   * @param {string} guildId
-   * @returns {Object}
-   */
   ensureGuild(guildId: string) {
     if (!guildId) throw new Error('A valid guildId must be provided');
     let guild = this.getGuild(guildId);
@@ -76,11 +66,6 @@ export class GuildRepo {
     return guild;
   }
 
-  /**
-   * Retrieves guild prefixes
-   * @param {string} guildId
-   * @returns {Array<string>}
-   */
   getPrefixes(guildId: string) {
     const guild = this.ensureGuild(guildId);
     try {
@@ -91,32 +76,17 @@ export class GuildRepo {
     }
   }
 
-  /**
-   * Sets guild prefixes
-   * @param {string} guildId
-   * @param {Array<string>} prefixes
-   */
   setPrefixes(guildId: string, prefixes: string[]) {
     this.ensureGuild(guildId);
     const guild = this.getGuild(guildId);
     this._updateGuild.run(JSON.stringify(prefixes), guild.default_volume, guild.auto_disconnect, guild.stay_247, guild.stay_247_voice_channel, guild.stay_247_text_channel, guildId);
   }
 
-  /**
-   * Retrieves default volume
-   * @param {string} guildId
-   * @returns {number}
-   */
   getDefaultVolume(guildId: string) {
     const guild = this.ensureGuild(guildId);
     return guild.default_volume ?? 100;
   }
 
-  /**
-   * Sets default volume
-   * @param {string} guildId
-   * @param {number} volume
-   */
   setDefaultVolume(guildId: string, volume: number) {
     if (volume < 1 || volume > 100) throw new Error('Volume must be between 1 and 100');
     this.ensureGuild(guildId);
@@ -124,57 +94,30 @@ export class GuildRepo {
     this._updateGuild.run(guild.prefixes, volume, guild.auto_disconnect, guild.stay_247, guild.stay_247_voice_channel, guild.stay_247_text_channel, guildId);
   }
 
-  /**
-   * Retrieves all guilds
-   * @returns {Array<Object>}
-   */
   getAllGuilds() {
     return this._getAllGuilds.all();
   }
 
-  /**
-   * Blacklists a guild
-   * @param {string} guildId
-   * @param {string} reason
-   */
   blacklistGuild(guildId: string, reason: string = 'No reason provided') {
     this.ensureGuild(guildId);
     this._setBlacklist.run(1, reason, guildId);
   }
 
-  /**
-   * Unblacklists a guild
-   * @param {string} guildId
-   */
   unblacklistGuild(guildId: string) {
     this.ensureGuild(guildId);
     this._setBlacklist.run(0, null, guildId);
   }
 
-  /**
-   * Checks if a guild is blacklisted
-   * @param {string} guildId
-   * @returns {Object|boolean}
-   */
   isBlacklisted(guildId: string) {
     const guild = this.getGuild(guildId);
     if (!guild || !guild.blacklisted) return false;
     return { blacklisted: true, reason: guild.blacklist_reason || 'No reason provided' };
   }
 
-  /**
-   * Retrieves all blacklisted guilds
-   * @returns {Array<Object>}
-   */
   getAllBlacklistedGuilds() {
     return this._getAllBlacklisted.all();
   }
 
-  /**
-   * Retrieves 24/7 settings for a guild
-   * @param {string} guildId
-   * @returns {Object}
-   */
   get247Settings(guildId: string) {
     const guild = this.ensureGuild(guildId);
     return {
@@ -185,80 +128,38 @@ export class GuildRepo {
     };
   }
 
-  /**
-   * Sets 24/7 mode
-   * @param {string} guildId
-   * @param {boolean} enabled
-   * @param {string|null} voiceChannelId
-   * @param {string|null} textChannelId
-   */
   set247Mode(guildId: string, enabled: boolean, voiceChannelId: string | null = null, textChannelId: string | null = null) {
     this.ensureGuild(guildId);
     const guild = this.getGuild(guildId);
     this._updateGuild.run(guild.prefixes, guild.default_volume, guild.auto_disconnect, enabled ? 1 : 0, enabled ? voiceChannelId : null, enabled ? textChannelId : null, guildId);
   }
 
-  /**
-   * Retrieves all 24/7 guilds
-   * @returns {Array<Object>}
-   */
   getAll247Guilds() {
     return this._get247Guilds.all();
   }
 
-  /**
-   * Retrieves valid 24/7 guilds
-   * @returns {Array<Object>}
-   */
   getValid247Guilds() {
     return this._getValid247Guilds.all();
   }
 
-  /**
-   * Sets auto disconnect
-   * @param {string} guildId
-   * @param {boolean} enabled
-   */
   setAutoDisconnect(guildId: string, enabled: boolean) {
     this.ensureGuild(guildId);
     const guild = this.getGuild(guildId);
     this._updateGuild.run(guild.prefixes, guild.default_volume, enabled ? 1 : 0, guild.stay_247, guild.stay_247_voice_channel, guild.stay_247_text_channel, guildId);
   }
 
-  /**
-   * Saves active session
-   * @param {string} guildId
-   * @param {string} voiceChannelId
-   * @param {string} textChannelId
-   * @param {Object|null} currentTrack
-   * @param {Array<Object>} queueTracks
-   * @param {number} position
-   */
   saveActiveSession(guildId: string, voiceChannelId: string, textChannelId: string, currentTrack: any = null, queueTracks: any[] = [], position: number = 0) {
     this._saveSession.run(guildId, voiceChannelId, textChannelId, currentTrack ? JSON.stringify(currentTrack) : null, JSON.stringify(queueTracks), position);
   }
 
-  /**
-   * Retrieves active session
-   * @param {string} guildId
-   * @returns {Object|null}
-   */
   getActiveSession(guildId: string) {
     return this._getSession.get(guildId);
   }
 
-  /**
-   * Retrieves all active sessions
-   * @returns {Array<Object>}
-   */
   getAllActiveSessions() {
     return this._getAllSessions.all();
   }
 
-  /**
-   * Deletes active session
-   * @param {string} guildId
-   */
   deleteActiveSession(guildId: string) {
     this._deleteSession.run(guildId);
   }

@@ -20,8 +20,8 @@ import { logger } from '#utils/logger';
 import { i18n } from '#utils/i18n';
 import phrases from '#utils/phrases';
 
-export const FAV_OPTIONS_PER_PAGE = 25; // Discord select-menu option cap
-/** Tree connectors, matching the playlist cards so the whole bot reads the same. */
+export const FAV_OPTIONS_PER_PAGE = 25;
+
 function tree(lines: string[]): string {
   return lines
     .map((l, i) => `${i === lines.length - 1 ? '└─' : '├─'} ${l}`)
@@ -35,7 +35,6 @@ const ICONS = {
   folder: emoji.get('folder') || '📁',
 };
 
-/** Title / artist / duration block shared by the like + unlike cards. */
 function trackBlock(track: any): string {
   const title = track?.title || i18n.cmd('Unknown Track');
   const author = track?.author && track.author !== 'Unknown' ? track.author : i18n.cmd('Unknown Artist');
@@ -55,10 +54,6 @@ function likedCount(userId: string): number {
   }
 }
 
-/**
- * `like` result card — the track that was saved (or already present) plus the
- * running total, so the user sees the favourite actually land.
- */
 export function buildLikeCard({ track, added, userId }: any) {
   const note = phrases.get(added ? 'likeAdded' : 'alreadyLiked');
   const content =
@@ -81,7 +76,6 @@ export function buildLikeCard({ track, added, userId }: any) {
   });
 }
 
-/** `unlike` result card — mirrors `like`, but reports removal. */
 export function buildUnlikeCard({ track, removed, userId }: any) {
   const note = phrases.get(removed ? 'likeRemoved' : 'notLiked');
   const content =
@@ -104,7 +98,6 @@ export function buildUnlikeCard({ track, removed, userId }: any) {
   });
 }
 
-/** `likeall` result card — a breakdown of what was saved vs skipped. */
 export function buildLikeAllCard({ addedCount, alreadyCount, total, userId }: any) {
   const note = phrases.get(addedCount > 0 ? 'likedAll' : 'alreadyLikedAll');
   const content =
@@ -156,11 +149,6 @@ function favoriteFooter(container: ContainerBuilder, note: string) {
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${note}`));
 }
 
-/**
- * Interactive favorites hub. The dropdown lists the page's liked songs; picking
- * one opens the per-track action panel (`buildFavoriteTrackCard`). Stats sit in
- * the header so the user sees the shape of their library at a glance.
- */
 export function buildFavoriteSelector({ tracks, user, page }: any) {
   const totalPages = Math.ceil(tracks.length / FAV_OPTIONS_PER_PAGE) || 1;
   const current = Math.max(1, Math.min(page, totalPages));
@@ -246,11 +234,7 @@ export function buildFavoriteSelector({ tracks, user, page }: any) {
   return container;
 }
 
-/**
- * Per-track action panel, opened by choosing a row in the favorites dropdown.
- * Every action works without re-running the command — that is the whole point.
- */
-export function buildFavoriteTrackCard({ track, user }: any) {
+export function buildFavoriteTrackCard({ track }: any) {
   const container = new ContainerBuilder();
   container.setAccentColor(0xfee75c);
   selectorHeader(container, i18n.cmd('Liked Song'), ICONS.music);
@@ -291,7 +275,6 @@ export function buildFavoriteTrackCard({ track, user }: any) {
   return container;
 }
 
-/** Resolves a stored liked entry back into a playable Lavalink track. */
 export async function resolveLikedTrack(client: any, stored: any, requester: any) {
   const query = stored?.uri || (stored?.author ? `${stored.title} ${stored.author}` : stored?.title);
   if (!query) return null;
@@ -303,11 +286,6 @@ export async function resolveLikedTrack(client: any, stored: any, requester: any
   }
 }
 
-/**
- * Queues one liked track. `mode` is `playnow` (jump the line and start it),
- * `playnext` (front of queue) or `queue` (append). Creates/connects the player
- * on demand, so the action works straight from the favorites menu.
- */
 export async function queueLikedTrack({ client, stored, requester, voiceChannel, guildId, textChannelId, mode = 'queue' }: any) {
   let player = client.music.getPlayer(guildId);
   if (!player) {
@@ -340,7 +318,6 @@ export async function queueLikedTrack({ client, stored, requester, voiceChannel,
   return { ok: true, track: resolved };
 }
 
-/** Shown when a liked-songs menu times out or is closed. */
 export function buildLibraryExpiredCard() {
   return buildContainer({
     title: i18n.translateTitle('Interaction Expired'),
@@ -350,11 +327,6 @@ export function buildLibraryExpiredCard() {
   });
 }
 
-/**
- * Resolves a user's stored liked tracks back into playable tracks and queues
- * them. Shared by the `playliked` command and the "Play All" button so both
- * paths behave identically.
- */
 export async function playLikedTracks({ client, userId, requester, voiceChannel, textChannelId, guildId }: any) {
   const tracks = (db as any).liked.getUserLiked(userId);
   if (tracks.length === 0) {
@@ -399,7 +371,6 @@ export async function playLikedTracks({ client, userId, requester, voiceChannel,
   return { ok: addedCount > 0, addedCount, total: tracks.length, alreadyConnected };
 }
 
-/** `playliked` result card — how many favourites were resolved and queued. */
 export function buildPlayLikedCard({ addedCount, total, ok }: any) {
   const note = phrases.get(ok ? 'likedQueued' : 'likedResolveFailed');
   const content =
@@ -419,8 +390,7 @@ export function buildPlayLikedCard({ addedCount, total, ok }: any) {
   });
 }
 
-/** Result card for a single queue action taken from the favorites menu. */
-export function buildQueueResultCard({ mode, title, ok, reason }: any) {
+export function buildQueueResultCard({ mode, title, ok }: any) {
   const note = phrases.get(ok ? 'trackQueued' : 'trackResolveFailed');
   const action = {
     playnow: i18n.cmd('Now Playing'),
@@ -445,7 +415,6 @@ export function buildQueueResultCard({ mode, title, ok, reason }: any) {
   });
 }
 
-/** `Play All` result card — queues the entire liked library. */
 export function buildPlayAllCard({ addedCount, total, ok }: any) {
   const note = phrases.get(ok ? 'likedQueued' : 'likedResolveFailed');
   const content =
@@ -464,3 +433,5 @@ export function buildPlayAllCard({ addedCount, total, ok }: any) {
     footer: note,
   });
 }
+
+// Made by Nikhil Under CodeX Devs

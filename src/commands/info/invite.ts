@@ -1,4 +1,4 @@
-import { Command, CommandContext } from '#core/Command';
+import { Command } from '#core/Command';
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -6,11 +6,10 @@ import {
 	MessageFlags,
 } from "discord.js";
 import type { Client } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildContainer, buildError } from "#ui/Theme";
 import { config } from "#config/config";
 import emoji from "#config/emoji";
 import { logger } from "#utils/logger";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 class InviteCommand extends Command {

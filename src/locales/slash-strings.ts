@@ -1,16 +1,3 @@
-/**
- * Slash-command localization catalog.
- *
- * Discord slash commands are registered once, globally, so a single payload
- * has to carry a `*_localizations` map for every supported locale. The English
- * literals below are the `name` / `description` / option `description` / choice
- * `name` values authored in each command's `slash.data`, so `CommandLoader`
- * can look them up by their exact English text and emit the localized maps.
- *
- * For English the value IS the key, so en-US is derived from the key union —
- * parity is structural rather than hand-maintained. Any description without an
- * entry here is simply left untranslated and Discord falls back to English.
- */
 const DE: Record<string, string> = {
 	"Manage blacklisted users and guilds (Owner Only)": "Verwalte gesperrte Benutzer und Server (nur für den Besitzer)",
 	"Comprehensive system, process health, memory, and performance dashboard (Developer Only)": "Umfassendes System-, Prozess-, Speicher- und Performance-Dashboard (nur für Entwickler)",
@@ -986,7 +973,6 @@ export const SLASH_LOCALES: Record<string, Record<string, string>> = {
 	'zh-CN': ZH,
 };
 
-// English values are identity: the key is already the English sentence.
 const ALL_KEYS: string[] = Array.from(
 	new Set(Object.values(SLASH_LOCALES).flatMap((m) => Object.keys(m))),
 ).sort();

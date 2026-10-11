@@ -1,4 +1,4 @@
-import { Command, CommandContext } from '#core/Command';
+import { Command } from '#core/Command';
 import {
   ActionRowBuilder,
   AttachmentBuilder,
@@ -7,12 +7,10 @@ import {
   MessageFlags,
 } from "discord.js";
 import type { Client } from "discord.js";
-import emoji from "#config/emoji";
 import { PingCard } from "#ui/cards/PingCard";
 import { logger } from "#utils/logger";
-import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
+import { buildContainer, buildError } from "#ui/Theme";
 import { componentCollectorSource } from "#ui/Components";
-import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 
 class PingCommand extends Command {
@@ -27,8 +25,7 @@ class PingCommand extends Command {
       cooldown: 3,
       slash: {
         enabled: true,
-        // This command defers itself to measure API latency accurately, so the
-        // shared pipeline must not pre-defer it.
+
         autoDefer: false,
         data: {
           name: "ping",
@@ -115,9 +112,7 @@ class PingCommand extends Command {
 
   _setupCollector(source: any, userId: any, client: Client) {
     const collectorTarget = componentCollectorSource(source);
-    // Slash replies can resolve to an interaction (whose collector lives on
-    // `interaction.response`); guard so a missing collector never crashes the
-    // command after an otherwise successful reply.
+
     if (typeof collectorTarget?.createMessageComponentCollector !== "function") return;
 
     const collector = collectorTarget.createMessageComponentCollector({

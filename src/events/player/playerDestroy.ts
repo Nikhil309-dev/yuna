@@ -1,4 +1,4 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
+import type { Player, LavalinkManager } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
@@ -30,8 +30,6 @@ export default {
 			new AutoplayEngine(client as any).clearSessionHistory(player.guildId);
 			cleanupGuildVoiceState(player.guildId);
 
-			// Commands that already send their own confirmation embed should not also
-			// trigger the generic "Player Disconnected" notice.
 			const quietReasons = new Set(['Stop command', 'Disconnect', 'Force disconnect', 'Destroyed']);
 
 			if (client && player.textChannelId && !quietReasons.has(reason)) {

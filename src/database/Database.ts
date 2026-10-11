@@ -149,7 +149,7 @@ export class Database {
 
   backupDatabases() { return this.backup(); }
   checkpointWAL() { return this.checkpoint(); }
-  /** Alias used by YunaClient.shutdown() — closes the SQLite connection. */
+
   closeAll() { return this.close(); }
 }
 

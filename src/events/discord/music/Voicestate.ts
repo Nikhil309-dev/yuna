@@ -5,7 +5,6 @@ import { i18n } from '#utils/i18n';
 const aloneTimeouts = new Map();
 const muteStates = new Map();
 
-/** Cleans up per-guild state when a player is destroyed by any code path. */
 export function cleanupGuildVoiceState(guildId: string) {
 	const timeout = aloneTimeouts.get(guildId);
 	if (timeout) {
@@ -94,9 +93,7 @@ async function handleUserVoiceStateChange(oldState: any, newState: any, pm: any,
 
 async function handleMuteStateChange(oldState: any, newState: any, pm: any, client: any) {
 	const guildId = newState.guild.id;
-	const wasServerMuted = oldState.serverMute;
 	const isServerMuted = newState.serverMute;
-	const wasSelfMuted = oldState.selfMute;
 	const isSelfMuted = newState.selfMute;
 
 	const previousMuteState = muteStates.get(guildId) || { serverMute: false, selfMute: false };

@@ -1,4 +1,4 @@
-import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
+import type { Player, Track } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { AttachmentBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } from 'discord.js';
 import { EventUtils } from '#utils/EventUtils';
@@ -12,7 +12,7 @@ import { createPlayerContainer } from '#ui/Components';
 export default {
   name: "trackStart",
   once: false,
-  async execute(player: Player, track: Track, payload: any, musicManager: LavalinkManager, client: YunaClient) {
+  async execute(player: Player, track: Track, client: YunaClient) {
     try {
       if (!track || !track.info) {
         logger.error('TrackStart', 'Invalid track data received:', track);
@@ -55,7 +55,7 @@ export default {
       let message;
       const style = track.requester?.id ? db.getNpStyle(track.requester.id) : 'card';
       const isTextMode = style === 'text';
-      // New track: reset any control mode chosen on the previous track.
+
       player.set('controlMode', 'default');
 
       const container = createPlayerContainer('default', { isTextMode, track, position: player.position || 0 });
@@ -84,8 +84,6 @@ export default {
       } catch (err: any) {
         logger.error('TrackStart', 'Error creating player view:', err);
 
-        // Components V2 messages reject the `content` field, so the fallback
-        // must render its text through a component instead.
         const fallbackContainer = new ContainerBuilder().addTextDisplayComponents(
           new TextDisplayBuilder().setContent(
             `🎵 **Now Playing**\n**${track.info.title}** by **${track.info.author}**`
@@ -102,7 +100,7 @@ export default {
         player.set('nowPlayingMessageId', message.id);
         player.set('nowPlayingChannelId', player.textChannelId);
         player.set('nowPlayingTextMode', isTextMode);
-        // Advance the progress bar (canvas image or text bar) while playing.
+
         EventUtils.startNowPlayingUpdater(client, player);
       }
 
