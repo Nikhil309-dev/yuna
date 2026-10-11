@@ -8,6 +8,7 @@ import { logger } from "#utils/logger";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
+import { splitFooter } from "#ui/Formatters";
 
 class RemoveTrackCommand extends Command {
 	constructor() {
@@ -184,9 +185,9 @@ class RemoveTrackCommand extends Command {
 
 	_createSuccessContainer(playlist: any, removedTracks: any, success: any, failed: any) {
 		const note = phrases.get("playlistUpdated");
-		const content = i18n.cmd("Successfully removed **{count}** track(s) from **{name}**.\n\n*{note}*", { count: success, name: playlist.name, note });
+		const body = splitFooter(i18n.cmd("Successfully removed **{count}** track(s) from **{name}**.\n\n*{note}*", { count: success, name: playlist.name, note }));
 
-		return buildSuccess(content, "Tracks Removed");
+		return buildSuccess({ message: body.content, footer: body.footer }, "Tracks Removed");
 	}
 
 	_createErrorContainer(message: string) {

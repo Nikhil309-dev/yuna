@@ -6,6 +6,7 @@ import { invalidatePremiumCache } from "#core/AccessControl";
 import emoji from "#config/emoji";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
+import { splitFooter } from "#ui/Formatters";
 
 const PRICES: Record<string, number> = {
   "1h": 100,
@@ -176,7 +177,8 @@ class BuyPremiumCommand extends Command {
     }
 
     const note = phrases.get("premiumSuccess");
-    const container = buildSuccess(`${description}\n\n*${note}*`, "Purchase Successful");
+    const body = splitFooter(`${description}\n\n*${note}*`);
+    const container = buildSuccess({ message: body.content, footer: body.footer }, "Purchase Successful");
 
     const payload = { components: [container], flags: MessageFlags.IsComponentsV2 };
     if (context.editReply && (context.deferred || context.replied)) return context.editReply(payload);

@@ -34,6 +34,7 @@ import { isOwner } from '#core/AccessControl';
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
+import { splitFooter } from "#ui/Formatters";
 
 class HelpCommand extends Command {
   constructor() {
@@ -984,11 +985,14 @@ class HelpCommand extends Command {
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small),
       );
 
-      const content = i18n.cmd("**Something went wrong**\n\n┌─ **{info} Issue:** {message}\n└─ **{reset} Action:** Try again or contact support\n\n*Please check your input and try again*", { info: emoji.get("info"), reset: emoji.get("reset"), message });
+      const body = splitFooter(i18n.cmd(
+        "**Something went wrong**\n\n┌─ **{info} Issue:** {message}\n└─ **{reset} Action:** Try again or contact support\n\n*Please check your input and try again*",
+        { info: emoji.get("info"), reset: emoji.get("reset"), message },
+      ));
 
       const section = new SectionBuilder()
         .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(content),
+          new TextDisplayBuilder().setContent(body.content),
         )
         .setThumbnailAccessory(
           new ThumbnailBuilder().setURL(
@@ -1001,6 +1005,12 @@ class HelpCommand extends Command {
       container.addSeparatorComponents(
         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small),
       );
+
+      if (body.footer) {
+        container.addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(body.footer),
+        );
+      }
 
       return container;
     } catch (error: any) {

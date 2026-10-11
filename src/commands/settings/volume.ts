@@ -239,9 +239,10 @@ class SetDefaultVolumeCommand extends Command {
   _createSuccessContainer(title: any, description: any, volume: any) {
     const note = phrases.get("volumeUpdated");
     const volumeIndicator = this._getVolumeIndicator(volume);
-    const fullDescription = `${description}\n\n${volumeIndicator}\n\n*${note}*`;
-
-    return buildSuccess(fullDescription, title);
+    return buildSuccess({
+      message: `${description}\n\n${volumeIndicator}`,
+      footer: `*${note}*`,
+    }, title);
   }
 
   _getVolumeIndicator(volume: any) {

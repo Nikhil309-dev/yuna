@@ -8,6 +8,7 @@ import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
 import { PlayerManager } from "#audio/PlayerManager";
+import { splitFooter } from "#ui/Formatters";
 
 /**
  * Resolves a preset's English name/description through the locale catalog so
@@ -224,11 +225,10 @@ class EqualizerCommand extends Command {
       await pm.player.filterManager.setEQ(preset.bands);
 
       const note = phrases.get("filterApplied");
-      const container = buildSuccess(
-        i18n.cmd("Successfully set audio equalizer to **{preset}**!", { preset: presetName(presetKey) }) +
-          `\n\n*${presetDescription(presetKey)}*\n*${note}*`,
-        "Equalizer Profile Applied"
-      );
+      const container = buildSuccess({
+        message: i18n.cmd("Successfully set audio equalizer to **{preset}**!", { preset: presetName(presetKey) }),
+        footer: `*${presetDescription(presetKey)}*\n*${note}*`,
+      }, "Equalizer Profile Applied");
 
       const payload = { components: [container], flags: MessageFlags.IsComponentsV2 };
 

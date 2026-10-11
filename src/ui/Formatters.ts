@@ -75,6 +75,18 @@ export function sanitizeMarkdown(str: string, maxLen: number = 100) {
   return truncate(sanitized, maxLen);
 }
 
+/**
+ * Many cards are authored as a single translated literal with an italic note
+ * folded in after a blank line. Rendering that literal as-is runs the note
+ * straight into the body; callers instead want it in the card footer, where it
+ * gets its own separator. Split on the first blank line.
+ */
+export function splitFooter(text: string): { content: string; footer?: string } {
+  const idx = (text || '').indexOf('\n\n');
+  if (idx === -1) return { content: text };
+  return { content: text.slice(0, idx), footer: text.slice(idx + 2) };
+}
+
 const Formatters = {
   formatDuration,
   truncate,
@@ -83,7 +95,8 @@ const Formatters = {
   formatBytes,
   timeAgo,
   discordTimestamp,
-  sanitizeMarkdown
+  sanitizeMarkdown,
+  splitFooter
 };
 
 export default Formatters;

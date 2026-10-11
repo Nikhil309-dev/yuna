@@ -3,6 +3,9 @@ import type { YunaClient } from '#core/YunaClient';
 import { Command } from "#core/Command";
 import { db } from "#database/Database";
 import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
 	ContainerBuilder,
 	TextDisplayBuilder,
 	SectionBuilder,
@@ -44,10 +47,12 @@ class BlacklistCommand extends Command {
 			}
 
 			if (!args.length) {
-				return message.reply({
+				const helpMsg = await message.reply({
 					components: [this._createHelpContainer()],
 					flags: MessageFlags.IsComponentsV2
 				});
+				this._setupCollector(helpMsg, message.author.id);
+				return helpMsg;
 			}
 
 			const action = args[0].toLowerCase();
@@ -270,7 +275,44 @@ class BlacklistCommand extends Command {
 			new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small)
 		);
 
+		const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder().setCustomId('bl_help_add').setLabel(i18n.cmd('Add')).setEmoji(emoji.get('add')).setStyle(ButtonStyle.Success),
+			new ButtonBuilder().setCustomId('bl_help_remove').setLabel(i18n.cmd('Remove')).setEmoji(emoji.get('cross')).setStyle(ButtonStyle.Danger),
+			new ButtonBuilder().setCustomId('bl_help_check').setLabel(i18n.cmd('Check')).setEmoji(emoji.get('info')).setStyle(ButtonStyle.Primary),
+			new ButtonBuilder().setCustomId('bl_help_close').setLabel(i18n.cmd('Close')).setEmoji(emoji.get('cross')).setStyle(ButtonStyle.Secondary),
+		);
+		container.addActionRowComponents(buttonRow);
+
 		return container;
+	}
+
+	/** Button guidance text for each blacklist sub-command. */
+	_helpText(action: string) {
+		switch (action) {
+			case 'add':
+				return i18n.cmd('{emoji} **Add to blacklist**\n\n`blacklist add user <id> [reason]`\n`blacklist add guild <id> [reason]`\n\nReason defaults to *Blacklisted by owner*.', { emoji: emoji.get('add') });
+			case 'remove':
+				return i18n.cmd('{emoji} **Remove from blacklist**\n\n`blacklist remove <id>`\n\nAccepts a raw ID or a mention.', { emoji: emoji.get('cross') });
+			case 'check':
+				return i18n.cmd('{emoji} **Check status**\n\n`blacklist check <id>`\n\nAccepts a raw ID or a mention.', { emoji: emoji.get('info') });
+			default:
+				return '';
+		}
+	}
+
+	_setupCollector(msg: any, authorId: string) {
+		const collector = msg.createMessageComponentCollector({ time: 120_000 });
+		collector.on('collect', async (interaction: any) => {
+			if (interaction.user.id !== authorId) {
+				return interaction.reply({ content: i18n.cmd('These buttons are not for you.'), ephemeral: true }).catch(() => {});
+			}
+			if (interaction.customId === 'bl_help_close') {
+				collector.stop('closed');
+				return interaction.update({ components: [buildContainer({ title: 'Blacklist Help', content: i18n.cmd('Help session dismissed.'), icon: emoji.get('info') })], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+			}
+			const action = interaction.customId.replace('bl_help_', '');
+			return interaction.reply({ components: [buildContainer({ title: `Blacklist ${action}`, content: this._helpText(action), icon: emoji.get(action === 'remove' ? 'cross' : action === 'check' ? 'info' : 'add') })], flags: MessageFlags.IsComponentsV2, ephemeral: true }).catch(() => {});
+		});
 	}
 
 	_sendSuccess(message: Message, title: string, description: string) {

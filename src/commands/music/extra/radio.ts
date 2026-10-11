@@ -13,6 +13,7 @@ import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import { componentCollectorSource } from '#ui/Components';
 import phrases from "#utils/phrases";
+import { splitFooter } from "#ui/Formatters";
 import { i18n } from "#utils/i18n";
 
 const RADIO_STATIONS = [
@@ -211,13 +212,16 @@ class RadioCommand extends Command {
       await pm.addTracks(track);
       await pm.play();
 
-      const successContainer = buildContainer({
-      title: `\`### ${station.emoji} ${i18n.translateTitle("Radio Stream Started")}\``,
-      content: i18n.cmd("Now broadcasting **{station}** in <#{channel}>!\n\n*{description}*", {
+      const radio = splitFooter(i18n.cmd("Now broadcasting **{station}** in <#{channel}>!\n\n*{description}*", {
         station: station.name,
         channel: voiceChannel.id,
         description: station.description,
-      }),
+      }));
+
+      const successContainer = buildContainer({
+      title: `\`### ${station.emoji} ${i18n.translateTitle("Radio Stream Started")}\``,
+      content: radio.content,
+      footer: radio.footer,
       thumbnail: config.assets.defaultTrackArtwork,
       icon: "ℹ️"
     });

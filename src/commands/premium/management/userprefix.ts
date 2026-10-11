@@ -9,6 +9,7 @@ import { config } from "#config/config";
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
+import { splitFooter } from "#ui/Formatters";
 
 const USER_PREFIX_LIMIT = 3;
 
@@ -123,7 +124,13 @@ class UserPrefixCommand extends Command {
   }
 
   async _sendResponse(ctx: any, isSuccess: any, message: string) {
-    const container = isSuccess ? buildSuccess(message) : buildError(message);
+    let container;
+    if (isSuccess) {
+      const body = splitFooter(message);
+      container = buildSuccess({ message: body.content, footer: body.footer });
+    } else {
+      container = buildError(message);
+    }
     const replyOptions = {
       components: [container],
       flags: MessageFlags.IsComponentsV2,

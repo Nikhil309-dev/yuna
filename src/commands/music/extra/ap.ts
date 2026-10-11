@@ -4,6 +4,7 @@ import { Command, CommandContext } from '#core/Command';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import { logger } from "#utils/logger";
 import phrases from "#utils/phrases";
+import { splitFooter } from "#ui/Formatters";
 import { i18n } from "#utils/i18n";
 
 class AutoplayCommand extends Command {
@@ -81,15 +82,22 @@ class AutoplayCommand extends Command {
   _createAutoplayContainer(isEnabled: any) {
     const apNote = phrases.get("apToggled");
     if (!isEnabled) {
+      const { content, footer } = splitFooter(
+        i18n.cmd("Autoplay has been turned **off**.\n\n*{note}*", { note: apNote }),
+      );
       return buildContainer({
         title: "Autoplay",
-        content: i18n.cmd("Autoplay has been turned **off**.\n\n*{note}*", { note: apNote }),
+        content,
+        footer,
         thumbnail: config.assets?.defaultThumbnail,
         icon: "⏹️"
       });
     }
 
-    return buildSuccess(i18n.cmd("Autoplay has been turned **on**. Similar songs will play when the queue ends.\n\n*{note}*", { note: apNote }), "Autoplay");
+    const on = splitFooter(
+      i18n.cmd("Autoplay has been turned **on**. Similar songs will play when the queue ends.\n\n*{note}*", { note: apNote }),
+    );
+    return buildSuccess({ message: on.content, footer: on.footer }, "Autoplay");
   }
 
   async _reply(context: CommandContext, container: any) {

@@ -15,6 +15,7 @@ import { config } from '#config/config';
 import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
 import phrases from '#utils/phrases';
 import { i18n } from "#utils/i18n";
+import { splitFooter } from "#ui/Formatters";
 
 class PresetCommand extends Command {
   constructor() {
@@ -106,11 +107,12 @@ class PresetCommand extends Command {
     db.setNpStyle(userId, style);
 
     const note = phrases.get("presetUpdated");
+    const body = splitFooter(i18n.cmd("Your Now Playing style has been successfully changed to **{style}**.\n\n*{note}*", {
+      style: style === 'card' ? i18n.cmd("Card Style") : i18n.cmd("Text Style"),
+      note,
+    }));
     const successContainer = buildSuccess(
-      i18n.cmd("Your Now Playing style has been successfully changed to **{style}**.\n\n*{note}*", {
-        style: style === 'card' ? i18n.cmd("Card Style") : i18n.cmd("Text Style"),
-        note,
-      }),
+      { message: body.content, footer: body.footer },
       i18n.translateTitle('Style Updated')
     );
 

@@ -20,6 +20,7 @@ import { logger } from "#utils/logger";
 import { buildContainer, buildError, buildSuccess } from "#ui/Theme";
 import phrases from "#utils/phrases";
 import { i18n } from "#utils/i18n";
+import { splitFooter } from "#ui/Formatters";
 
 class Stay247Command extends Command {
   constructor() {
@@ -300,7 +301,8 @@ class Stay247Command extends Command {
 
   _createSuccessContainer(title: any, description: any) {
     const note = phrases.get("modeToggled");
-    return buildSuccess(`${description}\n\n*${note}*`, title);
+    const body = splitFooter(`${description}\n\n*${note}*`);
+    return buildSuccess({ message: body.content, footer: body.footer }, title);
   }
 
   _createErrorContainer(message: string) {

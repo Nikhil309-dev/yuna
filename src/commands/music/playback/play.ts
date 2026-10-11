@@ -578,10 +578,8 @@ class PlayCommand extends Command {
   _createSuccessContainer(result: any) {
     if (result.type === "playing" || result.type === "queued") {
       const { track, premiumStatus } = result;
-      const title =
-        result.type === "playing"
-          ? i18n.translateTitle("Now Playing")
-          : i18n.translateTitle("Added to Queue");
+      const isPlaying = result.type === "playing";
+      const title = i18n.translateTitle(isPlaying ? "Now Playing" : "Added to Queue");
 
       let content =
         i18n.cmd("**Track Information**") + "\n\n" +
@@ -589,14 +587,16 @@ class PlayCommand extends Command {
         i18n.cmd("└─ **Artist:- ** {author}", { author: track.info.author || i18n.cmd("Unknown") }) + "\n" +
         i18n.cmd("└─ **Duration:- ** {duration}", { duration: this._formatDuration(track.info.duration) }) + "\n" +
         i18n.cmd("└─ **Status:-** {status}", {
-          status:
-            result.type === "playing"
-              ? i18n.cmd("Now playing")
-              : i18n.cmd("Position {position}", { position: result.queuePosition || 0 }),
-        }) + "\n\n" +
-        (result.type === "playing"
-          ? i18n.cmd("*Currently streaming in voice channel*")
-          : i18n.cmd("*Track has been queued successfully*"));
+          status: isPlaying
+            ? i18n.cmd("Now playing")
+            : i18n.cmd("Position {position}", { position: result.queuePosition || 0 }),
+        });
+
+      // The trailing line is the card's footer, not body text — passing it via
+      // `footer` gives it its own separator instead of running into the block.
+      let footer = isPlaying
+        ? i18n.cmd("*Currently streaming in voice channel*")
+        : i18n.cmd("*Track has been queued successfully*");
 
       if (result.type === "queued" && premiumStatus) {
         content +=
@@ -617,17 +617,18 @@ class PlayCommand extends Command {
           i18n.cmd("└─ **{emoji} Status:** {status}", {
             emoji: emoji.get("check") || "✅",
             status: premiumStatus.hasPremium ? i18n.cmd("Premium active") : i18n.cmd("Free tier"),
-          }) + "\n\n" +
-          (!premiumStatus.hasPremium
-            ? i18n.cmd("*Upgrade to premium for {count} song limit*", { count: config.queue.maxSongs.premium })
-            : i18n.cmd("*Premium features unlocked*"));
+          });
+        footer = !premiumStatus.hasPremium
+          ? i18n.cmd("*Upgrade to premium for {count} song limit*", { count: config.queue.maxSongs.premium })
+          : i18n.cmd("*Premium features unlocked*");
       }
 
       return buildContainer({ image: undefined,
           title,
           content,
           thumbnail: track.info.artworkUrl || config.assets.defaultTrackArtwork,
-          icon: emoji.get("music") || "🎵"
+          icon: emoji.get("music") || "🎵",
+          footer,
       });
     } else if (result.type.startsWith("playlist")) {
       const { playlist, tracks, premiumStatus, limitWarning, totalTracks } = result;
@@ -653,8 +654,9 @@ class PlayCommand extends Command {
         i18n.cmd("└─ **{emoji} Name:** {name}", { emoji: emoji.get("check") || "✅", name: playlist.name }) + "\n" +
         i18n.cmd("└─ **{emoji} Tracks Added:** {count}", { emoji: emoji.get("add") || "➕", count: trackCount }) + "\n" +
         i18n.cmd("└─ **{emoji} Total Tracks:** {count}", { emoji: emoji.get("info") || "ℹ️", count: totalTracks || trackCount }) + "\n" +
-        i18n.cmd("└─ **{emoji} Status:** {status}", { emoji: emoji.get("folder") || "📁", status: description }) + "\n\n" +
-        (limitWarning || i18n.cmd("*All tracks processed successfully*"));
+        i18n.cmd("└─ **{emoji} Status:** {status}", { emoji: emoji.get("folder") || "📁", status: description });
+
+      let footer = limitWarning || i18n.cmd("*All tracks processed successfully*");
 
       if ((result.type === "playlist_queued" || result.type === "playlist_queued_partial" || result.type === "playlist_playing_partial") && premiumStatus) {
         content +=
@@ -667,17 +669,18 @@ class PlayCommand extends Command {
           i18n.cmd("└─ **{emoji} Status:** {status}", {
             emoji: emoji.get("check") || "✅",
             status: premiumStatus.hasPremium ? i18n.cmd("Premium active") : i18n.cmd("Free tier active"),
-          }) + "\n\n" +
-          (!premiumStatus.hasPremium
-            ? i18n.cmd("*Upgrade to premium for {count} song limit*", { count: config.queue.maxSongs.premium })
-            : i18n.cmd("*Premium queue features enabled*"));
+          });
+        footer = !premiumStatus.hasPremium
+          ? i18n.cmd("*Upgrade to premium for {count} song limit*", { count: config.queue.maxSongs.premium })
+          : i18n.cmd("*Premium queue features enabled*");
       }
 
       return buildContainer({ image: undefined,
           title,
           content,
           thumbnail: tracks[0]?.info?.artworkUrl || config.assets.defaultTrackArtwork,
-          icon: emoji.get("folder") || "📁"
+          icon: emoji.get("folder") || "📁",
+          footer,
       });
     }
   }

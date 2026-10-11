@@ -364,12 +364,12 @@ class PrefixCommand extends Command {
 
   _createSuccessResponse(title: any, description: any, prefix: any) {
     const note = phrases.get("prefixUpdated");
-    let fullDescription = `${description}\n\n*${note}*`;
+    let content = description;
     if (COMMON_PREFIXES.includes(prefix)) {
-      fullDescription += i18n.cmd("\n\n**{emoji} Warning:** Using a common prefix like `{prefix}` may cause conflicts with other bots.", { emoji: emoji.get("folder"), prefix });
+      content += i18n.cmd("\n\n**{emoji} Warning:** Using a common prefix like `{prefix}` may cause conflicts with other bots.", { emoji: emoji.get("folder"), prefix });
     }
 
-    const container = buildSuccess(fullDescription, title);
+    const container = buildSuccess({ message: content, footer: `*${note}*` }, title);
     return { components: [container], flags: MessageFlags.IsComponentsV2 };
   }
 
