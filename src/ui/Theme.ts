@@ -146,87 +146,96 @@ function statusCard({ title, subtitle, accent, icon, body, footer, thumbnail }: 
 }
 
 /**
- * Signature Boxed Error Card Builder
- * Chrome labels are localized; callers pass already-translated content/titles.
+ * Signature Error Card Builder
+ * Renders as: `❌ **Title**` / separator / message / optional `-# tip`.
+ * Chrome labels ("Issue:", "Action:", box-drawing) are deliberately avoided —
+ * they bury the actual reason under noise.
  */
 export function buildError(errorInput: any, title: any = undefined, avatarUrl: any = undefined) {
-  const infoIcon = emoji.get('info') || 'ℹ️';
-  const resetIcon = emoji.get('reset') || '🔄';
   const crossIcon = emoji.get('cross') || '❌';
+  const obj = (typeof errorInput === 'object' && errorInput) ? errorInput : {};
 
-  const cardTitle = title ?? i18n.tr('ui.error.title');
-  const issueLabel = i18n.tr('ui.error.issue');
-  const actionLabel = i18n.tr('ui.error.action');
+  const cardTitle = title ?? obj.title ?? i18n.tr('ui.error.title');
+  const message = typeof errorInput === 'string' ? errorInput : (obj.issue || obj.message || '');
+  const tip = obj.tip;
 
-  const issueText = typeof errorInput === 'string' ? errorInput : (errorInput.issue || errorInput.message || i18n.tr('ui.error.title'));
-  const actionText = typeof errorInput === 'object' && errorInput.tip ? errorInput.tip : i18n.tr('ui.error.contact');
-  const subtitle = typeof errorInput === 'object' && errorInput.title ? errorInput.title : null;
-
-  const body = `┌─ **${infoIcon} ${issueLabel}:** ${issueText}\n└─ **${resetIcon} ${actionLabel}:** ${actionText}`;
-
-  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.error, icon: crossIcon, body, footer: i18n.tr('ui.error.hint'), thumbnail: avatarUrl });
+  return statusCard({
+    title: cardTitle,
+    accent: STATUS_ACCENT.error,
+    icon: crossIcon,
+    body: message,
+    // Only show the tip when it adds something the title/message doesn't already say.
+    footer: tip && tip !== cardTitle && tip !== message ? tip : null,
+    thumbnail: avatarUrl
+  });
 }
 
 /**
- * Signature Boxed Success Card Builder
+ * Signature Success Card Builder
  */
 export function buildSuccess(successInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const checkIcon = emoji.get('check') || '✅';
+  const obj = (typeof successInput === 'object' && successInput) ? successInput : {};
 
-  const cardTitle = title ?? i18n.tr('ui.success.title');
-  const resultLabel = i18n.tr('ui.success.result');
-  const detailLabel = i18n.tr('ui.success.detail');
+  const cardTitle = title ?? obj.title ?? i18n.tr('ui.success.title');
+  const message = typeof successInput === 'string' ? successInput : (obj.message || obj.content || i18n.tr('ui.success.status'));
+  const detail = obj.detail;
 
-  const messageText = typeof successInput === 'string' ? successInput : (successInput.message || successInput.content || i18n.tr('ui.success.status'));
-  const detailText = typeof successInput === 'object' && successInput.detail ? successInput.detail : null;
-  const subtitle = typeof successInput === 'object' && successInput.title ? successInput.title : null;
-
-  let body = `┌─ **${resultLabel}:** ${messageText}`;
-  if (detailText) body += `\n└─ **${detailLabel}:** ${detailText}`;
-
-  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.success, icon: checkIcon, body, footer: null, thumbnail: avatarUrl });
+  return statusCard({
+    title: cardTitle,
+    accent: STATUS_ACCENT.success,
+    icon: checkIcon,
+    body: message,
+    footer: detail && detail !== message ? detail : null,
+    thumbnail: avatarUrl
+  });
 }
 
 /**
- * Signature Boxed Info Card Builder
+ * Signature Info Card Builder
  */
 export function buildInfo(infoInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const infoIcon = emoji.get('info') || 'ℹ️';
-  const cardTitle = title ?? i18n.tr('ui.info.title');
-  const messageText = typeof infoInput === 'string' ? infoInput : (infoInput.message || infoInput.content || i18n.tr('ui.info.title'));
-  const subtitle = typeof infoInput === 'object' && infoInput.title ? infoInput.title : null;
+  const obj = (typeof infoInput === 'object' && infoInput) ? infoInput : {};
 
-  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.info, icon: infoIcon, body: messageText, footer: null, thumbnail: avatarUrl });
+  const cardTitle = title ?? obj.title ?? i18n.tr('ui.info.title');
+  const message = typeof infoInput === 'string' ? infoInput : (obj.message || obj.content || i18n.tr('ui.info.title'));
+
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.info, icon: infoIcon, body: message, footer: null, thumbnail: avatarUrl });
 }
 
 /**
- * Signature Boxed Warning Card Builder
+ * Signature Warning Card Builder
  */
 export function buildWarning(warningInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const warningIcon = '⚠️';
-  const resetIcon = emoji.get('reset') || '🔄';
+  const obj = (typeof warningInput === 'object' && warningInput) ? warningInput : {};
 
-  const cardTitle = title ?? i18n.tr('ui.warning.title');
-  const warningLabel = i18n.tr('ui.warning.title');
-  const actionLabel = i18n.tr('ui.error.action');
+  const cardTitle = title ?? obj.title ?? i18n.tr('ui.warning.title');
+  const message = typeof warningInput === 'string' ? warningInput : (obj.message || obj.content || i18n.tr('ui.warning.attention'));
+  const tip = obj.tip;
 
-  const messageText = typeof warningInput === 'string' ? warningInput : (warningInput.message || warningInput.content || i18n.tr('ui.warning.attention'));
-  const subtitle = typeof warningInput === 'object' && warningInput.title ? warningInput.title : null;
-
-  const body = `┌─ **${warningLabel}:** ${messageText}\n└─ **${resetIcon} ${actionLabel}:** ${i18n.tr('ui.warning.action')}`;
-
-  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.warning, icon: warningIcon, body, footer: null, thumbnail: avatarUrl });
+  return statusCard({
+    title: cardTitle,
+    accent: STATUS_ACCENT.warning,
+    icon: warningIcon,
+    body: message,
+    footer: tip && tip !== cardTitle && tip !== message ? tip : null,
+    thumbnail: avatarUrl
+  });
 }
 
 /**
- * Signature Boxed Loading Card Builder
+ * Signature Loading Card Builder
  */
 export function buildLoading(loadingInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const loadingIcon = emoji.get('loading') || '⏳';
-  const cardTitle = title ?? i18n.tr('ui.loading.title');
-  const messageText = typeof loadingInput === 'string' ? loadingInput : (loadingInput.message || loadingInput.content || i18n.tr('ui.loading.wait'));
+  const obj = (typeof loadingInput === 'object' && loadingInput) ? loadingInput : {};
 
-  return statusCard({ title: cardTitle, subtitle: null, accent: STATUS_ACCENT.loading, icon: loadingIcon, body: messageText, footer: null, thumbnail: avatarUrl });
+  const cardTitle = title ?? obj.title ?? i18n.tr('ui.loading.title');
+  const message = typeof loadingInput === 'string' ? loadingInput : (obj.message || obj.content || i18n.tr('ui.loading.wait'));
+
+  return statusCard({ title: cardTitle, subtitle: null, accent: STATUS_ACCENT.loading, icon: loadingIcon, body: message, footer: null, thumbnail: avatarUrl });
 }
 
 const Theme = {
