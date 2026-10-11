@@ -71,6 +71,7 @@ class MyPlaylistsCommand extends Command {
 
 	_buildPlaylistsContainer(playlists: any, page: any) {
 		const container = new ContainerBuilder();
+		container.setAccentColor(0x5865F2);
 		const totalPages = Math.ceil(playlists.length / PLAYLISTS_PER_PAGE) || 1;
 		page = Math.max(1, Math.min(page, totalPages));
 
@@ -109,22 +110,28 @@ class MyPlaylistsCommand extends Command {
 				),
 		);
 
-		if (totalPages > 1) {
-			const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder()
-					.setCustomId(`mypl_prev_${page}`)
-					.setLabel(i18n.cmd("Previous"))
-					.setStyle(ButtonStyle.Secondary)
-					.setEmoji(emoji.get("left"))
-					.setDisabled(page <= 1),
-				new ButtonBuilder()
-					.setCustomId(`mypl_next_${page}`)
-					.setLabel(i18n.cmd("Next"))
-					.setStyle(ButtonStyle.Secondary)
-					.setEmoji(emoji.get("right"))
-					.setDisabled(page >= totalPages),
-			);
-			container.addActionRowComponents(buttons);
-		}
+		const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+			new ButtonBuilder()
+				.setCustomId(`mypl_prev_${page}`)
+				.setLabel(i18n.cmd("Previous"))
+				.setStyle(ButtonStyle.Secondary)
+				.setEmoji(emoji.get("left"))
+				.setDisabled(page <= 1),
+			new ButtonBuilder()
+				.setCustomId(`mypl_next_${page}`)
+				.setLabel(i18n.cmd("Next"))
+				.setStyle(ButtonStyle.Secondary)
+				.setEmoji(emoji.get("right"))
+				.setDisabled(page >= totalPages),
+			new ButtonBuilder()
+				.setCustomId("mypl_close")
+				.setLabel(i18n.cmd("Close"))
+				.setStyle(ButtonStyle.Danger),
+		);
+		container.addActionRowComponents(buttons);
+
+		container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
+		container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${phrases.get("playlistLoaded")}`));
 
 		return container;
 	}
@@ -146,8 +153,14 @@ class MyPlaylistsCommand extends Command {
 				});
 			}
 
-			await interaction.deferUpdate();
+			if (interaction.customId === "mypl_close") {
+				return interaction.update({ components: [this._createExpiredContainer()] });
+			}
+
 			const [_, action, pageStr] = interaction.customId.split("_");
+			if (action !== "prev" && action !== "next") return;
+
+			await interaction.deferUpdate();
 			const page = parseInt(pageStr, 10);
 
 			if (action === "prev") currentPage = page - 1;

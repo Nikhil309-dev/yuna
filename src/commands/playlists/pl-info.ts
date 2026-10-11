@@ -127,6 +127,8 @@ class PlaylistInfoCommand extends Command {
 			content: content,
 			thumbnail: null,
 			components: [selectMenu],
+			accent: 0x5865F2,
+			footer: "phrases.playlistLoaded",
 			icon: emoji.get("folder") || "ℹ️"
 		});
 	}
@@ -159,6 +161,8 @@ class PlaylistInfoCommand extends Command {
 			content: content,
 			thumbnail: null,
 			components: [buttons],
+			accent: 0x5865F2,
+			footer: "phrases.playlistUpdated",
 			icon: emoji.get("openfolder") || "ℹ️"
 		});
 	}
@@ -222,6 +226,8 @@ class PlaylistInfoCommand extends Command {
 			content: trackListStr,
 			thumbnail: null,
 			components: components,
+			accent: 0x5865F2,
+			footer: "phrases.playlistLoaded",
 			icon: emoji.get("music") || "ℹ️"
 		});
 	}
