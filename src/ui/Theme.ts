@@ -110,7 +110,7 @@ export function buildContainer(options: any = {}) {
  * Shared status-card shell: accent stripe, icon + title header, body, and an
  * optional subtext footer (`-# …`). Keeps every status card visually consistent.
  */
-const BRAND_FOOTER = 'Built with ♥ by Yuna';
+const BRAND_FOOTER = 'Built with ♥ under CodeX Development';
 
 // Body labels for the two-part "progression" layout. Falls back to English when
 // a locale has not translated a key yet, so nothing ever renders as a raw key.
@@ -120,11 +120,32 @@ function label(key: string, fallback: string) {
 }
 
 /**
+ * Renders the card body as a smooth tree: each block is a node whose label sits
+ * on a rounded branch connector (╭─ / ├─ / ╰─) with its text hanging below on a
+ * matching guide. Rounded corners keep it soft instead of boxy.
+ */
+function renderTree(blocks: any[]): string {
+  const items = (blocks || []).filter((b: any) => b && b.text);
+  const n = items.length;
+  return items
+    .map((b: any, i: number) => {
+      const isLast = i === n - 1;
+      const connector = n === 1 ? '─' : isLast ? '╰─' : i === 0 ? '╭─' : '├─';
+      const pipe = n === 1 ? '  ' : isLast ? '   ' : '│  ';
+      const textLines = String(b.text).split('\n');
+      const first = b.label ? `**${b.label}**` : textLines[0];
+      const rest = b.label ? textLines : textLines.slice(1);
+      return [`${connector} ${first}`, ...rest.map((l: string) => `${pipe}${l}`)].join('\n');
+    })
+    .join('\n');
+}
+
+/**
  * Shared status-card shell (app-style "progression" layout):
  *   icon + title            -> what the card is about
  *   ─────────────
- *   [label] what happened   -> the message, with the avatar alongside
- *   [label] what you can do -> the next step (optional)
+ *   ╭─ label  what happened -> the message, with the avatar alongside
+ *   ╰─ label  next step     -> only when it adds info
  *   ─────────────
  *   -# branded footer
  */
@@ -141,10 +162,7 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(header)));
   container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 
-  const body = (blocks || [])
-    .filter((b: any) => b && b.text)
-    .map((b: any) => (b.label ? `**${b.label}**\n${b.text}` : `${b.text}`))
-    .join('\n\n');
+  const body = renderTree(blocks);
 
   if (body && thumbnail) {
     try {
