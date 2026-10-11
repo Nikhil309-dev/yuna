@@ -35,9 +35,21 @@ function cleanTitle(value: any): any {
     .trim();
 }
 
+// Status accents give each card a colored left stripe in Discord's Components
+// V2 renderer — the single biggest "looks designed" win, and it's free.
+const STATUS_ACCENT = {
+  error: 0xED4245,
+  success: 0x57F287,
+  warning: 0xFEE75C,
+  info: 0x5865F2,
+  loading: 0x99AAB5
+} as const;
+
 export function buildContainer(options: any = {}) {
-  const { title, content, thumbnail, image, components, icon, subtitle } = options;
+  const { title, content, thumbnail, image, components, icon, subtitle, accent } = options;
   const container = new ContainerBuilder();
+
+  if (typeof accent === 'number') container.setAccentColor(accent);
 
   // Titles are authored as English literals in the commands; translate known
   // ones for the active locale (dynamic titles fall through unchanged).
@@ -45,7 +57,10 @@ export function buildContainer(options: any = {}) {
 
   let headerText = `${icon || ''} **${localizedTitle}**`;
   if (subtitle) {
-    headerText += `\n**${cleanTitle(subtitle)}**`;
+    // Only add the subtitle when it actually differs — several builders used to
+    // pass the same string as title and subtitle, rendering it twice.
+    const cleanSub = cleanTitle(subtitle);
+    if (cleanSub && cleanSub !== localizedTitle) headerText += `\n**${cleanSub}**`;
   }
   headerText = clampText(headerText);
   const safeContent = clampText(content);
@@ -92,10 +107,49 @@ export function buildContainer(options: any = {}) {
 }
 
 /**
+ * Shared status-card shell: accent stripe, icon + title header, body, and an
+ * optional subtext footer (`-# …`). Keeps every status card visually consistent.
+ */
+function statusCard({ title, subtitle, accent, icon, body, footer, thumbnail }: any) {
+  const container = new ContainerBuilder();
+  if (typeof accent === 'number') container.setAccentColor(accent);
+
+  const cleanTitleText = cleanTitle(title);
+  let header = `${icon || ''} **${cleanTitleText}**`.trim();
+  if (subtitle) {
+    const cleanSub = cleanTitle(subtitle);
+    if (cleanSub && cleanSub !== cleanTitleText) header += `\n${cleanSub}`;
+  }
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(header)));
+  container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
+
+  if (body && thumbnail) {
+    try {
+      container.addSectionComponents(
+        new SectionBuilder()
+          .addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)))
+          .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnail))
+      );
+    } catch (_) {
+      container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)));
+    }
+  } else if (body) {
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)));
+  }
+
+  if (footer) {
+    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${footer}`)));
+  }
+
+  return container;
+}
+
+/**
  * Signature Boxed Error Card Builder
  * Chrome labels are localized; callers pass already-translated content/titles.
  */
-export function buildError(errorInput: any, title: any = undefined) {
+export function buildError(errorInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const infoIcon = emoji.get('info') || 'ℹ️';
   const resetIcon = emoji.get('reset') || '🔄';
   const crossIcon = emoji.get('cross') || '❌';
@@ -104,92 +158,75 @@ export function buildError(errorInput: any, title: any = undefined) {
   const issueLabel = i18n.tr('ui.error.issue');
   const actionLabel = i18n.tr('ui.error.action');
 
-  let issueText = typeof errorInput === 'string' ? errorInput : (errorInput.issue || errorInput.message || i18n.tr('ui.error.title'));
-  let actionText = typeof errorInput === 'object' && errorInput.tip ? errorInput.tip : i18n.tr('ui.error.contact');
-  let subtitle = typeof errorInput === 'object' && errorInput.title ? errorInput.title : i18n.tr('ui.error.title');
+  const issueText = typeof errorInput === 'string' ? errorInput : (errorInput.issue || errorInput.message || i18n.tr('ui.error.title'));
+  const actionText = typeof errorInput === 'object' && errorInput.tip ? errorInput.tip : i18n.tr('ui.error.contact');
+  const subtitle = typeof errorInput === 'object' && errorInput.title ? errorInput.title : null;
 
-  let content = `┌─ **${infoIcon} ${issueLabel}:** ${issueText}\n`;
-  content += `└─ **${resetIcon} ${actionLabel}:** ${actionText}\n\n`;
-  content += `*${i18n.tr('ui.error.hint')}*`;
+  const body = `┌─ **${infoIcon} ${issueLabel}:** ${issueText}\n└─ **${resetIcon} ${actionLabel}:** ${actionText}`;
 
-  return buildContainer({ image: null, thumbnail: null, title: cardTitle, subtitle, content, icon: undefined } as any);
+  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.error, icon: crossIcon, body, footer: i18n.tr('ui.error.hint'), thumbnail: avatarUrl });
 }
 
 /**
  * Signature Boxed Success Card Builder
  */
-export function buildSuccess(successInput: any, title: any = undefined) {
+export function buildSuccess(successInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const checkIcon = emoji.get('check') || '✅';
-  const infoIcon = emoji.get('info') || 'ℹ️';
 
   const cardTitle = title ?? i18n.tr('ui.success.title');
   const resultLabel = i18n.tr('ui.success.result');
   const detailLabel = i18n.tr('ui.success.detail');
 
-  let messageText = typeof successInput === 'string' ? successInput : (successInput.message || successInput.content || i18n.tr('ui.success.status'));
-  let detailText = typeof successInput === 'object' && successInput.detail ? successInput.detail : null;
-  let subtitle = typeof successInput === 'object' && successInput.title ? successInput.title : i18n.tr('ui.success.status');
+  const messageText = typeof successInput === 'string' ? successInput : (successInput.message || successInput.content || i18n.tr('ui.success.status'));
+  const detailText = typeof successInput === 'object' && successInput.detail ? successInput.detail : null;
+  const subtitle = typeof successInput === 'object' && successInput.title ? successInput.title : null;
 
-  let content = `┌─ **${checkIcon} ${resultLabel}:** ${messageText}\n`;
-  if (detailText) {
-    content += `└─ **${infoIcon} ${detailLabel}:** ${detailText}`;
-  } else {
-    content += `└─ **${infoIcon} ${i18n.tr('ui.success.status')}:** ${i18n.tr('ui.success.status')}`;
-  }
+  let body = `┌─ **${resultLabel}:** ${messageText}`;
+  if (detailText) body += `\n└─ **${detailLabel}:** ${detailText}`;
 
-  return buildContainer({ image: null, thumbnail: null, title: cardTitle, subtitle, content, icon: undefined } as any);
+  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.success, icon: checkIcon, body, footer: null, thumbnail: avatarUrl });
 }
 
 /**
  * Signature Boxed Info Card Builder
  */
-export function buildInfo(infoInput: any, title: any = undefined) {
+export function buildInfo(infoInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const infoIcon = emoji.get('info') || 'ℹ️';
   const cardTitle = title ?? i18n.tr('ui.info.title');
-  let messageText = typeof infoInput === 'string' ? infoInput : (infoInput.message || infoInput.content || i18n.tr('ui.info.title'));
-  let subtitle = typeof infoInput === 'object' && infoInput.title ? infoInput.title : null;
+  const messageText = typeof infoInput === 'string' ? infoInput : (infoInput.message || infoInput.content || i18n.tr('ui.info.title'));
+  const subtitle = typeof infoInput === 'object' && infoInput.title ? infoInput.title : null;
 
-  return buildContainer({ image: null, thumbnail: null,
-    title: cardTitle,
-    subtitle,
-    content: messageText,
-    icon: infoIcon
-  });
+  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.info, icon: infoIcon, body: messageText, footer: null, thumbnail: avatarUrl });
 }
 
 /**
  * Signature Boxed Warning Card Builder
  */
-export function buildWarning(warningInput: any, title: any = undefined) {
-  const infoIcon = emoji.get('info') || 'ℹ️';
-  const warningIcon = emoji.get('cross') || '⚠️';
+export function buildWarning(warningInput: any, title: any = undefined, avatarUrl: any = undefined) {
+  const warningIcon = '⚠️';
+  const resetIcon = emoji.get('reset') || '🔄';
 
   const cardTitle = title ?? i18n.tr('ui.warning.title');
   const warningLabel = i18n.tr('ui.warning.title');
   const actionLabel = i18n.tr('ui.error.action');
 
-  let messageText = typeof warningInput === 'string' ? warningInput : (warningInput.message || warningInput.content || i18n.tr('ui.warning.attention'));
-  let subtitle = typeof warningInput === 'object' && warningInput.title ? warningInput.title : i18n.tr('ui.warning.attention');
+  const messageText = typeof warningInput === 'string' ? warningInput : (warningInput.message || warningInput.content || i18n.tr('ui.warning.attention'));
+  const subtitle = typeof warningInput === 'object' && warningInput.title ? warningInput.title : null;
 
-  let content = `┌─ **${warningIcon} ${warningLabel}:** ${messageText}\n`;
-  content += `└─ **${emoji.get('reset') || '🔄'} ${actionLabel}:** ${i18n.tr('ui.warning.action')}`;
+  const body = `┌─ **${warningLabel}:** ${messageText}\n└─ **${resetIcon} ${actionLabel}:** ${i18n.tr('ui.warning.action')}`;
 
-  return buildContainer({ image: null, thumbnail: null, title: cardTitle, subtitle, content, icon: undefined } as any);
+  return statusCard({ title: cardTitle, subtitle, accent: STATUS_ACCENT.warning, icon: warningIcon, body, footer: null, thumbnail: avatarUrl });
 }
 
 /**
  * Signature Boxed Loading Card Builder
  */
-export function buildLoading(loadingInput: any, title: any = undefined) {
+export function buildLoading(loadingInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const loadingIcon = emoji.get('loading') || '⏳';
   const cardTitle = title ?? i18n.tr('ui.loading.title');
-  let messageText = typeof loadingInput === 'string' ? loadingInput : (loadingInput.message || loadingInput.content || i18n.tr('ui.loading.wait'));
+  const messageText = typeof loadingInput === 'string' ? loadingInput : (loadingInput.message || loadingInput.content || i18n.tr('ui.loading.wait'));
 
-  return buildContainer({ image: null, thumbnail: null,
-    title: cardTitle,
-    content: `${loadingIcon} ${messageText}`,
-    icon: loadingIcon
-  });
+  return statusCard({ title: cardTitle, subtitle: null, accent: STATUS_ACCENT.loading, icon: loadingIcon, body: messageText, footer: null, thumbnail: avatarUrl });
 }
 
 const Theme = {

@@ -36,13 +36,17 @@ export class Middleware {
     const guildId = guild?.id;
 
     const tr = (key: string, replacements?: Record<string, any>) => i18n.tr(key, replacements);
+    // Every middleware rejection renders through here so the user's avatar can
+    // be attached as the card thumbnail in one place.
+    const avatar = user?.displayAvatarURL?.({ size: 128 });
+    const errorCard = (opts: any) => buildError(opts, undefined, avatar);
     const pool = (category: string, replacements?: Record<string, any>) =>
       i18n.t(i18n.activeLocale(), category, replacements);
 
     if (isBlacklisted(userId, guildId)) {
       return {
         pass: false,
-        response: buildError({
+        response: errorCard({
           title: tr('mw.blacklisted.title'),
           issue: tr('mw.blacklisted.issue'),
           tip: tr('mw.blacklisted.tip')
@@ -53,7 +57,7 @@ export class Middleware {
     if (command.maintenance && !isOwner(userId)) {
       return {
         pass: false,
-        response: buildError({
+        response: errorCard({
           title: tr('mw.maintenance.title'),
           issue: tr('mw.maintenance.issue', { command: command.name }),
           tip: tr('ui.error.contact')
@@ -66,7 +70,7 @@ export class Middleware {
     if (this.anti.isBlacklisted(userId, command.name, guildId ?? 'dm')) {
       return {
         pass: false,
-        response: buildError({
+        response: errorCard({
           title: tr('mw.rateLimited.title'),
           issue: tr('mw.rateLimited.issue', { command: command.name }),
           tip: tr('mw.cooldown.title')
@@ -80,7 +84,7 @@ export class Middleware {
       const escalated = violations >= 5;
       return {
         pass: false,
-        response: buildError({
+        response: errorCard({
           title: escalated ? tr('mw.rateLimited.title') : tr('mw.cooldown.title'),
           issue: escalated
             ? tr('mw.rateLimited.issue', { command: command.name })
@@ -95,7 +99,7 @@ export class Middleware {
     if (command.access?.ownerOnly && !isOwner(userId)) {
       return {
         pass: false,
-        response: buildError({
+        response: errorCard({
           title: tr('mw.devOnly.title'),
           issue: pool('devOnly'),
           tip: tr('ui.error.contact')
@@ -107,7 +111,7 @@ export class Middleware {
       if (!checkPermissions(member, command.access.permissions)) {
         return {
           pass: false,
-          response: buildError({
+          response: errorCard({
             title: tr('mw.permissions.title'),
             issue: tr('mw.permissions.issue'),
             tip: `Required: \`${command.access.permissions.join(', ')}\``
@@ -121,7 +125,7 @@ export class Middleware {
       if (missing.length > 0) {
         return {
           pass: false,
-          response: buildError({
+          response: errorCard({
             title: tr('mw.botPermissions.title'),
             issue: tr('mw.botPermissions.issue'),
             tip: `Missing: \`${missing.join(', ')}\``
@@ -134,7 +138,7 @@ export class Middleware {
       if (!isPremium(userId, guildId, command.access.premium)) {
         return {
           pass: false,
-          response: buildError({
+          response: errorCard({
             title: tr('mw.premium.title'),
             issue: tr('mw.premium.issue', { tier: command.access.premium }),
             tip: tr('mw.premium.tip')
@@ -146,7 +150,7 @@ export class Middleware {
     if (command.access?.voice && !member?.voice?.channel) {
       return {
         pass: false,
-        response: buildError({
+        response: errorCard({
           title: tr('mw.voice.title'),
           issue: pool('voiceRequired'),
           tip: tr('ui.error.contact')
@@ -158,7 +162,7 @@ export class Middleware {
       if (member?.voice?.channelId !== guild.members.me.voice.channelId) {
         return {
           pass: false,
-          response: buildError({
+          response: errorCard({
             title: tr('mw.sameVoice.title'),
             issue: pool('sameVoiceRequired'),
             tip: `Join <#${guild.members.me.voice.channelId}>`
@@ -173,7 +177,7 @@ export class Middleware {
       if (command.access?.player && !player) {
         return {
           pass: false,
-          response: buildError({
+          response: errorCard({
             title: tr('mw.noPlayer.title'),
             issue: pool('playerRequired'),
             tip: tr('ui.error.contact')
@@ -184,7 +188,7 @@ export class Middleware {
       if (command.access?.playing && (!player || !player.queue?.current)) {
         return {
           pass: false,
-          response: buildError({
+          response: errorCard({
             title: tr('mw.playing.title'),
             issue: pool('noTrackPlaying'),
             tip: tr('ui.error.contact')
