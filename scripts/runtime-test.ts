@@ -56,7 +56,7 @@ async function main() {
   check('config loads with dummy TOKEN/CLIENT_ID', !!config.token && config.clientId === '123456789012345678');
   check('default node fallback present (no LAVALINK_HOST)', config.nodes.length === 1 && config.nodes[0].id === 'default-local-node');
   check('queue limits present', config.queue.maxSongs.free === 50 && config.queue.maxSongs.premium === 200);
-  check('sources default to jiosaavn', (await import('../src/config/sources')).default.PRIMARY_SOURCE === 'jiosaavn');
+  check('sources default to soundcloud', (await import('../src/config/sources')).default.PRIMARY_SOURCE === 'soundcloud');
   const emojiMod = await import('../src/config/emoji');
   check('emoji.get returns custom emojis + fallback', emojiMod.default.get('check').startsWith('<:') && emojiMod.default.get('nope', 'FB') === 'FB');
 
