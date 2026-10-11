@@ -31,11 +31,11 @@ type View = 'overview' | 'streaks' | 'tracks' | 'artists' | 'activity';
 const VIEW_ORDER: View[] = ['overview', 'streaks', 'tracks', 'artists', 'activity'];
 
 const VIEW_META: Record<View, { label: string; description: string }> = {
-  overview: { label: '📊 Overview', description: 'Coins, playtime and totals' },
-  streaks: { label: '🔥 Streaks', description: 'Current and longest listening streak' },
-  tracks: { label: '🎵 Top Tracks', description: 'Your 5 most-played tracks' },
-  artists: { label: '🎤 Top Artists', description: 'Your 5 most-played artists' },
-  activity: { label: '📈 Activity', description: 'Today, week, month and year' },
+  overview: { label: '1 · Overview', description: 'Coins, playtime and totals' },
+  streaks: { label: '2 · Streaks', description: 'Current and longest listening streak' },
+  tracks: { label: '3 · Top Tracks', description: 'Your 5 most-played tracks' },
+  artists: { label: '4 · Top Artists', description: 'Your 5 most-played artists' },
+  activity: { label: '5 · Activity', description: 'Today, week, month and year' },
 };
 
 interface Target {
@@ -224,11 +224,11 @@ class ProfileCommand extends Command {
       case 'overview': {
         const rank = t.rank ? `#${t.rank}` : '—';
         return [
-          '### 📊 Overview',
-          `**💰 Coins** · ${t.coins.toLocaleString()}`,
-          `**🎧 Tracks Played** · ${(agg.total_tracks_played || 0).toLocaleString()}`,
-          `**⏱️ Listen Time** · ${this._formatTime(agg.total_listen_time_ms || 0)}`,
-          `**🏆 Global Rank** · ${rank}`,
+          '**Overview**',
+          `├─ Coins · ${t.coins.toLocaleString()}`,
+          `├─ Tracks Played · ${(agg.total_tracks_played || 0).toLocaleString()}`,
+          `├─ Listen Time · ${this._formatTime(agg.total_listen_time_ms || 0)}`,
+          `└─ Global Rank · ${rank}`,
         ].join('\n');
       }
       case 'streaks': {
