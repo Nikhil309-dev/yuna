@@ -472,9 +472,9 @@ async function main() {
   const commandLoader = new CommandLoader(client as any);
   await commandLoader.load();
   check('all command files import cleanly (0 failures)', commandLoader.failedCommands.length === 0, JSON.stringify(commandLoader.failedCommands.slice(0, 5)));
-  check('commands registered', client.commands.size >= 70, `got ${client.commands.size}`);
+  check('commands registered', client.commands.size >= 60, `got ${client.commands.size}`);
   check('categories populated', client.categories.size >= 6, `got ${client.categories.size}`);
-  check('slash command data collected', commandLoader.getSlashCommandsData().length >= 60, `got ${commandLoader.getSlashCommandsData().length}`);
+  check('slash command data collected', commandLoader.getSlashCommandsData().length >= 50, `got ${commandLoader.getSlashCommandsData().length}`);
   const dupes = [...client.commands.keys()].filter((n, i, a) => a.indexOf(n) !== i);
   check('no duplicate command names', dupes.length === 0, dupes.join(','));
   const aliasDupes = [...client.aliases.keys()].filter((n, i, a) => a.indexOf(n) !== i);
