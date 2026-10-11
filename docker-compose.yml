@@ -10,7 +10,8 @@ services:
     image: ghcr.io/lavalink-devs/lavalink:4
     container_name: yuna-lavalink
     restart: unless-stopped
+    # Host networking: the container reaches Maven directly on first start so
+    # Lavalink can resolve its plugin, and it binds 127.0.0.1:9000 on the host.
+    network_mode: host
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
-    ports:
-      - "127.0.0.1:9000:9000"
