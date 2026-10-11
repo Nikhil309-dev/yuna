@@ -71,7 +71,7 @@ export default {
           const buffer = await musicCard.createMusicCard(track, 0, { isPremium });
           const attachment = new AttachmentBuilder(buffer, { name: 'yuna-nowplaying.png' });
 
-          const cardContainer = createPlayerContainer('default', { isTextMode: false, track, position: player.position || 0, hasImage: true });
+          const cardContainer = createPlayerContainer('default', { isTextMode: false, track, position: 0, hasImage: true });
 
           message = await EventUtils.sendPlayerMessage(client, player, {
             files: [attachment],
@@ -99,6 +99,9 @@ export default {
       if (message?.id) {
         player.set('nowPlayingMessageId', message.id);
         player.set('nowPlayingChannelId', player.textChannelId);
+        player.set('nowPlayingTextMode', isTextMode);
+        // Advance the progress bar (canvas image or text bar) while playing.
+        EventUtils.startNowPlayingUpdater(client, player);
       }
 
       logger.info('TrackStart', `Track started: "${track.info.title}" by ${track.info.author} in guild ${player.guildId}`);

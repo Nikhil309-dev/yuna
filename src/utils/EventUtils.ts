@@ -1,5 +1,8 @@
 import { logger } from '#utils/logger';
-import { Client, MessageCreateOptions, MessagePayload } from 'discord.js';
+import { Client, MessageCreateOptions, MessagePayload, AttachmentBuilder, MessageFlags } from 'discord.js';
+import { createPlayerContainer } from '#ui/Components';
+import MusicCard from '#ui/cards/MusicCard';
+import { db } from '#database/Database';
 
 export class EventUtils {
   /**
@@ -64,6 +67,59 @@ export class EventUtils {
       logger.error('EventUtils', `Failed to send player message: ${err.message}`, err);
     }
     return null;
+  }
+
+  /**
+   * Starts a periodic refresh of the now-playing message so its progress bar
+   * (canvas image or text bar) advances while the track plays. No-op unless a
+   * now-playing message has been recorded. Safe to call repeatedly; the previous
+   * interval for the player is cleared first.
+   */
+  static startNowPlayingUpdater(client: Client | any, player: any, intervalMs = 10_000) {
+    if (!client || !player) return;
+    this.clearPlayerInterval(player, 'updateInterval');
+
+    const id = setInterval(() => {
+      this.refreshNowPlaying(client, player).catch(() => {});
+    }, intervalMs);
+    if (typeof id.unref === 'function') id.unref();
+    player.set('updateInterval', id);
+  }
+
+  /**
+   * Rebuilds and edits the now-playing message once. Returns false (and does
+   * nothing) when there is no live player/message to update.
+   */
+  static async refreshNowPlaying(client: Client | any, player: any): Promise<boolean> {
+    if (!client?.channels?.fetch || !player) return false;
+
+    const messageId = player.get?.('nowPlayingMessageId');
+    const channelId = player.get?.('nowPlayingChannelId') || player.textChannelId;
+    const track = player.queue?.current;
+    if (!messageId || !channelId || !track?.info) return false;
+    // Position is frozen while paused; skip the redundant edit.
+    if (player.paused) return false;
+
+    const channel: any = await client.channels.fetch(channelId).catch(() => null);
+    const message: any = await channel?.messages?.fetch(messageId).catch(() => null);
+    if (!message?.edit) return false;
+
+    const position = player.position || 0;
+    const isTextMode = player.get?.('nowPlayingTextMode') === true;
+    const requesterId = track.requester?.id;
+
+    if (isTextMode) {
+      const container = createPlayerContainer('default', { isTextMode: true, track, position });
+      await message.edit({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+      return true;
+    }
+
+    const isPremium = requesterId ? !!db.hasAnyPremium(requesterId, player.guildId) : false;
+    const buffer = await new MusicCard().createMusicCard(track, position, { isPremium });
+    const attachment = new AttachmentBuilder(buffer, { name: 'yuna-nowplaying.png' });
+    const container = createPlayerContainer('default', { isTextMode: false, track, position, hasImage: true });
+    await message.edit({ files: [attachment], components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
+    return true;
   }
 }
 

@@ -10,6 +10,7 @@ import { FilterEngine } from '#audio/FilterEngine';
 import { logger } from '#utils/logger';
 import { db } from '#database/Database';
 import { createPlayerContainer } from '#ui/Components';
+import { EventUtils } from '#utils/EventUtils';
 import { i18n } from '#utils/i18n.js';
 
 function buildResponseContainer(title: any, text: any) {
@@ -55,6 +56,7 @@ function registerPlayerButtons(client: any) {
             await pm.resume();
             title = t('title.musicResumed');
             response = t('player.resumed');
+            EventUtils.refreshNowPlaying(client, player).catch(() => {});
         } else {
             await pm.pause();
             title = t('title.musicPaused');

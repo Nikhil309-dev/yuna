@@ -22,17 +22,30 @@ function clampText(value: any, limit = TEXT_DISPLAY_LIMIT): any {
   return `${value.slice(0, limit - 1)}…`;
 }
 
+// Titles are rendered as `**${title}**`, so callers that pass markdown-wrapped
+// titles (`` `### **Heading**` ``) produce broken output like
+// `**`### **Heading**`**` — literal asterisks/backticks instead of a heading.
+// Strip the wrapping so the title renders cleanly regardless of the caller.
+function cleanTitle(value: any): any {
+  if (typeof value !== 'string') return value;
+  return value
+    .replace(/`/g, '')
+    .replace(/^\s*#{1,6}\s*/, '')
+    .replace(/^\*\*(.*)\*\*$/s, '$1')
+    .trim();
+}
+
 export function buildContainer(options: any = {}) {
   const { title, content, thumbnail, image, components, icon, subtitle } = options;
   const container = new ContainerBuilder();
 
   // Titles are authored as English literals in the commands; translate known
   // ones for the active locale (dynamic titles fall through unchanged).
-  const localizedTitle = i18n.translateTitle(title);
+  const localizedTitle = cleanTitle(i18n.translateTitle(title));
 
   let headerText = `${icon || ''} **${localizedTitle}**`;
   if (subtitle) {
-    headerText += `\n**${subtitle}**`;
+    headerText += `\n**${cleanTitle(subtitle)}**`;
   }
   headerText = clampText(headerText);
   const safeContent = clampText(content);
