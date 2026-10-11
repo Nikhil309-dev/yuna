@@ -13,6 +13,7 @@
  * degrades to English instead of showing `undefined`.
  */
 import { localeStore } from "./localeStore.js";
+import { EN_POOLS } from "./phrasePools.js";
 import { logger } from "#utils/logger";
 
 import enUS from "../locales/en-US.js";
@@ -214,7 +215,10 @@ class I18nManager {
 	/** Randomized phrase lookup (used by `phrases.get`). */
 	public t(locale: string | null | undefined, category: string, replacements: Record<string, any> = {}): string {
 		this.load();
-		const list = this.getPhraseList(locale, category);
+		// Locale file first, then the embedded English pools, then the generic
+		// error string. Without the middle step an English user would see the
+		// literal word "Error" where a phrase belongs.
+		const list = this.getPhraseList(locale, category) || EN_POOLS[category] || null;
 		if (!list || list.length === 0) return this.ui(locale, "ui.error.title", replacements);
 
 		const template = list[Math.floor(Math.random() * list.length)];
