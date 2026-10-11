@@ -123,23 +123,21 @@ function label(key: string, fallback: string) {
 }
 
 /**
- * Renders the card body as a tree: each block is a node on a branch connector
- * (├─ / └─) with its text hanging below on a matching guide.
+ * Renders the card body. Uses a "quote bar" style: each block's label is bold
+ * and its text sits in a blockquote, which Discord draws as a soft vertical bar
+ * — cleaner than ASCII tree connectors.
  */
-function renderTree(blocks: any[]): string {
+function renderBody(blocks: any[]): string {
   const items = (blocks || []).filter((b: any) => b && b.text);
-  const n = items.length;
   return items
-    .map((b: any, i: number) => {
-      const isLast = i === n - 1;
-      const connector = isLast ? '└─' : '├─';
-      const pipe = isLast ? '   ' : '│  ';
-      const textLines = String(b.text).split('\n');
-      const first = b.label ? `**${b.label}**` : textLines[0];
-      const rest = b.label ? textLines : textLines.slice(1);
-      return [`${connector} ${first}`, ...rest.map((l: string) => `${pipe}${l}`)].join('\n');
+    .map((b: any) => {
+      const quoted = String(b.text)
+        .split('\n')
+        .map((l: string) => `> ${l}`)
+        .join('\n');
+      return b.label ? `**${b.label}**\n${quoted}` : quoted;
     })
-    .join('\n');
+    .join('\n\n');
 }
 
 /**
@@ -164,7 +162,7 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(header)));
   container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
 
-  const body = renderTree(blocks);
+  const body = renderBody(blocks);
 
   if (body && thumbnail) {
     try {
@@ -180,13 +178,13 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)));
   }
 
+  // Footer section: separator, optional action button, then the credit line.
+  container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
   if (buttons && buttons.length) {
     container.addActionRowComponents(
       new ActionRowBuilder<any>().addComponents(...buttons)
     );
   }
-
-  container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${footer || BRAND_FOOTER}`)));
 
   return container;
