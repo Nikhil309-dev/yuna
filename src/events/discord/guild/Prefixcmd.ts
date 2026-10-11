@@ -191,7 +191,14 @@ export default {
     try {
       const middlewareResult = await runWithLocale(ctx.locale, () => Middleware.run(ctx, command));
       if (!middlewareResult.pass) {
-        return message.reply(middlewareResult.response);
+        // `response` is a Components V2 container; it must be wrapped as a
+        // single top-level component with the V2 flag, otherwise Discord
+        // rejects the container's children as invalid top-level components.
+        const res = middlewareResult.response;
+        const payload = res?.components
+          ? { components: [res], flags: MessageFlags.IsComponentsV2 }
+          : (typeof res === 'object' ? { ...res } : { content: String(res) });
+        return message.reply(payload);
       }
 
       if (db.economy) {
