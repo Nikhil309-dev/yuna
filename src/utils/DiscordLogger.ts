@@ -3,12 +3,18 @@ import {
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
-  SectionBuilder,
   MessageFlags
 } from 'discord.js';
 import { config } from '#config/config';
 import { logger } from '#utils/logger';
 import emoji from '#config/emoji';
+
+function card(header: string, body: string) {
+  return new ContainerBuilder()
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(header))
+    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(body));
+}
 
 export class DiscordLogger {
   static getChannel(client: any, channelId: any) {
@@ -33,23 +39,15 @@ export class DiscordLogger {
     const channelId = config.logChannels?.guildJoin;
     if (!channelId) return;
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`${emoji.get('check') || '✅'} **New Guild Joined**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**${emoji.get('folder')} Server Info**\n` +
-            `├─ **Name:** ${guild.name}\n` +
-            `├─ **ID:** \`${guild.id}\` \n` +
-            `├─ **Members:** ${guild.memberCount.toLocaleString()}\n` +
-            `└─ **Owner:** <@${guild.ownerId}> (\`${guild.ownerId}\`)\n\n` +
-            `**Total Servers Now:** ${client.guilds?.cache?.size || 'N/A'}`
-          )
-        )
-      );
+    const container = card(
+      `${emoji.get('check') || '✅'} **New Guild Joined**`,
+      `**${emoji.get('folder')} Server Info**\n` +
+        `├─ **Name:** ${guild.name}\n` +
+        `├─ **ID:** \`${guild.id}\` \n` +
+        `├─ **Members:** ${guild.memberCount.toLocaleString()}\n` +
+        `└─ **Owner:** <@${guild.ownerId}> (\`${guild.ownerId}\`)\n\n` +
+        `**Total Servers Now:** ${client.guilds?.cache?.size || 'N/A'}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
@@ -58,22 +56,14 @@ export class DiscordLogger {
     const channelId = config.logChannels?.guildLeave;
     if (!channelId) return;
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`${emoji.get('cross') || '❌'} **Guild Removed**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**${emoji.get('folder')} Server Info**\n` +
-            `├─ **Name:** ${guild.name}\n` +
-            `├─ **ID:** \`${guild.id}\` \n` +
-            `└─ **Members:** ${guild.memberCount?.toLocaleString() || 'N/A'}\n\n` +
-            `**Total Servers Now:** ${client.guilds?.cache?.size || 'N/A'}`
-          )
-        )
-      );
+    const container = card(
+      `${emoji.get('cross') || '❌'} **Guild Removed**`,
+      `**${emoji.get('folder')} Server Info**\n` +
+        `├─ **Name:** ${guild.name}\n` +
+        `├─ **ID:** \`${guild.id}\` \n` +
+        `└─ **Members:** ${guild.memberCount?.toLocaleString() || 'N/A'}\n\n` +
+        `**Total Servers Now:** ${client.guilds?.cache?.size || 'N/A'}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
@@ -84,22 +74,14 @@ export class DiscordLogger {
 
     const argsText = args.length > 0 ? `\`${args.join(' ')}\`` : '*None*';
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`⚡ **Command Executed**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**${emoji.get('folder')} Command Details**\n` +
-            `├─ **Command:** \`${commandName}\` (${type})\n` +
-            `├─ **User:** ${user.username} (\`${user.id}\`)\n` +
-            `├─ **Guild:** ${guild ? `${guild.name} (\`${guild.id}\`)` : 'Direct Message'}\n` +
-            `└─ **Arguments:** ${argsText}`
-          )
-        )
-      );
+    const container = card(
+      `⚡ **Command Executed**`,
+      `**${emoji.get('folder')} Command Details**\n` +
+        `├─ **Command:** \`${commandName}\` (${type})\n` +
+        `├─ **User:** ${user.username} (\`${user.id}\`)\n` +
+        `├─ **Guild:** ${guild ? `${guild.name} (\`${guild.id}\`)` : 'Direct Message'}\n` +
+        `└─ **Arguments:** ${argsText}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
@@ -110,20 +92,12 @@ export class DiscordLogger {
 
     const errorDetails = error ? `\`\`\`js\n${(error.stack || error.toString()).slice(0, 800)}\n\`\`\`` : '*No Stack Trace*';
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`${emoji.get('cross') || '⚠️'} **System Error Caught**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**${emoji.get('folder')} Context:** \`${context}\` \n` +
-            `**Message:** ${message || 'Error occurred'}\n\n` +
-            `**Trace:**\n${errorDetails}`
-          )
-        )
-      );
+    const container = card(
+      `${emoji.get('cross') || '⚠️'} **System Error Caught**`,
+      `**${emoji.get('folder')} Context:** \`${context}\` \n` +
+        `**Message:** ${message || 'Error occurred'}\n\n` +
+        `**Trace:**\n${errorDetails}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
@@ -135,22 +109,14 @@ export class DiscordLogger {
     const trackTitle = track?.title || track?.info?.title || 'Unknown Track';
     const author = track?.author || track?.info?.author || 'Unknown Artist';
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`🎵 **Music Event: ${event}**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**${emoji.get('folder')} Track Details**\n` +
-            `├─ **Title:** ${trackTitle}\n` +
-            `├─ **Artist:** ${author}\n` +
-            `├─ **Guild:** ${guild ? `${guild.name} (\`${guild.id}\`)` : 'N/A'}\n` +
-            `└─ **Requested By:** ${requester ? `${requester.displayName || requester.username} (\`${requester.id}\`)` : 'Autoplay'}`
-          )
-        )
-      );
+    const container = card(
+      `🎵 **Music Event: ${event}**`,
+      `**${emoji.get('folder')} Track Details**\n` +
+        `├─ **Title:** ${trackTitle}\n` +
+        `├─ **Artist:** ${author}\n` +
+        `├─ **Guild:** ${guild ? `${guild.name} (\`${guild.id}\`)` : 'N/A'}\n` +
+        `└─ **Requested By:** ${requester ? `${requester.displayName || requester.username} (\`${requester.id}\`)` : 'Autoplay'}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
@@ -159,22 +125,14 @@ export class DiscordLogger {
     const channelId = config.logChannels?.abuseBlacklist;
     if (!channelId) return;
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`🛡️ **Anti-Abuse / Blacklist Action**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**${emoji.get('folder')} Audit Log**\n` +
-            `├─ **Action:** ${action}\n` +
-            `├─ **Target:** ${targetType} (\`${targetId}\`)\n` +
-            `├─ **Reason:** ${reason || 'Excessive Cooldown Violations'}\n` +
-            `└─ **Executed By:** ${admin ? `${admin.username} (\`${admin.id}\`)` : 'System Automated Guard'}`
-          )
-        )
-      );
+    const container = card(
+      `🛡️ **Anti-Abuse / Blacklist Action**`,
+      `**${emoji.get('folder')} Audit Log**\n` +
+        `├─ **Action:** ${action}\n` +
+        `├─ **Target:** ${targetType} (\`${targetId}\`)\n` +
+        `├─ **Reason:** ${reason || 'Excessive Cooldown Violations'}\n` +
+        `└─ **Executed By:** ${admin ? `${admin.username} (\`${admin.id}\`)` : 'System Automated Guard'}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
@@ -183,19 +141,11 @@ export class DiscordLogger {
     const channelId = config.logChannels?.clusterLavalink;
     if (!channelId) return;
 
-    const container = new ContainerBuilder()
-      .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`🌐 **Cluster / Lavalink: ${title}**`)
-      )
-      .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `**Status:** \`${status}\` \n` +
-            `**Details:** ${message}`
-          )
-        )
-      );
+    const container = card(
+      `🌐 **Cluster / Lavalink: ${title}**`,
+      `**Status:** \`${status}\` \n` +
+        `**Details:** ${message}`
+    );
 
     await this.sendLog(client, channelId, container);
   }
