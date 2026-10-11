@@ -42,6 +42,27 @@ export interface LocaleData {
 
 export const DEFAULT_LOCALE = "en-US";
 
+/**
+ * Maps bundled locale codes to Discord's application-command locale enum.
+ * Discord only accepts a fixed set of codes for `name_localizations` /
+ * `description_localizations`; several bundled codes are region-qualified
+ * (`de-DE`, `fr-FR`, …) and are rejected unless trimmed to the bare language.
+ * Codes not listed here (`en-US`, `es-ES`, `zh-CN`, …) are already valid.
+ */
+export const DISCORD_LOCALE_MAP: Record<string, string> = {
+        "de-DE": "de",
+        "fr-FR": "fr",
+        "hi-IN": "hi",
+        "ja-JP": "ja",
+        "ko-KR": "ko",
+        "ru-RU": "ru",
+};
+
+/** Converts a bundled locale code to the code Discord accepts for localizations. */
+export function toDiscordLocale(code: string): string {
+        return DISCORD_LOCALE_MAP[code] ?? code;
+}
+
 const BUNDLED: Record<string, LocaleData> = {
 	"en-US": enUS as LocaleData,
 	"de-DE": deDE as LocaleData,

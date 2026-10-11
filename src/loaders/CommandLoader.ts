@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import { Client } from "discord.js";
-import { i18n } from "#utils/i18n";
+import { i18n, toDiscordLocale } from "#utils/i18n";
 import { SLASH_STRINGS } from "../locales/slash-strings.js";
 
 export class CommandLoader {
@@ -232,16 +232,20 @@ export class CommandLoader {
     for (const locale of localeCodes) {
       if (locale === i18n.defaultLocale) continue;
 
+      // Discord rejects region-qualified codes it doesn't define (e.g. "de-DE"),
+      // so emit the mapped locale code while still translating from the bundled one.
+      const discordLocale = toDiscordLocale(locale);
+
       const description = pick(locale, dataJson.description);
       if (description) {
         dataJson.description_localizations = dataJson.description_localizations || {};
-        dataJson.description_localizations[locale] = description;
+        dataJson.description_localizations[discordLocale] = description;
       }
 
       const name = lookup(locale, dataJson.name);
       if (name && isValidCommandName(name)) {
         dataJson.name_localizations = dataJson.name_localizations || {};
-        dataJson.name_localizations[locale] = name;
+        dataJson.name_localizations[discordLocale] = name;
       }
 
       if (!Array.isArray(dataJson.options)) continue;
@@ -249,14 +253,14 @@ export class CommandLoader {
         const optionDescription = pick(locale, option?.description);
         if (optionDescription) {
           option.description_localizations = option.description_localizations || {};
-          option.description_localizations[locale] = optionDescription;
+          option.description_localizations[discordLocale] = optionDescription;
         }
         if (!Array.isArray(option?.choices)) continue;
         for (const choice of option.choices) {
           const choiceName = pick(locale, choice?.name);
           if (choiceName) {
             choice.name_localizations = choice.name_localizations || {};
-            choice.name_localizations[locale] = choiceName;
+            choice.name_localizations[discordLocale] = choiceName;
           }
         }
       }
