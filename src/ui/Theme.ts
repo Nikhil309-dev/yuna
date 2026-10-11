@@ -262,7 +262,7 @@ export function buildWarning(warningInput: any, title: any = undefined, avatarUr
 
   const blocks = [
     { label: label('ui.block.headsUp', 'Heads up'), text: message },
-    tip && tip !== cardTitle && tip !== message ? { label: label('ui.block.solution', 'What you can do'), text: tip } : null
+    tip && tip !== cardTitle && tip !== message ? { label: label('ui.block.whatYouCanDo', 'What you can do'), text: tip } : null
   ];
 
   return statusCard({ title: cardTitle, accent: STATUS_ACCENT.warning, icon: warningIcon, blocks, footer: obj.footer, thumbnail: avatarUrl });

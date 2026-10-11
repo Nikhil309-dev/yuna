@@ -22,6 +22,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
                 "ui.block.done": "What's done",
                 "ui.block.next": "What's next",
                 "ui.block.headsUp": "Heads up",
+                "ui.block.whatYouCanDo": "What you can do",
                 "ui.button.support": "Join Support Server",
 
 		"comp.notForYou": "This button is not for you.",
