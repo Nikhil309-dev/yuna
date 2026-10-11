@@ -216,10 +216,9 @@ class I18nManager {
 	public t(locale: string | null | undefined, category: string, replacements: Record<string, any> = {}): string {
 		this.load();
 		// Locale file first, then the embedded English pools, then the generic
-		// error string. Without the middle step an English user would see the
-		// literal word "Error" where a phrase belongs.
+		// localized error message — never a bare card title.
 		const list = this.getPhraseList(locale, category) || EN_POOLS[category] || null;
-		if (!list || list.length === 0) return this.ui(locale, "ui.error.title", replacements);
+		if (!list || list.length === 0) return this.t(locale, "errorGeneric", replacements);
 
 		const template = list[Math.floor(Math.random() * list.length)];
 		return interpolate(template, replacements);

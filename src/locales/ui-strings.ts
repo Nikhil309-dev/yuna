@@ -14,7 +14,7 @@ type Catalog = Record<string, string>;
 
 export const UI_STRINGS: Record<string, Catalog> = {
 	"en-US": {
-		"ui.error.title": "Error",
+		"ui.error.title": "Something Went Wrong",
 		"ui.error.issue": "Issue",
 		"ui.error.action": "Action",
 		"ui.error.hint": "Please check your input and try again",
@@ -92,7 +92,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"de-DE": {
-		"ui.error.title": "Fehler",
+		"ui.error.title": "Etwas ist schiefgelaufen",
 		"ui.error.issue": "Problem",
 		"ui.error.action": "Aktion",
 		"ui.error.hint": "Bitte prüfe deine Eingabe und versuche es erneut",
@@ -164,7 +164,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"es-ES": {
-		"ui.error.title": "Error",
+		"ui.error.title": "Algo salió mal",
 		"ui.error.issue": "Problema",
 		"ui.error.action": "Acción",
 		"ui.error.hint": "Revisa tu entrada e inténtalo de nuevo",
@@ -236,7 +236,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"fr-FR": {
-		"ui.error.title": "Erreur",
+		"ui.error.title": "Une erreur est survenue",
 		"ui.error.issue": "Problème",
 		"ui.error.action": "Action",
 		"ui.error.hint": "Vérifiez votre saisie et réessayez",
@@ -308,7 +308,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"hi-IN": {
-		"ui.error.title": "त्रुटि",
+		"ui.error.title": "कुछ गलत हो गया",
 		"ui.error.issue": "समस्या",
 		"ui.error.action": "कार्रवाई",
 		"ui.error.hint": "कृपया अपना इनपुट जाँचें और फिर से प्रयास करें",
@@ -380,7 +380,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"ja-JP": {
-		"ui.error.title": "エラー",
+		"ui.error.title": "問題が発生しました",
 		"ui.error.issue": "問題",
 		"ui.error.action": "対処",
 		"ui.error.hint": "入力内容を確認して、もう一度お試しください",
@@ -452,7 +452,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"ko-KR": {
-		"ui.error.title": "오류",
+		"ui.error.title": "문제가 발생했습니다",
 		"ui.error.issue": "문제",
 		"ui.error.action": "조치",
 		"ui.error.hint": "입력 내용을 확인하고 다시 시도해 주세요",
@@ -524,7 +524,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"pt-BR": {
-		"ui.error.title": "Erro",
+		"ui.error.title": "Algo deu errado",
 		"ui.error.issue": "Problema",
 		"ui.error.action": "Ação",
 		"ui.error.hint": "Verifique sua entrada e tente novamente",
@@ -596,7 +596,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"ru-RU": {
-		"ui.error.title": "Ошибка",
+		"ui.error.title": "Что-то пошло не так",
 		"ui.error.issue": "Проблема",
 		"ui.error.action": "Действие",
 		"ui.error.hint": "Проверьте ввод и попробуйте снова",
@@ -668,7 +668,7 @@ export const UI_STRINGS: Record<string, Catalog> = {
 	},
 
 	"zh-CN": {
-		"ui.error.title": "错误",
+		"ui.error.title": "出了点问题",
 		"ui.error.issue": "问题",
 		"ui.error.action": "操作",
 		"ui.error.hint": "请检查您的输入并重试",
