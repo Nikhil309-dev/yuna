@@ -148,11 +148,22 @@ function registerPlayerButtons(client: any) {
             const style = interaction.user?.id ? db.getNpStyle?.(interaction.user.id) : 'card';
             const isTextMode = style === 'text';
             const track = player.queue?.current;
+            // Preserve the now-playing card: the image gallery and progress bar
+            // only render when hasImage/position are passed, otherwise switching
+            // mode redraws the message as bare controls and the card "disappears".
             const newContainer = createPlayerContainer
-                ? createPlayerContainer(selectedMode, { isTextMode, track })
+                ? createPlayerContainer(selectedMode, {
+                    isTextMode,
+                    track,
+                    hasImage: !isTextMode,
+                    position: player.position || 0,
+                })
                 : buildResponseContainer(t('title.modeChanged'), `${t('player.modeChanged')} ${selectedMode}`);
 
-            await interaction.message.edit({
+            // Edit the original now-playing message in place so the card keeps
+            // its attachment; cleaning up the ephemeral "thinking" reply after.
+            const target = interaction.message ?? interaction;
+            await target.edit({
                 components: [newContainer],
                 flags: MessageFlags.IsComponentsV2
             });
