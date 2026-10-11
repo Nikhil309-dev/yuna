@@ -34,7 +34,16 @@ export default {
           // the Lavalink node may not have installed.
           let fallbackRes: any = null;
           let sourceUsed = '';
-          for (const prefix of musicSource.getPrefixList()) {
+          // YouTube is skipped when the failing track *is* YouTube: the failure
+          // is bot-protection (403 / "requires login"), so replaying it via
+          // ytsearch fails identically and spins until Lavalink destroys the
+          // player for too many errors.
+          const failingSource = String(track?.info?.sourceName || '').toLowerCase();
+          const isYoutubeTrack = /youtube|\byt\b/.test(failingSource);
+          const prefixes = musicSource.getPrefixList();
+          const ordered = isYoutubeTrack ? prefixes.filter((p) => !p.startsWith('yt')) : prefixes;
+          const candidates = ordered.length ? ordered : prefixes;
+          for (const prefix of candidates) {
             try {
               const res = await client.music.search(searchQuery, { source: prefix.replace(':', '') });
               if (res?.tracks?.length) {
@@ -47,25 +56,37 @@ export default {
 
           if (fallbackRes?.tracks?.length > 0) {
             const fallbackTrack = fallbackRes.tracks[0];
-            logger.info('TrackException', `Found ${sourceUsed} fallback stream: "${fallbackTrack.info.title}"`);
 
-            await player.play({ clientTrack: fallbackTrack });
-
-            const fallbackNotice = new ContainerBuilder()
-              .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### 🔄 **Stream Recovery Active**`))
-              .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
-              .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                  i18n.cmd("YouTube stream was blocked (HTTP 403 / bot protection).\n\n") +
-                  i18n.cmd("├─ 🎵 **Original Track:** {title}\n", { title }) +
-                  i18n.cmd("└─ ⚡ **Auto-Fallback:** Switched to {source} stream automatically!", { source: sourceUsed })
-                )
+            // Guard against retry storms: if this exact fallback stream already
+            // failed once, give up instead of looping until the player dies.
+            const lastAttempt = player.get<string | null>('recoveryAttemptId');
+            if (lastAttempt && lastAttempt === fallbackTrack.info.identifier) {
+              logger.warn(
+                'TrackException',
+                `Recovery already attempted for "${fallbackTrack.info.title}"; stopping to avoid a retry loop.`,
               );
+            } else {
+              player.set('recoveryAttemptId', fallbackTrack.info.identifier);
+              logger.info('TrackException', `Found ${sourceUsed} fallback stream: "${fallbackTrack.info.title}"`);
 
-            return await EventUtils.sendPlayerMessage(client, player, {
-              components: [fallbackNotice],
-              flags: MessageFlags.IsComponentsV2
-            });
+              await player.play({ clientTrack: fallbackTrack });
+
+              const fallbackNotice = new ContainerBuilder()
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`### 🔄 **Stream Recovery Active**`))
+                .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+                .addTextDisplayComponents(
+                  new TextDisplayBuilder().setContent(
+                    i18n.cmd("The original stream was blocked by the provider (bot protection).\n\n") +
+                    i18n.cmd("├─ 🎵 **Original Track:** {title}\n", { title }) +
+                    i18n.cmd("└─ ⚡ **Auto-Fallback:** Switched to {source} stream automatically!", { source: sourceUsed })
+                  )
+                );
+
+              return await EventUtils.sendPlayerMessage(client, player, {
+                components: [fallbackNotice],
+                flags: MessageFlags.IsComponentsV2
+              });
+            }
           }
         } catch (fallbackErr) {
           logger.error('TrackException', 'Fallback resolution failed:', fallbackErr);

@@ -4,7 +4,9 @@
  * Change default search provider, fallback priority, and autoplay recommendations in ONE single place!
  */
 
-const DEFAULT_SOURCE = process.env.DEFAULT_MUSIC_SOURCE || 'jiosaavn';
+// SoundCloud needs no login/PO-token and streams without bot-protection, so it
+// is the safe default. Override with DEFAULT_MUSIC_SOURCE (e.g. youtube, spotify).
+const DEFAULT_SOURCE = process.env.DEFAULT_MUSIC_SOURCE || 'soundcloud';
 
 const PREFIX_MAP: Record<string, string> = {
   spotify: 'spsearch:',
