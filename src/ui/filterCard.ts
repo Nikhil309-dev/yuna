@@ -16,20 +16,20 @@ import { i18n } from "#utils/i18n";
 export function buildFilterAppliedContainer(filterName: string) {
 	const name = String(filterName);
 	const content =
-		i18n.tr("cmd.**Filter Information**") +
+		i18n.cmd("**Filter Information**") +
 		"\n\n" +
-		i18n.tr("cmd.└─ **{emoji} Filter:** {filter} Equalizer", {
+		i18n.cmd("└─ **{emoji} Filter:** {filter} Equalizer", {
 			emoji: emoji.get("music") || "🎵",
 			filter: name,
 		}) +
 		"\n" +
-		i18n.tr("cmd.└─ **{emoji} Status:** Applied successfully", {
+		i18n.cmd("└─ **{emoji} Status:** Applied successfully", {
 			emoji: emoji.get("check") || "✅",
 		}) +
 		"\n" +
-		i18n.tr("cmd.└─ **{emoji} Effect:** {effect}", {
+		i18n.cmd("└─ **{emoji} Effect:** {effect}", {
 			emoji: emoji.get("info") || "ℹ️",
-			effect: i18n.tr("cmd.Enhanced for {filter} music", { filter: name.toLowerCase() }),
+			effect: i18n.cmd("Enhanced for {filter} music", { filter: name.toLowerCase() }),
 		}) +
 		"\n\n" +
 		`*${phrases.get("filterApplied")}*`;
@@ -45,19 +45,19 @@ export function buildFilterAppliedContainer(filterName: string) {
 /** Success card for resetting all filters (/reset). */
 export function buildFilterResetContainer() {
 	const content =
-		i18n.tr("cmd.**Reset Information**") +
+		i18n.cmd("**Reset Information**") +
 		"\n\n" +
-		i18n.tr("cmd.└─ **{emoji} Filters:** All filters cleared", {
+		i18n.cmd("└─ **{emoji} Filters:** All filters cleared", {
 			emoji: emoji.get("music") || "🎵",
 		}) +
 		"\n" +
-		i18n.tr("cmd.└─ **{emoji} Status:** Reset successfully", {
+		i18n.cmd("└─ **{emoji} Status:** Reset successfully", {
 			emoji: emoji.get("check") || "✅",
 		}) +
 		"\n" +
-		i18n.tr("cmd.└─ **{emoji} Effect:** {effect}", {
+		i18n.cmd("└─ **{emoji} Effect:** {effect}", {
 			emoji: emoji.get("info") || "ℹ️",
-			effect: i18n.tr("cmd.Audio back to original quality"),
+			effect: i18n.cmd("Audio back to original quality"),
 		}) +
 		"\n\n" +
 		`*${phrases.get("filterCleared")}*`;

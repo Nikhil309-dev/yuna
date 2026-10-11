@@ -18,7 +18,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd src && node index.js"
+args = "npm start"
 
 [nix]
 packages = ["unzipNLS"]

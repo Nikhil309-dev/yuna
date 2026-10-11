@@ -1,6 +1,6 @@
 import type { Player, Track, LavalinkNode, LavalinkManager } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
-import { AttachmentBuilder, MessageFlags } from 'discord.js';
+import { AttachmentBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } from 'discord.js';
 import { EventUtils } from '#utils/EventUtils';
 import { db } from '#database/Database';
 import { PlayerManager } from '#audio/PlayerManager';
@@ -82,9 +82,16 @@ export default {
       } catch (err: any) {
         logger.error('TrackStart', 'Error creating player view:', err);
 
+        // Components V2 messages reject the `content` field, so the fallback
+        // must render its text through a component instead.
+        const fallbackContainer = new ContainerBuilder().addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `🎵 **Now Playing**\n**${track.info.title}** by **${track.info.author}**`
+          )
+        );
+
         message = await EventUtils.sendPlayerMessage(client, player, {
-          content: `🎵 **Now Playing**\n**${track.info.title}** by **${track.info.author}**`,
-          components: [container],
+          components: [fallbackContainer],
           flags: MessageFlags.IsComponentsV2
         });
       }

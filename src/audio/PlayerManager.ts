@@ -59,11 +59,14 @@ export class PlayerManager {
   async playPrevious() {
     const prev = this.player.queue.previous;
     if (!prev || prev.length === 0) return false;
-    const previousTrack = prev.pop();
+    // lavalink-client unshifts finished tracks, so the most recent track is at
+    // index 0 (not the end). Playing it must therefore shift, not pop — pop()
+    // would jump to the oldest entry in history.
+    const previousTrack = prev.shift();
     if (!previousTrack) return false;
 
     const current = this.player.queue.current;
-    if (current) prev.push(current);
+    if (current) prev.unshift(current);
     await this.play({ track: previousTrack });
     return true;
   }

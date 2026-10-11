@@ -692,7 +692,6 @@ class PlayCommand extends Command {
       }
 
       await message.edit({
-        content: "",
         components: [container],
         flags: MessageFlags.IsComponentsV2,
       });
@@ -728,7 +727,6 @@ class PlayCommand extends Command {
       }
 
       await interaction.editReply({
-        content: "",
         components: [container],
         flags: MessageFlags.IsComponentsV2,
       });
