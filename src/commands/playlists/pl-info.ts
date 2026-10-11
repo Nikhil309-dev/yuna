@@ -172,31 +172,26 @@ class PlaylistInfoCommand extends Command {
 				.setCustomId("plinfo_play")
 				.setLabel(i18n.cmd("Play Now"))
 				.setStyle(ButtonStyle.Success)
-				.setEmoji(emoji.get("play") || "▶️")
 				.setDisabled(count === 0),
 			new ButtonBuilder()
 				.setCustomId("plinfo_queue")
 				.setLabel(i18n.cmd("Queue"))
 				.setStyle(ButtonStyle.Primary)
-				.setEmoji("➕")
 				.setDisabled(count === 0),
 			new ButtonBuilder()
 				.setCustomId("plinfo_shuffle")
 				.setLabel(i18n.cmd("Shuffle"))
 				.setStyle(ButtonStyle.Primary)
-				.setEmoji("🔀")
 				.setDisabled(count === 0),
 			new ButtonBuilder()
 				.setCustomId("plinfo_view_tracks")
 				.setLabel(i18n.cmd("Tracks ({count})", { count }))
 				.setStyle(ButtonStyle.Secondary)
-				.setEmoji(emoji.get("music") || "🎵")
 				.setDisabled(count === 0),
 			new ButtonBuilder()
 				.setCustomId("plinfo_delreq")
 				.setLabel(i18n.cmd("Delete"))
-				.setStyle(ButtonStyle.Danger)
-				.setEmoji(emoji.get("trash") || "🗑️"),
+				.setStyle(ButtonStyle.Danger),
 		);
 
 		return buildContainer({
@@ -367,8 +362,7 @@ class PlaylistInfoCommand extends Command {
 			new ButtonBuilder()
 				.setCustomId("plinfo_delete")
 				.setLabel(i18n.cmd("Confirm delete"))
-				.setStyle(ButtonStyle.Danger)
-				.setEmoji(emoji.get("trash") || "🗑️"),
+				.setStyle(ButtonStyle.Danger),
 			new ButtonBuilder()
 				.setCustomId("plinfo_abort")
 				.setLabel(i18n.cmd("Keep"))
