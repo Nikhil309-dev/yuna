@@ -107,6 +107,7 @@ class CoinsCommand extends Command {
       c.addTextDisplayComponents(new TextDisplayBuilder().setContent(handle));
     }
 
+    c.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
     c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
       [
         '**_Wallet_**',
