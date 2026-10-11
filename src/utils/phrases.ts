@@ -251,6 +251,16 @@ export const phrases = {
     "Couldn't load those favorites — the source may be unavailable.",
     "No playable favorites found this time. Try re-adding them!"
   ],
+  likedTrack: [
+    "Pick an action below to play this song right away!",
+    "One tap to play, queue, or remove this favorite.",
+    "Manage this track without leaving the menu!"
+  ],
+  trackResolveFailed: [
+    "That track couldn't be resolved from the source.",
+    "The source didn't return that song — it may be region-locked.",
+    "Couldn't find a playable version of that track right now."
+  ],
 
   playlistCreated: [
     "Playlist created successfully!",
