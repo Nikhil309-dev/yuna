@@ -29,6 +29,11 @@ export const UI_STRINGS: Record<string, Catalog> = {
 		"ui.warning.action": "Please review settings and retry",
 		"ui.loading.title": "Loading...",
 		"ui.loading.wait": "Please wait...",
+                "ui.block.problem": "What went wrong",
+                "ui.block.solution": "How to fix it",
+                "ui.block.done": "What's done",
+                "ui.block.next": "What's next",
+                "ui.block.headsUp": "Heads up",
 
 		"comp.notForYou": "This button is not for you.",
 		"comp.sameVoice": "You must be in the same voice channel as me.",

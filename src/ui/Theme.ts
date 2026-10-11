@@ -110,7 +110,25 @@ export function buildContainer(options: any = {}) {
  * Shared status-card shell: accent stripe, icon + title header, body, and an
  * optional subtext footer (`-# …`). Keeps every status card visually consistent.
  */
-function statusCard({ title, subtitle, accent, icon, body, footer, thumbnail }: any) {
+const BRAND_FOOTER = 'Built with ♥ by Yuna';
+
+// Body labels for the two-part "progression" layout. Falls back to English when
+// a locale has not translated a key yet, so nothing ever renders as a raw key.
+function label(key: string, fallback: string) {
+  const v = i18n.tr(key);
+  return v && v !== key ? v : fallback;
+}
+
+/**
+ * Shared status-card shell (app-style "progression" layout):
+ *   icon + title            -> what the card is about
+ *   ─────────────
+ *   [label] what happened   -> the message, with the avatar alongside
+ *   [label] what you can do -> the next step (optional)
+ *   ─────────────
+ *   -# branded footer
+ */
+function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbnail }: any) {
   const container = new ContainerBuilder();
   if (typeof accent === 'number') container.setAccentColor(accent);
 
@@ -122,6 +140,11 @@ function statusCard({ title, subtitle, accent, icon, body, footer, thumbnail }: 
   }
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(header)));
   container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
+
+  const body = (blocks || [])
+    .filter((b: any) => b && b.text)
+    .map((b: any) => (b.label ? `**${b.label}**\n${b.text}` : `${b.text}`))
+    .join('\n\n');
 
   if (body && thumbnail) {
     try {
@@ -137,41 +160,33 @@ function statusCard({ title, subtitle, accent, icon, body, footer, thumbnail }: 
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)));
   }
 
-  if (footer) {
-    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
-    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${footer}`)));
-  }
+  container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${footer || BRAND_FOOTER}`)));
 
   return container;
 }
 
 /**
- * Signature Error Card Builder
- * Renders as: `❌ **Title**` / separator / message / optional `-# tip`.
- * Chrome labels ("Issue:", "Action:", box-drawing) are deliberately avoided —
- * they bury the actual reason under noise.
+ * Signature Error Card Builder — "what went wrong" + "how to fix it".
  */
 export function buildError(errorInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const crossIcon = emoji.get('cross') || '❌';
   const obj = (typeof errorInput === 'object' && errorInput) ? errorInput : {};
 
   const cardTitle = title ?? obj.title ?? i18n.tr('ui.error.title');
-  const message = typeof errorInput === 'string' ? errorInput : (obj.issue || obj.message || '');
-  const tip = obj.tip;
+  const what = typeof errorInput === 'string' ? errorInput : (obj.issue || obj.message || '');
+  const fix = obj.tip;
 
-  return statusCard({
-    title: cardTitle,
-    accent: STATUS_ACCENT.error,
-    icon: crossIcon,
-    body: message,
-    // Only show the tip when it adds something the title/message doesn't already say.
-    footer: tip && tip !== cardTitle && tip !== message ? tip : null,
-    thumbnail: avatarUrl
-  });
+  const blocks = [
+    { label: label('ui.block.problem', 'What went wrong'), text: what },
+    fix && fix !== cardTitle && fix !== what ? { label: label('ui.block.solution', 'How to fix it'), text: fix } : null
+  ];
+
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.error, icon: crossIcon, blocks, thumbnail: avatarUrl });
 }
 
 /**
- * Signature Success Card Builder
+ * Signature Success Card Builder — "what's done" + optional "what's next".
  */
 export function buildSuccess(successInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const checkIcon = emoji.get('check') || '✅';
@@ -181,18 +196,16 @@ export function buildSuccess(successInput: any, title: any = undefined, avatarUr
   const message = typeof successInput === 'string' ? successInput : (obj.message || obj.content || i18n.tr('ui.success.status'));
   const detail = obj.detail;
 
-  return statusCard({
-    title: cardTitle,
-    accent: STATUS_ACCENT.success,
-    icon: checkIcon,
-    body: message,
-    footer: detail && detail !== message ? detail : null,
-    thumbnail: avatarUrl
-  });
+  const blocks = [
+    { label: label('ui.block.done', "What's done"), text: message },
+    detail && detail !== message ? { label: label('ui.block.next', "What's next"), text: detail } : null
+  ];
+
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.success, icon: checkIcon, blocks, thumbnail: avatarUrl });
 }
 
 /**
- * Signature Info Card Builder
+ * Signature Info Card Builder — plain details, no label.
  */
 export function buildInfo(infoInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const infoIcon = emoji.get('info') || 'ℹ️';
@@ -201,11 +214,11 @@ export function buildInfo(infoInput: any, title: any = undefined, avatarUrl: any
   const cardTitle = title ?? obj.title ?? i18n.tr('ui.info.title');
   const message = typeof infoInput === 'string' ? infoInput : (obj.message || obj.content || i18n.tr('ui.info.title'));
 
-  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.info, icon: infoIcon, body: message, footer: null, thumbnail: avatarUrl });
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.info, icon: infoIcon, blocks: [{ text: message }], thumbnail: avatarUrl });
 }
 
 /**
- * Signature Warning Card Builder
+ * Signature Warning Card Builder — "heads up" + optional "what you can do".
  */
 export function buildWarning(warningInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const warningIcon = '⚠️';
@@ -215,18 +228,16 @@ export function buildWarning(warningInput: any, title: any = undefined, avatarUr
   const message = typeof warningInput === 'string' ? warningInput : (obj.message || obj.content || i18n.tr('ui.warning.attention'));
   const tip = obj.tip;
 
-  return statusCard({
-    title: cardTitle,
-    accent: STATUS_ACCENT.warning,
-    icon: warningIcon,
-    body: message,
-    footer: tip && tip !== cardTitle && tip !== message ? tip : null,
-    thumbnail: avatarUrl
-  });
+  const blocks = [
+    { label: label('ui.block.headsUp', 'Heads up'), text: message },
+    tip && tip !== cardTitle && tip !== message ? { label: label('ui.block.solution', 'What you can do'), text: tip } : null
+  ];
+
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.warning, icon: warningIcon, blocks, thumbnail: avatarUrl });
 }
 
 /**
- * Signature Loading Card Builder
+ * Signature Loading Card Builder.
  */
 export function buildLoading(loadingInput: any, title: any = undefined, avatarUrl: any = undefined) {
   const loadingIcon = emoji.get('loading') || '⏳';
@@ -235,7 +246,7 @@ export function buildLoading(loadingInput: any, title: any = undefined, avatarUr
   const cardTitle = title ?? obj.title ?? i18n.tr('ui.loading.title');
   const message = typeof loadingInput === 'string' ? loadingInput : (obj.message || obj.content || i18n.tr('ui.loading.wait'));
 
-  return statusCard({ title: cardTitle, subtitle: null, accent: STATUS_ACCENT.loading, icon: loadingIcon, body: message, footer: null, thumbnail: avatarUrl });
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.loading, icon: loadingIcon, blocks: [{ text: message }], thumbnail: avatarUrl });
 }
 
 const Theme = {
