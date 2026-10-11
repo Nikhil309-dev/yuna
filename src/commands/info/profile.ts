@@ -117,11 +117,17 @@ class ProfileCommand extends Command {
         aggregate = full.aggregate || aggregate;
         report = full;
       }
+      // total_listen_time_ms is the live counter; the all-time period sums the
+      // logged track durations. Take whichever is larger so the canvas and the
+      // Activity tab never disagree (they used to read different sources).
+      const logged = Number(report?.period?.total_duration_ms) || 0;
+      aggregate.total_listen_time_ms = Math.max(Number(aggregate.total_listen_time_ms) || 0, logged);
     }
 
+    // Rank follows the Wealth board, matching the coin figure shown beside it.
     let rank: number | null = null;
-    if (db.stats?.getGlobalTopListeners) {
-      const board = db.stats.getGlobalTopListeners(1000) as any[];
+    if (db.economy?.getTopUsers) {
+      const board = db.economy.getTopUsers(1000) as any[];
       const idx = board.findIndex((r) => r.user_id === id);
       if (idx >= 0) rank = idx + 1;
     }
@@ -313,7 +319,7 @@ class ProfileCommand extends Command {
 
     collector.on('collect', async (i: any) => {
       if (i.user.id !== viewer.id) {
-        return i.reply({ content: phrases.get('notYourInteraction') || 'These controls are not for you.', flags: MessageFlags.Ephemeral }).catch(() => {});
+        return i.reply(this._error(phrases.get('notYourInteraction') || 'This panel is not for you.', 'Not Your Panel')).catch(() => {});
       }
       try {
         if (i.customId === 'pf_close') {
@@ -353,8 +359,9 @@ class ProfileCommand extends Command {
     return context.reply(withFetch);
   }
 
-  _error(message: string) {
-    return { components: [buildError(message)], flags: MessageFlags.IsComponentsV2 };
+  _error(message: string, title = 'Something Went Wrong') {
+    // Ephemeral so a foreign user's rejection never touches the requester's panel.
+    return { components: [buildError(message, title)], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
   }
 }
 
