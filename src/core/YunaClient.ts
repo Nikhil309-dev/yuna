@@ -113,8 +113,7 @@ export class YunaClient extends Client {
 			await this.withTimeout('commandLoader.load()', () => this.commandLoader.load(), 20_000);
 			await this.withTimeout('components.load()', () => this.components.load(), 20_000);
 
-			this.scheduler.every('db_checkpoint', { minutes: 15 }, () => this.db?.checkpoint?.());
-			this.scheduler.every('db_backup', { hours: 6 }, () => this.db?.backup?.());
+			// DB maintenance intervals are scheduled in the clientReady handler.
 			await this.withTimeout('scheduler.init()', () => this.scheduler.init(), 10_000);
 
 			if (config.token && config.token !== 'YOUR_BOT_TOKEN_HERE') {

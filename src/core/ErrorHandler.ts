@@ -13,9 +13,9 @@ class ErrorHandler {
             this.shutdown('uncaughtException').catch(() => process.exit(1));
         });
 
+        // A single stray rejected promise should not take every shard down with it.
         process.on('unhandledRejection', (reason: any) => {
             logger.error('UnhandledRejection', 'Unhandled promise rejection', reason);
-            this.shutdown('unhandledRejection').catch(() => process.exit(1));
         });
 
         process.on('SIGINT', () => this.shutdown('SIGINT'));

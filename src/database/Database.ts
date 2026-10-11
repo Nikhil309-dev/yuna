@@ -111,22 +111,33 @@ export class Database {
     }
   }
 
-  backup() {
-    return new Promise<void>((resolve, reject) => {
-      try {
-        const backupDir = path.resolve(process.cwd(), 'backups');
-        if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupPath = path.join(backupDir, `${timestamp}-yuna.yuna`);
+  async backup() {
+    try {
+      const backupDir = path.resolve(process.cwd(), 'backups');
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(backupDir, `${timestamp}-yuna.yuna`);
 
-        this.db.backup(backupPath);
-        logger.info('Backup', `Database backup completed: ${backupPath}`);
-        resolve();
-      } catch (error) {
-        logger.error('Backup', 'Failed to initialize database backup', error);
-        reject(error);
+      await this.db.backup(backupPath);
+      logger.info('Backup', `Database backup completed: ${backupPath}`);
+      this.pruneBackups(backupDir);
+    } catch (error) {
+      logger.error('Backup', 'Failed to create database backup', error);
+    }
+  }
+
+  private pruneBackups(backupDir: string, keep = 24) {
+    try {
+      const files = fs
+        .readdirSync(backupDir)
+        .filter((f) => f.endsWith('-yuna.yuna'))
+        .sort();
+      for (const file of files.slice(0, Math.max(0, files.length - keep))) {
+        fs.unlinkSync(path.join(backupDir, file));
       }
-    });
+    } catch (error) {
+      logger.debug('Database', `Backup pruning skipped: ${(error as any)?.message || error}`);
+    }
   }
 
   get guild() { return this.guilds; }
