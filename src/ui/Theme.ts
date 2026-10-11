@@ -50,7 +50,7 @@ const STATUS_ACCENT = {
 } as const;
 
 export function buildContainer(options: any = {}) {
-  const { title, content, thumbnail, image, components, icon, subtitle, accent, footer } = options;
+  const { title, content, thumbnail, image, components, icon, subtitle, accent, footer, separatorBeforeButtons } = options;
   const container = new ContainerBuilder();
 
   if (typeof accent === 'number') container.setAccentColor(accent);
@@ -101,11 +101,11 @@ export function buildContainer(options: any = {}) {
     container.addMediaGalleryComponents(mediaGallery);
   }
 
-  (components || []).forEach((row: any) => {
-    if (row instanceof ActionRowBuilder) {
-      container.addActionRowComponents(row);
-    }
-  });
+  const rows = (components || []).filter((r: any) => r instanceof ActionRowBuilder);
+  if (separatorBeforeButtons && rows.length) {
+    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
+  }
+  rows.forEach((row: any) => container.addActionRowComponents(row));
 
   if (footer) {
     container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));

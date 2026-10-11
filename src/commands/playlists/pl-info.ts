@@ -134,39 +134,12 @@ class PlaylistInfoCommand extends Command {
 		});
 	}
 
-	_sourceLabel(source: any) {
-		if (!source) return null;
-		const s = String(source).toLowerCase();
-		if (s.includes("youtube") || s === "ytsearch" || s === "ytmsearch") return "YouTube";
-		if (s.includes("spotify")) return "Spotify";
-		if (s.includes("soundcloud")) return "SoundCloud";
-		if (s.includes("apple")) return "Apple Music";
-		if (s.includes("deezer")) return "Deezer";
-		if (s.includes("bandcamp")) return "Bandcamp";
-		if (s.includes("twitch")) return "Twitch";
-		if (s.includes("vimeo")) return "Vimeo";
-		if (s.startsWith("http")) return "Direct";
-		return source;
-	}
-
 	_createMainInfoContainer(playlist: any) {
 		const LIMIT = 50;
 		const shortId = playlist.id.replace("pl_", "").substring(0, 8);
 		const tracks = Array.isArray(playlist.tracks) ? playlist.tracks : [];
 		const count = playlist.track_count || tracks.length || 0;
 		const avg = count > 0 ? this._formatDuration(Math.round(playlist.total_duration / count)) : "0:00";
-
-		const artistCounts = new Map<string, number>();
-		const sourceCounts = new Map<string, number>();
-		let missingArt = 0;
-		for (const t of tracks) {
-			if (t?.author) artistCounts.set(t.author, (artistCounts.get(t.author) || 0) + 1);
-			const label = this._sourceLabel(t?.sourceName || t?.uri);
-			if (label) sourceCounts.set(label, (sourceCounts.get(label) || 0) + 1);
-			if (!t?.artworkUrl) missingArt++;
-		}
-		const topArtists = [...artistCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
-		const sources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]).map(([n, c]) => `${n} (${c})`).join(", ");
 
 		const tree = (lines: string[]) => lines.map((l, i) => `${i === lines.length - 1 ? "└─" : "├─"} ${l}`).join("\n");
 		const filled = count > 0 ? Math.min(10, Math.round((count / LIMIT) * 10)) : 0;
@@ -181,9 +154,6 @@ class PlaylistInfoCommand extends Command {
 		];
 
 		const library = [
-			`🎧 **Sources:** ${sources || "—"}`,
-			...(topArtists.length ? [`🎤 **Top artists:** ${topArtists.map(([n, c]) => `${n} (${c})`).join(", ")}`] : []),
-			missingArt > 0 ? `⚠️ **Missing artwork:** ${missingArt}` : `🖼️ **Artwork:** complete`,
 			`📊 **Capacity:** ${bar} ${Math.round((count / LIMIT) * 100)}%`,
 		];
 
@@ -234,6 +204,7 @@ class PlaylistInfoCommand extends Command {
 			content: content,
 			thumbnail: null,
 			components: [buttons],
+			separatorBeforeButtons: true,
 			accent: 0x5865F2,
 			footer: "phrases.playlistUpdated",
 			icon: emoji.get("openfolder") || "ℹ️"
@@ -408,6 +379,7 @@ class PlaylistInfoCommand extends Command {
 				title: i18n.translateTitle("Delete Playlist?"),
 				content: i18n.cmd("This permanently removes **{name}** and its {count} track(s). This cannot be undone.", { name: playlist.name, count: playlist.track_count }),
 				components: [row],
+				separatorBeforeButtons: true,
 				accent: 0xED4245,
 				icon: emoji.get("warning") || "⚠️"
 			})],
