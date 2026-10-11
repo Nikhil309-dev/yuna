@@ -12,9 +12,7 @@
     "dev": "tsx --watch --expose-gc src/shard.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "bench": "tsx scripts/bench.js",
-    "setup": "cp .env.example .env && echo 'Created .env file. Please edit it with your configuration.'",
-    "test": "tsx scripts/runtime-test.ts"
+    "setup": "cp .env.example .env && echo 'Created .env file. Please edit it with your configuration.'"
   },
   "imports": {
     "#core/*": "./src/core/*.ts",

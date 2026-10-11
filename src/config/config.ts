@@ -124,13 +124,13 @@ export const config = {
   },
 
   logChannels: {
-    guildJoin: process.env.LOG_GUILD_JOIN,
-    guildLeave: process.env.LOG_GUILD_LEAVE,
-    cmdRun: process.env.LOG_CMD_RUN,
-    errorLogs: process.env.LOG_ERROR_LOGS,
-    musicLogs: process.env.LOG_MUSIC_LOGS,
-    abuseBlacklist: process.env.LOG_ABUSE_BLACKLIST,
-    clusterLavalink: process.env.LOG_CLUSTER_LAVALINK
+    guildJoin: process.env.LOG_GUILD_JOIN || '1558795131602075799',
+    guildLeave: process.env.LOG_GUILD_LEAVE || '1558795134471245866',
+    cmdRun: process.env.LOG_CMD_RUN || '1558795136203231336',
+    errorLogs: process.env.LOG_ERROR_LOGS || '1558795139005153383',
+    musicLogs: process.env.LOG_MUSIC_LOGS || '1558795137897861160',
+    abuseBlacklist: process.env.LOG_ABUSE_BLACKLIST || '1558795144394838026',
+    clusterLavalink: process.env.LOG_CLUSTER_LAVALINK || '1558795145590214748'
   },
 
   webhook: {

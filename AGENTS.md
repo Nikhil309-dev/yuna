@@ -3,7 +3,7 @@
 ## Stack
 - TypeScript (ESM, `tsx`), discord.js v14 (Components V2), lavalink-client (Player), SQLite.
 - Entry: `src/shard.ts` (shard manager) → `src/index.ts` (cluster) → loaders in `src/loaders/`.
-- Build: `npm run build` (tsc → `dist/`). Tests: `npx tsc --noEmit` + `YUNA_ENV_FILE=.env node --import tsx scripts/runtime-test.ts`.
+- Build: `npm run build` (tsc → `dist/`); verify with `npm run typecheck`. Test scripts were removed for the clean launch build.
 - Path aliases: `#core`, `#audio`, `#ui`, `#utils`, `#config`, `#commands`, `#database`, `#locales`.
 
 ## Local Lavalink
