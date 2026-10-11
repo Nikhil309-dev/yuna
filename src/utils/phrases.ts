@@ -221,6 +221,36 @@ export const phrases = {
     "Your favorites list is currently empty.",
     "No liked songs found in your library."
   ],
+  alreadyLiked: [
+    "That track is already in your favorites!",
+    "You've already liked this one — no change needed.",
+    "This song is already saved to your liked songs!"
+  ],
+  notLiked: [
+    "That track wasn't in your favorites to begin with!",
+    "Nothing to remove — this song isn't in your liked songs.",
+    "That one wasn't saved to your favorites."
+  ],
+  alreadyLikedAll: [
+    "Every track in the queue is already in your favorites!",
+    "Nothing new to add — the whole queue is already liked.",
+    "All of these were saved to your liked songs already!"
+  ],
+  likedList: [
+    "Tip: click a track row to manage it, or play everything at once!",
+    "Use the buttons below to page through or play your favorites.",
+    "Your liked songs are always saved for instant replay!"
+  ],
+  likedQueued: [
+    "Your favorites are lined up and ready to play!",
+    "Loading your liked songs into the queue now!",
+    "Your whole favorites list is queued up!"
+  ],
+  likedResolveFailed: [
+    "None of your liked songs could be resolved right now.",
+    "Couldn't load those favorites — the source may be unavailable.",
+    "No playable favorites found this time. Try re-adding them!"
+  ],
 
   playlistCreated: [
     "Playlist created successfully!",

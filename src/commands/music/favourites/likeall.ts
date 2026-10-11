@@ -1,8 +1,8 @@
 import { Command } from '#core/Command';
 import { db } from '#database/Database';
-import emoji from "#config/emoji";
 import { MessageFlags } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildError } from '#ui/Theme';
+import { buildLikeAllCard } from '#ui/LibraryCards';
 import phrases from "#utils/phrases";
 
 class LikeAllCommand extends Command {
@@ -30,7 +30,7 @@ class LikeAllCommand extends Command {
   }
 
   async execute(ctx: any) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction } = ctx;
     const context = interaction || message;
     const userId = (context.user || context.author).id;
     return this._handleLikeAll(context, client, userId);
@@ -44,28 +44,28 @@ class LikeAllCommand extends Command {
     const player = client.music?.getPlayer(context.guild?.id || context.guildId);
 
     if (!player || (!player.queue.current && player.queue.tracks.length === 0)) {
-      const container = buildError(phrases.get("noTrackPlaying"));
-      return this._reply(context, container);
+      return this._reply(context, buildError(phrases.get("noTrackPlaying")));
     }
 
+    const all = [player.queue.current, ...player.queue.tracks].filter(Boolean);
     let addedCount = 0;
+    let alreadyCount = 0;
 
-    if (player.queue.current) {
-      if ((db as any).liked.addLikedTrack(userId, player.queue.current.info)) addedCount++;
-    }
-
-    for (const track of player.queue.tracks) {
-      if ((db as any).liked.addLikedTrack(userId, track.info)) {
-        addedCount++;
+    for (const track of all) {
+      try {
+        if ((db as any).liked.addLikedTrack(userId, track.info)) addedCount++;
+        else alreadyCount++;
+      } catch {
+        alreadyCount++;
       }
     }
 
-    const likedAllNote = phrases.get("likedAll");
-    const container = addedCount > 0
-      ? buildSuccess(`❤️ Added **${addedCount}** new songs to your liked songs!\n\n*${likedAllNote}*`, "Favorites")
-      : buildError("All songs in the queue are already in your liked songs!", "Favorites");
-
-    return this._reply(context, container);
+    return this._reply(context, buildLikeAllCard({
+      addedCount,
+      alreadyCount,
+      total: all.length,
+      userId,
+    }));
   }
 
   async _reply(context: any, container: any) {

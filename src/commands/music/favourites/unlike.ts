@@ -1,8 +1,8 @@
 import { Command } from '#core/Command';
 import { db } from '#database/Database';
-import emoji from "#config/emoji";
 import { MessageFlags } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildError } from '#ui/Theme';
+import { buildUnlikeCard } from '#ui/LibraryCards';
 import phrases from "#utils/phrases";
 
 class UnlikeCommand extends Command {
@@ -31,7 +31,7 @@ class UnlikeCommand extends Command {
   }
 
   async execute(ctx: any) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction } = ctx;
     const context = interaction || message;
     const userId = (context.user || context.author).id;
     return this._handleUnlike(context, client, userId);
@@ -46,8 +46,7 @@ class UnlikeCommand extends Command {
     const track = player?.queue?.current;
 
     if (!track) {
-      const container = buildError(phrases.get("noTrackPlaying"));
-      return this._reply(context, container);
+      return this._reply(context, buildError(phrases.get("noTrackPlaying")));
     }
 
     let removed;
@@ -56,13 +55,8 @@ class UnlikeCommand extends Command {
     } catch (err: any) {
       return this._reply(context, buildError(`Failed to remove from favorites: ${err.message}`));
     }
-    const unlikeNote = phrases.get("likeRemoved");
 
-    const container = removed
-      ? buildSuccess(`Removed **${track.info.title}** from your liked songs.\n\n*${unlikeNote}*`, "Favorites")
-      : buildError(`**${track.info.title}** is not in your liked songs!`, "Favorites");
-
-    return this._reply(context, container);
+    return this._reply(context, buildUnlikeCard({ track: track.info, removed, userId }));
   }
 
   async _reply(context: any, container: any) {

@@ -1,8 +1,8 @@
 import { Command } from '#core/Command';
 import { db } from '#database/Database';
-import emoji from "#config/emoji";
 import { MessageFlags } from "discord.js";
-import { buildContainer, buildError, buildSuccess } from '#ui/Theme';
+import { buildError } from '#ui/Theme';
+import { buildLikeCard } from '#ui/LibraryCards';
 import phrases from "#utils/phrases";
 
 class LikeCommand extends Command {
@@ -31,7 +31,7 @@ class LikeCommand extends Command {
   }
 
   async execute(ctx: any) {
-    const { client, message, interaction, player, pm, args = [] } = ctx;
+    const { client, message, interaction } = ctx;
     const context = interaction || message;
     const userId = (context.user || context.author).id;
     return this._handleLike(context, client, userId);
@@ -46,8 +46,7 @@ class LikeCommand extends Command {
     const track = player?.queue?.current;
 
     if (!track) {
-      const container = buildError(phrases.get("noTrackPlaying"));
-      return this._reply(context, container);
+      return this._reply(context, buildError(phrases.get("noTrackPlaying")));
     }
 
     let added;
@@ -56,13 +55,8 @@ class LikeCommand extends Command {
     } catch (err: any) {
       return this._reply(context, buildError(`Failed to add to favorites: ${err.message}`));
     }
-    const likeNote = phrases.get("likeAdded");
 
-    const container = added
-      ? buildSuccess(`❤️ Added **${track.info.title}** to your liked songs!\n\n*${likeNote}*`, "Favorites")
-      : buildError(`**${track.info.title}** is already in your liked songs!`, "Favorites");
-
-    return this._reply(context, container);
+    return this._reply(context, buildLikeCard({ track: track.info, added, userId }));
   }
 
   async _reply(context: any, container: any) {
