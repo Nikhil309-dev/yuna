@@ -6,10 +6,13 @@ import {
   SectionBuilder,
   ThumbnailBuilder,
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   MediaGalleryBuilder,
   MediaGalleryItemBuilder
 } from 'discord.js';
 import emoji from '#config/emoji';
+import branding from '#config/branding';
 import { i18n } from '#utils/i18n.js';
 
 // Discord Components V2 hard limits. Exceeding them throws at build time, so
@@ -120,9 +123,8 @@ function label(key: string, fallback: string) {
 }
 
 /**
- * Renders the card body as a smooth tree: each block is a node whose label sits
- * on a rounded branch connector (╭─ / ├─ / ╰─) with its text hanging below on a
- * matching guide. Rounded corners keep it soft instead of boxy.
+ * Renders the card body as a tree: each block is a node on a branch connector
+ * (├─ / └─) with its text hanging below on a matching guide.
  */
 function renderTree(blocks: any[]): string {
   const items = (blocks || []).filter((b: any) => b && b.text);
@@ -130,8 +132,8 @@ function renderTree(blocks: any[]): string {
   return items
     .map((b: any, i: number) => {
       const isLast = i === n - 1;
-      const connector = n === 1 ? '─' : isLast ? '╰─' : i === 0 ? '╭─' : '├─';
-      const pipe = n === 1 ? '  ' : isLast ? '   ' : '│  ';
+      const connector = isLast ? '└─' : '├─';
+      const pipe = isLast ? '   ' : '│  ';
       const textLines = String(b.text).split('\n');
       const first = b.label ? `**${b.label}**` : textLines[0];
       const rest = b.label ? textLines : textLines.slice(1);
@@ -149,7 +151,7 @@ function renderTree(blocks: any[]): string {
  *   ─────────────
  *   -# branded footer
  */
-function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbnail }: any) {
+function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbnail, buttons = [] }: any) {
   const container = new ContainerBuilder();
   if (typeof accent === 'number') container.setAccentColor(accent);
 
@@ -178,10 +180,24 @@ function statusCard({ title, subtitle, accent, icon, blocks = [], footer, thumbn
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(body)));
   }
 
+  if (buttons && buttons.length) {
+    container.addActionRowComponents(
+      new ActionRowBuilder<any>().addComponents(...buttons)
+    );
+  }
+
   container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small));
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(clampText(`-# ${footer || BRAND_FOOTER}`)));
 
   return container;
+}
+
+/** Link button to the support server, used on "blocked / restricted" cards. */
+function supportButton(labelText?: string) {
+  return new ButtonBuilder()
+    .setLabel(labelText || label('ui.button.support', 'Join Support Server'))
+    .setStyle(ButtonStyle.Link)
+    .setURL(branding.links.supportServer);
 }
 
 /**
@@ -200,7 +216,20 @@ export function buildError(errorInput: any, title: any = undefined, avatarUrl: a
     fix && fix !== cardTitle && fix !== what ? { label: label('ui.block.solution', 'How to fix it'), text: fix } : null
   ];
 
-  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.error, icon: crossIcon, blocks, thumbnail: avatarUrl });
+  // A "blocked" error (blacklist / restriction) gets a link button to support,
+  // where the user can appeal — matching how the card tells them to.
+  const buttons = obj.blocked ? [supportButton(obj.supportLabel)] : [];
+
+  return statusCard({ title: cardTitle, accent: STATUS_ACCENT.error, icon: crossIcon, blocks, buttons, thumbnail: avatarUrl });
+}
+
+/**
+ * Blocked / restricted card — same as an error but with a support-server link
+ * button so the user has a one-click path to appeal.
+ */
+export function buildBlocked(blockedInput: any, title: any = undefined, avatarUrl: any = undefined) {
+  const obj = (typeof blockedInput === 'object' && blockedInput) ? blockedInput : { issue: blockedInput };
+  return buildError({ ...obj, blocked: true }, title ?? i18n.tr('mw.blacklisted.title'), avatarUrl);
 }
 
 /**
@@ -274,6 +303,7 @@ const Theme = {
   buildInfo,
   buildWarning,
   buildLoading,
+  buildBlocked,
   buildYunaContainer: buildContainer,
   buildYunaError: buildError,
   buildYunaSuccess: buildSuccess

@@ -1,5 +1,5 @@
 import { db } from '#database/Database';
-import { buildError } from '#ui/Theme';
+import { buildError, buildBlocked } from '#ui/Theme';
 import { checkPermissions, checkBotPermissions, isPremium, isOwner, isBlacklisted } from '../core/AccessControl';
 import { AntiAbuse } from '../utils/AntiAbuse';
 import { GuildMember, Guild, GuildChannel, User, Client } from 'discord.js';
@@ -46,11 +46,11 @@ export class Middleware {
     if (isBlacklisted(userId, guildId)) {
       return {
         pass: false,
-        response: errorCard({
-          title: tr('mw.blacklisted.title'),
-          issue: tr('mw.blacklisted.issue'),
-          tip: tr('mw.blacklisted.tip')
-        })
+        response: buildBlocked(
+          { issue: tr('mw.blacklisted.issue'), tip: tr('mw.blacklisted.tip') },
+          tr('mw.blacklisted.title'),
+          avatar
+        )
       };
     }
 
@@ -70,11 +70,11 @@ export class Middleware {
     if (this.anti.isBlacklisted(userId, command.name, guildId ?? 'dm')) {
       return {
         pass: false,
-        response: errorCard({
-          title: tr('mw.rateLimited.title'),
-          issue: tr('mw.rateLimited.issue', { command: command.name }),
-          tip: tr('mw.cooldown.title')
-        })
+        response: buildBlocked(
+          { issue: tr('mw.rateLimited.issue', { command: command.name }), tip: tr('mw.cooldown.title') },
+          tr('mw.rateLimited.title'),
+          avatar
+        )
       };
     }
 
