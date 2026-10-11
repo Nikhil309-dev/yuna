@@ -70,8 +70,7 @@ export function buildLikeCard({ track, added, userId }: any) {
         ? `${ICONS.check} ${i18n.cmd('Added to your liked songs')}`
         : `${ICONS.info} ${i18n.cmd('Already in your liked songs')}`,
       `${ICONS.folder} ${i18n.cmd('Total liked: {count}', { count: likedCount(userId) })}`,
-    ]) +
-    `\n\n*${note}*`;
+    ]);
 
   return buildContainer({
     title: i18n.translateTitle(added ? 'Song Liked' : 'Already Liked'),
@@ -79,6 +78,7 @@ export function buildLikeCard({ track, added, userId }: any) {
     thumbnail: track?.artworkUrl || config.assets?.defaultTrackArtwork,
     icon: added ? ICONS.check : ICONS.info,
     accent: added ? 0x57f287 : 0x5865f2,
+    footer: note,
   });
 }
 
@@ -93,8 +93,7 @@ export function buildUnlikeCard({ track, removed, userId }: any) {
         ? `${ICONS.check} ${i18n.cmd('Removed from your liked songs')}`
         : `${ICONS.info} ${i18n.cmd('Not in your liked songs')}`,
       `${ICONS.folder} ${i18n.cmd('Total liked: {count}', { count: likedCount(userId) })}`,
-    ]) +
-    `\n\n*${note}*`;
+    ]);
 
   return buildContainer({
     title: i18n.translateTitle(removed ? 'Song Unliked' : 'Not Liked'),
@@ -102,6 +101,7 @@ export function buildUnlikeCard({ track, removed, userId }: any) {
     thumbnail: track?.artworkUrl || config.assets?.defaultTrackArtwork,
     icon: removed ? ICONS.check : ICONS.info,
     accent: removed ? 0x57f287 : 0xfee75c,
+    footer: note,
   });
 }
 
@@ -115,8 +115,7 @@ export function buildLikeAllCard({ addedCount, alreadyCount, total, userId }: an
       `${ICONS.info} ${i18n.cmd('Skipped (already saved): {count}', { count: alreadyCount })}`,
       `${ICONS.music} ${i18n.cmd('Scanned: {count} tracks', { count: total })}`,
       `${ICONS.folder} ${i18n.cmd('Total liked: {count}', { count: likedCount(userId) })}`,
-    ]) +
-    `\n\n*${note}*`;
+    ]);
 
   return buildContainer({
     title: i18n.translateTitle(addedCount > 0 ? 'Queue Liked' : 'Already All Liked'),
@@ -124,6 +123,7 @@ export function buildLikeAllCard({ addedCount, alreadyCount, total, userId }: an
     thumbnail: config.assets?.defaultThumbnail,
     icon: addedCount > 0 ? ICONS.check : ICONS.info,
     accent: addedCount > 0 ? 0x57f287 : 0xfee75c,
+    footer: note,
   });
 }
 
@@ -409,8 +409,7 @@ export function buildPlayLikedCard({ addedCount, total, ok }: any) {
     tree([
       `${ICONS.check} ${i18n.cmd('Queued: {count} tracks', { count: addedCount })}`,
       `${ICONS.info} ${i18n.cmd('Available: {count} liked songs', { count: total })}`,
-    ]) +
-    `\n\n*${note}*`;
+    ]);
 
   return buildContainer({
     title: i18n.translateTitle(ok ? 'Playing Favorites' : 'Could Not Load Favorites'),
@@ -418,6 +417,7 @@ export function buildPlayLikedCard({ addedCount, total, ok }: any) {
     thumbnail: config.assets?.defaultThumbnail,
     icon: ok ? ICONS.check : ICONS.info,
     accent: ok ? 0x57f287 : 0xfee75c,
+    footer: note,
   });
 }
 
@@ -435,8 +435,7 @@ export function buildQueueResultCard({ mode, title, ok, reason }: any) {
     tree([
       `${ICONS.check} ${action}`,
       `${ICONS.music} **${title}**`,
-    ]) +
-    `\n\n*${note}*`;
+    ]);
 
   return buildContainer({
     title: i18n.translateTitle(ok ? 'Favorites Update' : 'Could Not Queue Track'),
@@ -444,6 +443,7 @@ export function buildQueueResultCard({ mode, title, ok, reason }: any) {
     thumbnail: config.assets?.defaultTrackArtwork,
     icon: ok ? ICONS.check : ICONS.info,
     accent: ok ? 0x57f287 : 0xfee75c,
+    footer: note,
   });
 }
 
@@ -455,8 +455,7 @@ export function buildPlayAllCard({ addedCount, total, ok }: any) {
     tree([
       `${ICONS.check} ${i18n.cmd('Queued: {count} tracks', { count: addedCount })}`,
       `${ICONS.info} ${i18n.cmd('Library size: {count} songs', { count: total })}`,
-    ]) +
-    `\n\n*${note}*`;
+    ]);
 
   return buildContainer({
     title: i18n.translateTitle(ok ? 'Playing Favorites' : 'Could Not Load Favorites'),
@@ -464,5 +463,6 @@ export function buildPlayAllCard({ addedCount, total, ok }: any) {
     thumbnail: config.assets?.defaultThumbnail,
     icon: ok ? ICONS.check : ICONS.info,
     accent: ok ? 0x57f287 : 0xfee75c,
+    footer: note,
   });
 }
