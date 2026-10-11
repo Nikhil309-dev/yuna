@@ -57,7 +57,7 @@ class InviteCommand extends Command {
 			logger.error("InviteCommand", `Error in slash command: ${error.message}`, error);
 			const errorPayload = {
 				components: [this._createErrorContainer(i18n.cmd("An error occurred while generating invite link."))],
-				ephemeral: true,
+				flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
 			};
 			if (interaction.replied || interaction.deferred) {
 				await interaction.editReply(errorPayload).catch(() => {});

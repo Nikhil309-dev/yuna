@@ -139,7 +139,7 @@ class Stay247Command extends Command {
       logger.error("Stay247Command", `Error in slash command: ${error?.message}`, error);
       const errorPayload = {
         components: [this._createErrorContainer(i18n.cmd("An error occurred while changing 24/7 settings."))],
-        ephemeral: true,
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
       };
       if (interaction.replied || interaction.deferred) {
         await interaction.editReply(errorPayload).catch(() => {});
