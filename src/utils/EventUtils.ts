@@ -106,10 +106,11 @@ export class EventUtils {
 
     const position = player.position || 0;
     const isTextMode = player.get?.('nowPlayingTextMode') === true;
+    const controlMode = player.get?.('controlMode') || 'default';
     const requesterId = track.requester?.id;
 
     if (isTextMode) {
-      const container = createPlayerContainer('default', { isTextMode: true, track, position });
+      const container = createPlayerContainer(controlMode, { isTextMode: true, track, position });
       await message.edit({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
       return true;
     }
@@ -117,7 +118,7 @@ export class EventUtils {
     const isPremium = requesterId ? !!db.hasAnyPremium(requesterId, player.guildId) : false;
     const buffer = await new MusicCard().createMusicCard(track, position, { isPremium });
     const attachment = new AttachmentBuilder(buffer, { name: 'yuna-nowplaying.png' });
-    const container = createPlayerContainer('default', { isTextMode: false, track, position, hasImage: true });
+    const container = createPlayerContainer(controlMode, { isTextMode: false, track, position, hasImage: true });
     await message.edit({ files: [attachment], components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
     return true;
   }

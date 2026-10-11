@@ -55,6 +55,8 @@ export default {
       let message;
       const style = track.requester?.id ? db.getNpStyle(track.requester.id) : 'card';
       const isTextMode = style === 'text';
+      // New track: reset any control mode chosen on the previous track.
+      player.set('controlMode', 'default');
 
       const container = createPlayerContainer('default', { isTextMode, track, position: player.position || 0 });
 
