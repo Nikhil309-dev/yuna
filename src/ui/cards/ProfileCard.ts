@@ -1,22 +1,27 @@
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import { join } from 'path';
-import { logger } from '#utils/logger';
 
-const CARD_WIDTH = 800;
-const CARD_HEIGHT = 380;
+const CARD_WIDTH = 900;
+const CARD_HEIGHT = 440;
 
 let fontsRegisteredGlobally = false;
 
-const YUNA_THEME = {
-  bg: '#070811',
-  panelBg: 'rgba(13, 16, 26, 0.90)',
+/**
+ * Matte, glass-forward palette. Deliberately no glossy highlights — depth comes
+ * from layered translucency and soft matte radial washes, not specular shine.
+ */
+const T = {
+  bgTop: '#0A0B16',
+  bgBottom: '#12132A',
+  glassFill: 'rgba(255,255,255,0.05)',
+  glassStroke: 'rgba(255,255,255,0.13)',
+  hairline: 'rgba(255,255,255,0.08)',
   textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255, 255, 255, 0.72)',
-  textMuted: 'rgba(255, 255, 255, 0.45)',
-  sakuraMain: '#FF69B4',
+  textSecondary: 'rgba(255,255,255,0.72)',
+  textMuted: 'rgba(255,255,255,0.42)',
+  sakura: '#FF8FC5',
   roseLight: '#FFB6C1',
   roseSoft: '#F4C2C2',
-  platinum: '#F8FAFC'
 };
 
 export default class ProfileCard {
@@ -27,14 +32,14 @@ export default class ProfileCard {
   registerFonts() {
     if (fontsRegisteredGlobally) return;
     try {
-      const fontDir = join(process.cwd(), 'fonts');
-      GlobalFonts.registerFromPath(join(fontDir, 'GreatVibes-Regular.ttf'), 'Great Vibes');
-      GlobalFonts.registerFromPath(join(fontDir, 'AlexBrush-Regular.ttf'), 'Alex Brush');
-      GlobalFonts.registerFromPath(join(fontDir, 'Righteous-Regular.ttf'), 'Righteous');
-      fontsRegisteredGlobally = true;
-    } catch (e) {
-      fontsRegisteredGlobally = true;
+      const dir = join(process.cwd(), 'fonts');
+      GlobalFonts.registerFromPath(join(dir, 'GreatVibes-Regular.ttf'), 'Great Vibes');
+      GlobalFonts.registerFromPath(join(dir, 'AlexBrush-Regular.ttf'), 'Alex Brush');
+      GlobalFonts.registerFromPath(join(dir, 'Righteous-Regular.ttf'), 'Righteous');
+    } catch {
+      /* fall back to system fonts */
     }
+    fontsRegisteredGlobally = true;
   }
 
   roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
@@ -42,213 +47,288 @@ export default class ProfileCard {
     ctx.roundRect(x, y, w, h, r);
   }
 
-  drawLeaf(ctx: any, x: number, y: number, size: number, angle: number, color: string) {
+  // ── Decorative flora ────────────────────────────────────────────────────────
+
+  /** A soft 5-petal blossom with a matte centre and two leaves. */
+  drawBlossom(ctx: any, x: number, y: number, size: number, alpha = 1) {
+    const petals = ['#FFD1E3', '#FFB6C1', '#FF8FC5'];
     ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    ctx.rotate(angle);
+
+    ctx.save();
+    ctx.rotate(-0.6);
+    ctx.fillStyle = 'rgba(255,182,193,0.55)';
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(size * 0.8, -size * 0.4, size, -size);
-    ctx.quadraticCurveTo(size * 0.2, -size * 0.6, 0, 0);
-    ctx.fillStyle = color;
+    ctx.ellipse(-size * 0.75, size * 0.75, size * 0.85, size * 0.34, 0.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-  }
-
-  drawSakuraFlower(ctx: any, x: number, y: number, size: number) {
-    const petals = 5;
-    const colors = ['#FFC0CB', '#FFB6C1', '#FF69B4'];
-
     ctx.save();
-    ctx.translate(x, y);
+    ctx.rotate(0.4);
+    ctx.fillStyle = 'rgba(255,143,197,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(size * 0.8, -size * 0.7, size * 0.8, size * 0.32, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
-    this.drawLeaf(ctx, -size * 0.5, size * 0.5, size * 0.8, Math.PI * 0.8, '#FF69B4');
-    this.drawLeaf(ctx, size * 0.5, -size * 0.5, size * 0.8, -Math.PI * 0.2, '#FFB6C1');
-
-    for (let i = 0; i < petals; i++) {
-      ctx.rotate((Math.PI * 2) / petals);
+    for (let i = 0; i < 5; i++) {
+      ctx.save();
+      ctx.rotate((Math.PI * 2 * i) / 5);
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.bezierCurveTo(size, -size * 0.5, size, size * 0.5, 0, 0);
-      ctx.fillStyle = colors[i % colors.length];
+      ctx.bezierCurveTo(size * 0.95, -size * 0.55, size * 0.95, size * 0.55, 0, 0);
+      ctx.fillStyle = petals[i % petals.length];
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      ctx.restore();
     }
 
     ctx.beginPath();
-    ctx.arc(0, 0, size * 0.25, 0, Math.PI * 2);
-    ctx.fillStyle = '#FFFFFF';
+    ctx.arc(0, 0, size * 0.24, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,240,246,0.95)';
     ctx.fill();
     ctx.restore();
   }
+
+  /** A single drifting petal. */
+  drawPetal(ctx: any, x: number, y: number, size: number, angle: number, alpha: number) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size, size * 0.45, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFC3DA';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /**
+   * Scatters flora around the frame. It sits *behind* the glass so it reads
+   * through the translucent panel as a frosted backdrop.
+   */
+  drawFlora(ctx: any) {
+    this.drawBlossom(ctx, CARD_WIDTH - 66, 54, 30, 0.9);
+    this.drawBlossom(ctx, CARD_WIDTH - 124, 108, 17, 0.7);
+    this.drawBlossom(ctx, CARD_WIDTH - 34, 122, 12, 0.55);
+    this.drawBlossom(ctx, 58, CARD_HEIGHT - 56, 24, 0.85);
+    this.drawBlossom(ctx, 116, CARD_HEIGHT - 104, 14, 0.6);
+
+    const petals: Array<[number, number, number, number, number]> = [
+      [CARD_WIDTH - 150, 40, 9, 0.5, 0.5],
+      [CARD_WIDTH - 96, 168, 7, -0.9, 0.4],
+      [CARD_WIDTH - 30, 200, 8, 1.2, 0.35],
+      [40, 110, 7, 0.8, 0.4],
+      [96, 74, 9, -0.4, 0.45],
+      [150, CARD_HEIGHT - 40, 8, 1.4, 0.4],
+      [CARD_WIDTH - 190, CARD_HEIGHT - 30, 7, -0.6, 0.35],
+    ];
+    for (const [x, y, s, a, al] of petals) this.drawPetal(ctx, x, y, s, a, al);
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   truncate(ctx: any, text: string, maxWidth: number, font: string) {
     ctx.font = font;
     if (ctx.measureText(text).width <= maxWidth) return text;
-    let truncated = text;
-    while (ctx.measureText(truncated + '...').width > maxWidth && truncated.length > 0) {
-      truncated = truncated.slice(0, -1);
-    }
-    return truncated + '...';
+    let out = text;
+    while (ctx.measureText(out + '…').width > maxWidth && out.length > 0) out = out.slice(0, -1);
+    return out + '…';
   }
 
   formatTime(ms: number) {
     if (!ms || isNaN(ms)) return '0H 0M';
-    const totalMins = Math.floor(ms / 60000);
-    const hrs = Math.floor(totalMins / 60);
-    const mins = totalMins % 60;
-    return `${hrs}H ${mins}M`;
+    const mins = Math.floor(ms / 60000);
+    return `${Math.floor(mins / 60)}H ${mins % 60}M`;
   }
+
+  // ── Card ───────────────────────────────────────────────────────────────────
 
   async createProfileCard(user: any, profileData: any) {
     const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT);
     const ctx = canvas.getContext('2d');
+    const premium = !!profileData.premium;
 
-    ctx.fillStyle = YUNA_THEME.bg;
+    // Matte base + two soft matte washes for depth (no shine).
+    const base = ctx.createLinearGradient(0, 0, 0, CARD_HEIGHT);
+    base.addColorStop(0, T.bgTop);
+    base.addColorStop(1, T.bgBottom);
+    ctx.fillStyle = base;
     ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < CARD_WIDTH; i += 40) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, CARD_HEIGHT); ctx.stroke();
-    }
-    for (let i = 0; i < CARD_HEIGHT; i += 40) {
-      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(CARD_WIDTH, i); ctx.stroke();
-    }
+    const pinkWash = ctx.createRadialGradient(CARD_WIDTH - 150, 70, 20, CARD_WIDTH - 150, 70, 420);
+    pinkWash.addColorStop(0, 'rgba(255,143,197,0.13)');
+    pinkWash.addColorStop(1, 'rgba(255,143,197,0)');
+    ctx.fillStyle = pinkWash;
+    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-    const px = 40;
-    const py = 40;
-    const pw = CARD_WIDTH - (px * 2);
+    const indigoWash = ctx.createRadialGradient(120, CARD_HEIGHT - 30, 20, 120, CARD_HEIGHT - 30, 440);
+    indigoWash.addColorStop(0, 'rgba(99,102,241,0.14)');
+    indigoWash.addColorStop(1, 'rgba(99,102,241,0)');
+    ctx.fillStyle = indigoWash;
+    ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+
+    this.drawFlora(ctx);
+
+    // ── Glass panel ──
+    const px = 44;
+    const py = 44;
+    const pw = CARD_WIDTH - px * 2;
+    const ph = CARD_HEIGHT - py * 2;
 
     ctx.save();
-    this.roundRect(ctx, px, py, pw, CARD_HEIGHT - (py * 2), 20);
-    ctx.fillStyle = YUNA_THEME.panelBg;
+    this.roundRect(ctx, px, py, pw, ph, 30);
+    ctx.fillStyle = T.glassFill;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = T.glassStroke;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
 
+    // Faint etched blossoms inside the glass, top-right.
+    this.drawBlossom(ctx, px + pw - 56, py + 40, 15, 0.28);
+    this.drawPetal(ctx, px + pw - 92, py + 74, 6, 0.6, 0.22);
+
+    // ── Brand wordmark ──
     ctx.save();
-    const brandY = py + 30;
-    this.drawSakuraFlower(ctx, CARD_WIDTH - px - 28, brandY, 14);
-
-    ctx.font = '34px "Great Vibes", "Alex Brush", cursive';
-    const yunaGrad = ctx.createLinearGradient(CARD_WIDTH - 150, brandY, CARD_WIDTH - 40, brandY + 24);
-    yunaGrad.addColorStop(0, '#FFFFFF');
-    yunaGrad.addColorStop(0.5, '#FFC0CB');
-    yunaGrad.addColorStop(1, YUNA_THEME.sakuraMain);
-
-    ctx.fillStyle = yunaGrad;
+    ctx.font = '40px "Great Vibes", "Alex Brush", cursive';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Yuna', CARD_WIDTH - px - 48, brandY);
+    const word = ctx.createLinearGradient(px + pw - 200, py + 34, px + pw - 36, py + 58);
+    word.addColorStop(0, '#FFFFFF');
+    word.addColorStop(0.55, '#FFC0CB');
+    word.addColorStop(1, T.sakura);
+    ctx.fillStyle = word;
+    ctx.fillText('Yuna', px + pw - 36, py + 46);
     ctx.restore();
 
+    // ── Avatar ──
     let avatarImg;
     try {
-      const avatarUrl = user.displayAvatarURL({ extension: 'png', size: 256, forceStatic: true });
-      avatarImg = await loadImage(avatarUrl);
-    } catch (e) {
-
+      const url = user.displayAvatarURL({ extension: 'png', size: 256, forceStatic: true });
+      avatarImg = await loadImage(url);
+    } catch {
+      /* avatar is optional */
     }
 
-    const avatarSize = 120;
-    const avatarX = px + 40;
-    const avatarY = py + 40;
+    const av = 118;
+    const ax = px + 40;
+    const ay = py + 36;
 
     if (avatarImg) {
       ctx.save();
       ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+      ctx.arc(ax + av / 2, ay + av / 2, av / 2, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.drawImage(avatarImg, ax, ay, av, av);
       ctx.restore();
 
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
-
-      let borderGrad = ctx.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize);
-      if (profileData.premium) {
-        borderGrad.addColorStop(0, YUNA_THEME.sakuraMain);
-        borderGrad.addColorStop(1, YUNA_THEME.roseLight);
+      const ring = ctx.createLinearGradient(ax, ay, ax + av, ay + av);
+      if (premium) {
+        ring.addColorStop(0, T.sakura);
+        ring.addColorStop(1, T.roseLight);
       } else {
-        borderGrad.addColorStop(0, 'rgba(255,255,255,0.2)');
-        borderGrad.addColorStop(1, 'rgba(255,255,255,0.05)');
+        ring.addColorStop(0, 'rgba(255,255,255,0.42)');
+        ring.addColorStop(1, 'rgba(255,255,255,0.14)');
       }
-
-      ctx.strokeStyle = borderGrad;
-      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(ax + av / 2, ay + av / 2, av / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = ring;
+      ctx.lineWidth = 3.5;
       ctx.stroke();
     }
 
-    const textX = avatarX + avatarSize + 32;
-    const textY = avatarY + 36;
+    // ── Identity ──
+    const tx = ax + av + 30;
+    const nameY = ay + 44;
 
-    ctx.font = '32px "Righteous"';
-    ctx.fillStyle = YUNA_THEME.textPrimary;
+    ctx.font = '34px "Righteous"';
+    ctx.fillStyle = T.textPrimary;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    const dispName = this.truncate(ctx, user.displayName || user.username, 400, '32px "Righteous"');
-    ctx.fillText(dispName.toUpperCase(), textX, textY);
+    const dispName = this.truncate(ctx, (user.displayName || user.username || 'Unknown').toUpperCase(), 380, '34px "Righteous"');
+    ctx.fillText(dispName, tx, nameY);
 
-    ctx.font = '16px "Righteous"';
-    ctx.fillStyle = YUNA_THEME.textSecondary;
-    ctx.fillText(`@${user.username}`, textX, textY + 28);
-
-    if (profileData.premium) {
-      const badgeY = textY - 24;
-      const badgeX = textX + ctx.measureText(dispName.toUpperCase()).width + 16;
+    if (premium) {
+      const badgeX = tx + ctx.measureText(dispName).width + 16;
+      const badgeY = nameY - 26;
       ctx.save();
-      this.roundRect(ctx, badgeX, badgeY - 14, 80, 22, 6);
-      ctx.fillStyle = 'rgba(255, 105, 180, 0.15)';
+      this.roundRect(ctx, badgeX, badgeY, 84, 24, 8);
+      ctx.fillStyle = 'rgba(255,143,197,0.14)';
       ctx.fill();
-      ctx.strokeStyle = YUNA_THEME.sakuraMain;
+      ctx.strokeStyle = 'rgba(255,143,197,0.45)';
       ctx.lineWidth = 1;
       ctx.stroke();
-
-      ctx.font = '11px "Righteous"';
-      ctx.fillStyle = YUNA_THEME.sakuraMain;
-      ctx.fillText('PREMIUM', badgeX + 16, badgeY + 2);
+      ctx.font = '12px "Righteous"';
+      ctx.fillStyle = T.sakura;
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PREMIUM', badgeX + 14, badgeY + 13);
       ctx.restore();
     }
 
-    const statsY = avatarY + avatarSize + 40;
+    ctx.font = '15px "Righteous"';
+    ctx.fillStyle = T.textSecondary;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(`@${user.username || 'unknown'}`, tx, nameY + 30);
 
-    const statItems = [
-      { label: 'WALLET BALANCE', value: `${(profileData.coins || 0).toLocaleString()} COINS`, color: YUNA_THEME.sakuraMain, bg: 'rgba(255, 105, 180, 0.05)' },
-      { label: 'TRACKS PLAYED', value: (profileData.stats?.total_tracks_played || 0).toLocaleString(), color: YUNA_THEME.roseLight, bg: 'rgba(255, 182, 193, 0.05)' },
-      { label: 'LISTEN TIME', value: this.formatTime(profileData.stats?.total_listen_time_ms || 0), color: YUNA_THEME.roseSoft, bg: 'rgba(244, 194, 194, 0.05)' }
+    // Hairline under the identity block.
+    ctx.beginPath();
+    ctx.moveTo(px + 40, ay + av + 26);
+    ctx.lineTo(px + pw - 40, ay + av + 26);
+    ctx.strokeStyle = T.hairline;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // ── Stat tiles ──
+    const statsY = ay + av + 46;
+    const tileH = 92;
+    const gap = 18;
+    const tileW = (pw - 80 - gap * 2) / 3;
+
+    const items = [
+      { label: 'WALLET BALANCE', value: `${(profileData.coins || 0).toLocaleString()}`, hint: 'COINS', color: T.sakura },
+      { label: 'TRACKS PLAYED', value: `${(profileData.stats?.total_tracks_played || 0).toLocaleString()}`, hint: 'TRACKS', color: T.roseLight },
+      { label: 'LISTEN TIME', value: this.formatTime(profileData.stats?.total_listen_time_ms || 0), hint: 'TOTAL', color: T.roseSoft },
     ];
 
-    const totalSpacing = 20;
-    const statBoxW = (pw - 80 - totalSpacing) / 3;
-
-    statItems.forEach((item, i) => {
-      const sx = px + 40 + i * (statBoxW + 10);
-
+    items.forEach((item, i) => {
+      const sx = px + 40 + i * (tileW + gap);
       ctx.save();
-      this.roundRect(ctx, sx, statsY, statBoxW, 72, 14);
-      ctx.fillStyle = item.bg;
+      this.roundRect(ctx, sx, statsY, tileW, tileH, 16);
+      ctx.fillStyle = 'rgba(255,255,255,0.045)';
       ctx.fill();
-
-      ctx.strokeStyle = `${item.color}35`;
+      ctx.strokeStyle = T.hairline;
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      ctx.font = '11px "Righteous"';
-      ctx.fillStyle = YUNA_THEME.textSecondary;
-      ctx.textAlign = 'left';
-      ctx.fillText(item.label, sx + 16, statsY + 24);
+      // Small etched petal accent, top-right of each tile.
+      this.drawPetal(ctx, sx + tileW - 20, statsY + 20, 6, -0.6, 0.18);
 
-      ctx.font = '20px "Righteous"';
+      ctx.font = '11px "Righteous"';
+      ctx.fillStyle = T.textMuted;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(item.label, sx + 18, statsY + 26);
+
+      ctx.font = '24px "Righteous"';
       ctx.fillStyle = item.color;
-      ctx.fillText(item.value, sx + 16, statsY + 52);
+      ctx.fillText(item.value, sx + 18, statsY + 58);
+
+      ctx.font = '10px "Righteous"';
+      ctx.fillStyle = T.textMuted;
+      ctx.fillText(item.hint, sx + 18, statsY + 76);
       ctx.restore();
     });
+
+    // ── Footer mark ──
+    ctx.save();
+    ctx.font = '12px "Righteous"';
+    ctx.fillStyle = T.textMuted;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🌸  SAKURA MUSIC ENGINE', px + 44, py + ph - 32);
+    ctx.restore();
 
     return canvas.toBuffer('image/png');
   }

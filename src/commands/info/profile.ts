@@ -179,12 +179,12 @@ class ProfileCommand extends Command {
 
   _container(view: View, target: Target, cardBuffer: Buffer | null) {
     const c = new ContainerBuilder();
-    // Premium profiles wear the sakura accent; everyone else the Yuna brand blue.
-    c.setAccentColor(target.premium ? 0xff69b4 : 0x5865f2);
+    // No accent stripe here — the sakura canvas carries the colour; the card
+    // frame stays neutral so nothing competes with the artwork.
 
     const name = target.user.displayName || target.user.username || 'Unknown';
-    const badge = target.premium ? '  ✨ **PREMIUM**' : '';
-    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🌸 **${name}**${badge}`));
+    const badge = target.premium ? '  ·  **Premium**' : '';
+    c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`## 🌸 ${name}${badge}`));
 
     const handle = `> @${target.user.username || 'unknown'}`;
     try {
