@@ -19,9 +19,11 @@ process.env.CLIENT_ID = '123456789012345678';
 process.env.DATABASE_PATH = path.join(TEST_DIR, 'test-runtime.yuna');
 process.env.NODE_ENV = 'production';
 process.env.DEBUG = 'false';
-// The developer's .env may define real Lavalink nodes; blank them so config
-// falls back to the built-in default node. Empty (not deleted) values survive
-// dotenv, which does not override keys that already exist.
+// Point the config loader at an empty env file so the developer's real `.env`
+// is ignored entirely; the harness stays hermetic regardless of local config.
+process.env.YUNA_ENV_FILE = path.join(TEST_DIR, 'empty.env');
+fs.writeFileSync(process.env.YUNA_ENV_FILE, '');
+// Belt-and-suspenders: ensure no Lavalink node leaks in from the shell.
 for (const key of ['LAVALINK_HOST', 'LAVALINK_PORT', 'LAVALINK_PASSWORD', 'LAVALINK_SECURE',
   'LAVALINK_HOST_2', 'LAVALINK_PORT_2', 'LAVALINK_PASSWORD_2', 'LAVALINK_SECURE_2',
   'LAVALINK_HOST_3', 'LAVALINK_PORT_3', 'LAVALINK_PASSWORD_3', 'LAVALINK_SECURE_3',
