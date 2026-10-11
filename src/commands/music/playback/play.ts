@@ -114,10 +114,16 @@ class PlayCommand extends Command {
         const searchSource = this._normalizeSource(source);
 
         try {
-          let searchResult = await client.music.search(query, {
-            source: searchSource,
-            limit: 10,
-          });
+          let searchResult;
+          try {
+            searchResult = await client.music.search(query, {
+              source: searchSource,
+              limit: 10,
+            });
+          } catch (searchError: any) {
+            // Missing plugin sources throw rather than return empty; fall through.
+            searchResult = null;
+          }
 
           // Mirror playback's fallback so autocomplete still works when the
           // configured primary source has no plugin backing it.
@@ -323,11 +329,31 @@ class PlayCommand extends Command {
         options.source = this._normalizeSource(source);
       }
 
-      let searchResult = await client.music.search(finalquery, options);
+      let searchResult;
+      try {
+        searchResult = await client.music.search(finalquery, options);
+      } catch (searchError: any) {
+        // A source whose node plugin is missing (e.g. jiosaavn) *throws* instead
+        // of returning empty, so swallow it and let the fallback below run.
+        logger.warn(
+          "PlayCommand",
+          `Search with source '${options.source}' failed: ${searchError?.message}`,
+        );
+        searchResult = null;
+      }
 
       if ((!searchResult || !searchResult.tracks?.length) && !this._isUrl(query) && options.source !== "ytsearch") {
         options.source = "ytsearch";
-        searchResult = await client.music.search(finalquery, options);
+        try {
+          searchResult = await client.music.search(finalquery, options);
+        } catch (fallbackError: any) {
+          logger.error(
+            "PlayCommand",
+            `Fallback search 'ytsearch' failed: ${fallbackError?.message}`,
+            fallbackError,
+          );
+          searchResult = null;
+        }
       }
 
       if (!searchResult || !searchResult.tracks?.length) {
