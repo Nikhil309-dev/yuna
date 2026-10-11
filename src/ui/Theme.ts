@@ -135,6 +135,11 @@ function label(key: string, fallback: string) {
  */
 function phraseOr(category: string | undefined, fallback: string): string {
   if (!category) return fallback;
+  // Guard against unknown categories: `phrases.get` falls back to the generic
+  // *error* pool when a category is missing, which would put "something went
+  // wrong" on a healthy card. Skip the lookup entirely when the category is
+  // not defined anywhere.
+  if (!phrases.has(category)) return fallback;
   const p = phrases.get(category);
   return p && p !== category ? p : fallback;
 }

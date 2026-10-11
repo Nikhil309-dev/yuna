@@ -412,6 +412,20 @@ export const phrases = {
 
     // Category missing everywhere — generic localized error.
     return i18n.t(locale, "errorGeneric", replacements);
+  },
+
+  /**
+   * True when the category resolves in the active locale or the embedded pool.
+   * Lets callers distinguish a real phrase from the generic error fallback of
+   * `get()`, which would otherwise mask a mistyped category.
+   * @param {string} category
+   * @returns {boolean}
+   */
+  has(category: string): boolean {
+    const locale = localeStore.getStore()?.locale || "en-US";
+    if (i18n.getPhraseList(locale, category)) return true;
+    const embedded = (this as unknown as Record<string, string[]>)[category];
+    return Array.isArray(embedded) && embedded.length > 0;
   }
 };
 
