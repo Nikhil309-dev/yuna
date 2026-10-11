@@ -162,4 +162,8 @@ if (config.ownerIds.length === 0) {
   logger.warn("Config", "OWNER_IDS is not set. No user has owner-level bot access.");
 }
 
+if (config.webhook?.enabled && !/^https:\/\/discord(app)?\.com\/api\/webhooks\//.test(config.webhook.url || '')) {
+  logger.warn("Config", "WEBHOOK_ENABLED is true but WEBHOOK_URL is not a valid Discord webhook URL. Webhook logging is disabled.");
+}
+
 // Made by Nikhil Under CodeX Devs
