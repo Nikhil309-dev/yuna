@@ -20,8 +20,7 @@ import { logger } from '#utils/logger';
 import { i18n } from '#utils/i18n';
 import phrases from '#utils/phrases';
 
-export const LIKED_PER_PAGE = 8;
-
+export const FAV_OPTIONS_PER_PAGE = 25; // Discord select-menu option cap
 /** Tree connectors, matching the playlist cards so the whole bot reads the same. */
 function tree(lines: string[]): string {
   return lines
@@ -128,7 +127,6 @@ export function buildLikeAllCard({ addedCount, alreadyCount, total, userId }: an
 }
 
 export const FAV_ACCENT = 0xf47fff;
-export const FAV_OPTIONS_PER_PAGE = 25; // Discord select-menu option cap
 
 function totalDuration(tracks: any[]): string {
   const ms = tracks.reduce((sum, t) => sum + (t?.duration || 0), 0);
