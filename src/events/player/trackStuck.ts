@@ -1,4 +1,4 @@
-import type { Player, Track } from 'lavalink-client';
+import type { Player, Track, LavalinkManager } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { EventUtils } from "#utils/EventUtils";
@@ -13,7 +13,7 @@ import {
 export default {
 	name: "trackStuck",
 	once: false,
-	async execute(player: Player, track: Track, payload: any, client: YunaClient) {
+	async execute(player: Player, track: Track, payload: any, _lavalink: LavalinkManager, client: YunaClient) {
 		try {
 			logger.warn("TrackStuck", `Track stuck for ${payload.thresholdMs}ms in guild ${player.guildId}:`, {
 				track: track?.info?.title || "Unknown",
