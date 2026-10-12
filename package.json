@@ -12,6 +12,7 @@
     "dev": "tsx --watch --expose-gc src/shard.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/**/*.test.ts",
     "setup": "cp .env.example .env && echo 'Created .env file. Please edit it with your configuration.'"
   },
   "imports": {
