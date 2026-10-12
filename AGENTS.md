@@ -11,6 +11,24 @@
   service uses `network_mode: host` and binds `127.0.0.1:9000` (password `youshallnotpass`).
 - First start downloads the youtube-source plugin from Maven; host networking is required for that.
 
+## Startup on Pterodactyl / Nexio Host (read before touching the launch command)
+- The panel's start command tests `[[ "${MAIN_FILE}" == "*.js" ]]` **with the glob quoted**, so it is a
+  *literal* string compare: it is false for every real filename (even `boot.js`). The `node` branch is
+  therefore dead and the panel always runs its `else` branch: global `ts-node --esm`.
+- `boot.js` is a plain CommonJS launcher: it spawns the project-local `tsx` with
+  `--expose-gc --max-old-space-size=2048` on `src/shard.ts`, forwarding signals and exit codes.
+  `node boot.js` runs it directly, bypassing ts-node entirely.
+- `tsx` must stay a **runtime** dependency: `NODE_ENV=production npm install` skips devDependencies,
+  which would otherwise leave `node_modules/.bin/tsx` missing on the host.
+- Why not `ts-node --esm src/shard.ts`: ts-node 10.x crashes with `Cannot read properties of undefined
+  (reading 'fileExists')` under `typescript@7` (the native port exposes no `ts.sys`/`readConfigFile`),
+  and even with a working compiler it cannot resolve the repo's extensionless relative imports or the
+  `#alias` imports (`ERR_MODULE_NOT_FOUND`). Do not downgrade `typescript` — TS 5.9.3 fails the build
+  (`src/commands/playlists/add2pl.ts` TS7034/TS7005).
+- Locked-command fallback: set env `TS_NODE_COMPILER=typescript5` and add
+  `"typescript5": "npm:typescript@5.9.3"` + `ts-node@10.9.2` as deps, then `MAIN_FILE=boot.js` works
+  even through the `ts-node --esm` branch. Not needed if the panel command can be edited.
+
 ## i18n / phrases (important)
 - Two lookup styles: `i18n.t(locale, category)` = randomized **phrase pool**;
   `i18n.ui/tr(locale, key)` = deterministic **UI string**; `i18n.cmd(english)` = per-command string.
