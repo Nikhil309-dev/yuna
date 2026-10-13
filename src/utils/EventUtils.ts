@@ -59,6 +59,31 @@ export class EventUtils {
     player.set('updateInterval', id);
   }
 
+  // lavalink-client derives `player.position` solely from websocket `playerUpdate`
+  // frames. Some Lavalink builds (e.g. the Rust node this bot runs on) never push
+  // those frames — the node tracks position but only exposes it over REST, so
+  // `player.position` stays 0 and the progress bar freezes at 0:00. Fall back to
+  // the node's REST player state, which is authoritative and always current.
+  static async resolvePosition(player: any): Promise<number> {
+    const wsPosition = typeof player?.position === 'number' && Number.isFinite(player.position) ? player.position : 0;
+    const node = player?.node;
+    if (!node?.sessionId || typeof node.request !== 'function' || !player?.guildId) return wsPosition;
+
+    try {
+      const res: any = await Promise.race([
+        node.request(`/sessions/${node.sessionId}/players/${player.guildId}`),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('position sync timeout')), 2500)),
+      ]);
+      const restPosition = Number(res?.state?.position);
+      if (Number.isFinite(restPosition) && restPosition >= 0) {
+        return Math.max(wsPosition, restPosition);
+      }
+    } catch (err: any) {
+      logger.debug('EventUtils', `Position REST sync failed: ${err?.message}`);
+    }
+    return wsPosition;
+  }
+
   static async refreshNowPlaying(client: Client | any, player: any): Promise<boolean> {
     if (!client?.channels?.fetch || !player) return false;
 
@@ -73,7 +98,7 @@ export class EventUtils {
     const message: any = await channel?.messages?.fetch(messageId).catch(() => null);
     if (!message?.edit) return false;
 
-    const position = player.position || 0;
+    const position = await EventUtils.resolvePosition(player);
     const isTextMode = player.get?.('nowPlayingTextMode') === true;
     const controlMode = player.get?.('controlMode') || 'default';
     const requesterId = track.requester?.id;

@@ -391,7 +391,7 @@ class Add2PlaylistCommand extends Command {
 		try {
 			const current = player.queue.current;
 			const queue = player.queue.tracks;
-			let tracksToAdd = [];
+			let tracksToAdd: any[] = [];
 			let addedCount = 0;
 			let skippedCount = 0;
 

@@ -1,4 +1,4 @@
-import type { Player, Track } from 'lavalink-client';
+import type { Player, Track, LavalinkManager } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { logger } from "#utils/logger";
 import { db } from '#database/Database';
@@ -16,7 +16,7 @@ let autoplayEngine: AutoplayEngine | null = null;
 export default {
   name: "queueEnd",
   once: false,
-  async execute(player: Player, track: Track, client: YunaClient) {
+  async execute(player: Player, track: Track, _payload: any, _lavalink: LavalinkManager, client: YunaClient) {
     try {
       logger.info('QueueEnd', `Queue ended in guild ${player.guildId}`);
 

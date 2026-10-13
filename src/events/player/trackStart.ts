@@ -1,4 +1,4 @@
-import type { Player, Track } from 'lavalink-client';
+import type { Player, Track, LavalinkManager } from 'lavalink-client';
 import type { YunaClient } from '#core/YunaClient';
 import { AttachmentBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } from 'discord.js';
 import { EventUtils } from '#utils/EventUtils';
@@ -12,7 +12,7 @@ import { createPlayerContainer } from '#ui/Components';
 export default {
   name: "trackStart",
   once: false,
-  async execute(player: Player, track: Track, client: YunaClient) {
+  async execute(player: Player, track: Track, _payload: any, _lavalink: LavalinkManager, client: YunaClient) {
     try {
       if (!track || !track.info) {
         logger.error('TrackStart', 'Invalid track data received:', track);
