@@ -211,12 +211,12 @@ class Stay247Command extends Command {
     const botMember = guild.members.me ?? guild.members.cache.get(client.user.id);
     const voicePerms = targetVoiceChannel.permissionsFor(botMember);
 
-    if (!voicePerms.has([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak])) {
+    if (!voicePerms?.has([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak])) {
       return this._createErrorContainer(i18n.cmd("Missing permissions for {channel}.\nI need `Connect` and `Speak` permissions in that voice channel.", { channel: targetVoiceChannel.name }));
     }
 
     const textPerms = targetTextChannel.permissionsFor(botMember);
-    if (!textPerms.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
+    if (!textPerms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
       return this._createErrorContainer(i18n.cmd("Missing permissions for {channel}.\nI need `View Channel` and `Send Messages` permissions in that text channel.", { channel: targetTextChannel.name }));
     }
 

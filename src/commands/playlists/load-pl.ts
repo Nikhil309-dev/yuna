@@ -145,7 +145,7 @@ class LoadPlaylistCommand extends Command {
 					),
 				);
 			const permissions = voiceChannel.permissionsFor(context.guild.members.me);
-			if (!permissions.has(["Connect", "Speak"]))
+			if (!permissions?.has(["Connect", "Speak"]))
 				return this._editReply(
 					loadingMessage,
 					this._createErrorContainer(
