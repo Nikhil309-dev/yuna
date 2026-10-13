@@ -215,7 +215,7 @@ class PlayCommand extends Command {
       }
 
       const permissions = voiceChannel.permissionsFor(context.guild.members.me);
-      if (!permissions.has(["Connect", "Speak"])) {
+      if (!permissions?.has(["Connect", "Speak"])) {
         const errorContainer = this._createErrorContainer(
           "I need permission to join and speak in your voice channel.",
         );

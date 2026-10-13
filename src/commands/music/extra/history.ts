@@ -250,7 +250,7 @@ class HistoryCommand extends Command {
         }
 
         const permissions = voiceChannel.permissionsFor(interaction.guild.members.me);
-        if (!permissions.has(['Connect', 'Speak'])) {
+        if (!permissions?.has(['Connect', 'Speak'])) {
           const errC = buildContainer({
       title: "`### ⚠️ **Permission Missing**`",
       content: "I need permission to join and speak in your voice channel.",
